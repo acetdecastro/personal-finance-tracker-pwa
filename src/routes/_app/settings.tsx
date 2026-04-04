@@ -1,130 +1,138 @@
 import { useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { Plus, X } from 'lucide-react'
 import { ThemeToggle } from '#/features/settings/components/ThemeToggle'
-import { AccountForm } from '#/features/accounts/components/AccountForm'
-import { AccountList } from '#/features/accounts/components/AccountList'
 import { RecurringRuleForm } from '#/features/recurring/components/RecurringRuleForm'
 import { RecurringRuleList } from '#/features/recurring/components/RecurringRuleList'
 import { SectionHeader } from '#/components/common/SectionHeader'
 import { EmptyState } from '#/components/common/EmptyState'
-import {
-  useAccounts,
-  useCreateAccount,
-} from '#/features/accounts/hooks/use-accounts'
+import { useAccounts } from '#/features/accounts/hooks/use-accounts'
 import { useCategories } from '#/features/categories/hooks/use-categories'
 import {
   useRecurringRules,
   useCreateRecurringRule,
+  useUpdateRecurringRule,
 } from '#/features/recurring/hooks/use-recurring-rules'
-import type { CreateAccountInput } from '#/features/accounts/schemas/account.schemas'
+import type { RecurringRule } from '#/types/domain'
 import type { CreateRecurringRuleInput } from '#/features/recurring/schemas/recurring-rule.schemas'
 
 export const Route = createFileRoute('/_app/settings')({
   component: SettingsRoute,
 })
 
-type Sheet = 'account' | 'recurring' | null
+type SheetState =
+  | { mode: 'create'; type: 'income' | 'expense' }
+  | { mode: 'edit'; rule: RecurringRule }
+  | null
 
 function SettingsRoute() {
-  const [openSheet, setOpenSheet] = useState<Sheet>(null)
+  const [sheetState, setSheetState] = useState<SheetState>(null)
 
   const { data: accounts = [] } = useAccounts()
   const { data: categories = [] } = useCategories()
   const { data: recurringRules = [] } = useRecurringRules()
-
-  const createAccount = useCreateAccount()
   const createRecurringRule = useCreateRecurringRule()
-
-  async function handleAccountSubmit(values: CreateAccountInput) {
-    await createAccount.mutateAsync(values)
-    setOpenSheet(null)
-  }
+  const updateRecurringRule = useUpdateRecurringRule()
 
   async function handleRecurringSubmit(values: CreateRecurringRuleInput) {
-    await createRecurringRule.mutateAsync(values)
-    setOpenSheet(null)
+    if (sheetState?.mode === 'edit') {
+      await updateRecurringRule.mutateAsync({
+        id: sheetState.rule.id,
+        changes: values,
+      })
+    } else {
+      await createRecurringRule.mutateAsync(values)
+    }
+    setSheetState(null)
   }
+
+  const recurringType =
+    sheetState?.mode === 'edit'
+      ? sheetState.rule.type
+      : sheetState?.mode === 'create'
+        ? sheetState.type
+        : null
 
   return (
     <>
       <div className="space-y-8">
-        {/* Appearance */}
         <div className="space-y-3">
           <SectionHeader title="Appearance" />
-          <div className="rounded-2xl bg-white p-4 dark:bg-zinc-900">
-            <p className="mb-3 text-sm font-medium text-slate-600 dark:text-slate-400">
+          <div className="rounded-2xl bg-card p-4">
+            <p className="mb-3 text-sm font-medium text-secondary-foreground">
               Theme
             </p>
             <ThemeToggle />
           </div>
         </div>
 
-        {/* Accounts */}
         <div className="space-y-3">
-          <SectionHeader
-            title="Accounts"
-            action={
-              <button
-                onClick={() => setOpenSheet('account')}
-                className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-              >
-                <Plus className="size-3.5" />
-                Add
-              </button>
-            }
-          />
-          {accounts.length === 0 ? (
-            <EmptyState
-              title="No accounts"
-              description="Add an account to get started."
-            />
-          ) : (
-            <AccountList accounts={accounts} />
-          )}
+          <SectionHeader title="Accounts" />
+          <div className="rounded-2xl bg-card p-4">
+            <p className="mb-3 text-sm text-muted-foreground">
+              Manage accounts and per-account safety buffers from the Accounts
+              tab.
+            </p>
+            <Link
+              to="/accounts"
+              className="inline-flex rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
+            >
+              Open Accounts
+            </Link>
+          </div>
         </div>
 
-        {/* Recurring Rules */}
         <div className="space-y-3">
           <SectionHeader
-            title="Recurring Rules"
+            title="Recurring Transactions"
             action={
-              <button
-                onClick={() => setOpenSheet('recurring')}
-                className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-              >
-                <Plus className="size-3.5" />
-                Add
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setSheetState({ mode: 'create', type: 'income' })}
+                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-primary transition hover:bg-primary-subtle"
+                >
+                  <Plus className="size-3.5" />
+                  Income
+                </button>
+                <button
+                  onClick={() => setSheetState({ mode: 'create', type: 'expense' })}
+                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-secondary-foreground transition hover:bg-muted"
+                >
+                  <Plus className="size-3.5" />
+                  Expense
+                </button>
+              </div>
             }
           />
           {recurringRules.length === 0 ? (
             <EmptyState
-              title="No recurring rules"
-              description="Add salary or fixed expenses for forecasting."
+              title="No recurring transactions"
+              description="Add expected salary or fixed expenses for forecasting."
             />
           ) : (
-            <RecurringRuleList rules={recurringRules} />
+            <RecurringRuleList
+              rules={recurringRules}
+              onSelect={(rule) => setSheetState({ mode: 'edit', rule })}
+            />
           )}
         </div>
 
-        {/* Import / Export — shell */}
         <div className="space-y-3">
           <SectionHeader title="Data" />
-          <div className="rounded-2xl bg-white p-4 dark:bg-zinc-900">
-            <p className="mb-3 text-xs text-slate-400 dark:text-slate-500">
+          <div className="rounded-2xl bg-card p-4">
+            <p className="mb-3 text-xs text-muted-foreground/70">
               Export and import coming in Phase 5.
             </p>
             <div className="flex gap-3">
               <button
                 disabled
-                className="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-semibold text-slate-400 dark:bg-zinc-800 dark:text-slate-500"
+                className="flex-1 rounded-xl bg-muted py-2.5 text-sm font-semibold text-muted-foreground/70"
               >
                 Export JSON
               </button>
               <button
                 disabled
-                className="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-semibold text-slate-400 dark:bg-zinc-800 dark:text-slate-500"
+                className="flex-1 rounded-xl bg-muted py-2.5 text-sm font-semibold text-muted-foreground/70"
               >
                 Import JSON
               </button>
@@ -133,22 +141,29 @@ function SettingsRoute() {
         </div>
       </div>
 
-      {openSheet === 'account' && (
-        <BottomSheet title="Add Account" onClose={() => setOpenSheet(null)}>
-          <AccountForm
-            onSubmit={handleAccountSubmit}
-            onCancel={() => setOpenSheet(null)}
-          />
-        </BottomSheet>
-      )}
-
-      {openSheet === 'recurring' && (
-        <BottomSheet title="Add Recurring Rule" onClose={() => setOpenSheet(null)}>
+      {sheetState && (
+        <BottomSheet
+          title={
+            sheetState.mode === 'edit'
+              ? 'Edit Recurring Transaction'
+              : recurringType === 'expense'
+                ? 'Add Recurring Expense'
+                : 'Add Recurring Income'
+          }
+          onClose={() => setSheetState(null)}
+        >
           <RecurringRuleForm
             accounts={accounts}
             categories={categories}
+            type={recurringType ?? 'income'}
+            initialValues={
+              sheetState.mode === 'edit' ? sheetState.rule : undefined
+            }
             onSubmit={handleRecurringSubmit}
-            onCancel={() => setOpenSheet(null)}
+            onCancel={() => setSheetState(null)}
+            submitLabel={
+              sheetState.mode === 'edit' ? 'Save Changes' : 'Save'
+            }
           />
         </BottomSheet>
       )}
@@ -171,16 +186,16 @@ function BottomSheet({
       onClick={onClose}
     >
       <div
-        className="max-h-[90dvh] overflow-y-auto rounded-t-3xl bg-white px-5 pb-8 pt-5 dark:bg-zinc-950"
+        className="max-h-[90dvh] overflow-y-auto rounded-t-3xl bg-popover px-5 pb-8 pt-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+          <h2 className="text-base font-bold text-foreground">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:text-slate-600 dark:text-slate-500"
+            className="rounded-lg p-1 text-muted-foreground hover:text-foreground"
           >
             <X className="size-5" />
           </button>

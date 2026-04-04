@@ -13,24 +13,24 @@ interface TransactionListProps {
 const TYPE_CONFIG = {
   income: {
     Icon: ArrowDownLeft,
-    color: 'text-emerald-700 dark:text-emerald-400',
-    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+    color: 'text-primary',
+    bg: 'bg-primary-subtle',
     sign: '+',
-    amountColor: 'text-emerald-700 dark:text-emerald-400',
+    amountColor: 'text-primary',
   },
   expense: {
     Icon: ArrowUpRight,
-    color: 'text-slate-500 dark:text-slate-400',
-    bg: 'bg-slate-100 dark:bg-zinc-800',
+    color: 'text-muted-foreground',
+    bg: 'bg-muted',
     sign: '-',
-    amountColor: 'text-slate-900 dark:text-slate-100',
+    amountColor: 'text-foreground',
   },
   transfer: {
     Icon: ArrowLeftRight,
-    color: 'text-teal-600 dark:text-teal-400',
-    bg: 'bg-teal-50 dark:bg-teal-950/30',
+    color: 'text-accent',
+    bg: 'bg-accent-subtle',
     sign: '',
-    amountColor: 'text-teal-600 dark:text-teal-400',
+    amountColor: 'text-accent',
   },
 } as const
 
@@ -54,16 +54,16 @@ export function TransactionList({
         return (
           <div
             key={t.id}
-            className="flex items-center gap-3 rounded-2xl p-4 hover:bg-slate-50 dark:hover:bg-zinc-800/50"
+            className="flex items-center gap-3 rounded-2xl p-4 hover:bg-muted/50"
           >
             <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${cfg.bg}`}>
               <Icon className={`size-5 ${cfg.color}`} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+              <p className="truncate text-sm font-semibold text-foreground">
                 {categoryName ?? t.note ?? t.type}
               </p>
-              <p className="text-xs text-slate-400 dark:text-slate-500">
+              <p className="text-xs text-muted-foreground/70">
                 {accountName}
                 {accountName && t.transactionDate ? ' · ' : ''}
                 {formatDisplayDate(t.transactionDate)}
@@ -76,7 +76,7 @@ export function TransactionList({
               {onDelete && (
                 <button
                   onClick={() => onDelete(t.id)}
-                  className="rounded-lg p-1 text-slate-300 transition hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400"
+                  className="rounded-lg p-1 text-muted-foreground/40 transition hover:text-destructive"
                   aria-label="Delete transaction"
                 >
                   <Trash2 className="size-4" />

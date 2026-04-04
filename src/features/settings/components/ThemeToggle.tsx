@@ -20,8 +20,8 @@ export function ThemeToggle() {
           onClick={() => setThemeMode(value)}
           className={`flex flex-col items-center gap-1.5 rounded-xl py-3 text-xs font-semibold transition active:scale-[0.98] ${
             themeMode === value
-              ? 'bg-emerald-700 text-white dark:bg-emerald-600'
-              : 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-300'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-secondary-foreground'
           }`}
         >
           <Icon className="size-4" />

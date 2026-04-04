@@ -195,6 +195,7 @@ User can configure:
 - next salary date
 - recurring fixed expenses
 - preferred accounts
+- safety buffer for the primary account
 - monthly savings goal
 - currency (PHP default)
 
@@ -220,7 +221,7 @@ Fast-add UX should prioritize:
 - category
 - save
 
-### C. Recurring Rules
+### C. Recurring Transactions
 
 User can define recurring items:
 
@@ -230,7 +231,8 @@ User can define recurring items:
 - utilities
 - other fixed expenses
 
-Recurring entries should power forecasting even if not yet “realized” as posted transactions.
+Recurring transactions should power forecasting even if not yet “realized” as posted transactions.
+Their amount is the expected amount used for forecast planning; the actual posted transaction amount may differ.
 
 ### D. Dashboard
 
@@ -442,7 +444,7 @@ Keep it simple: 4 tabs max.
 
 Optional fifth later:
 
-5. **Accounts** or **Goals**
+5. **Accounts**
 
 ## Suggested mobile structure
 
@@ -469,7 +471,6 @@ Optional fifth later:
 
 - salary setup
 - recurring rules
-- accounts
 - export/import
 - theme/preferences
 
@@ -525,11 +526,13 @@ Because you said you often quit early:
   - bank
   - e-wallet
 - view per-account balances
+- set a per-account safety buffer
 
 ## Recurring items
 
 - create recurring income
 - create recurring expense
+- recurring items must be explicitly created as either income or expense
 - define amount, cadence, next date, category, account
 
 ## Budgets
@@ -625,6 +628,7 @@ High-level only.
 - id
 - name
 - type: income | expense
+- type determines whether the item adds to or subtracts from forecasted balances
 - amount
 - categoryId
 - accountId
@@ -652,7 +656,6 @@ High-level only.
 - currency
 - payday cadence
 - payday config
-- minimum buffer
 - theme
 - install dismissed flags
 - onboarding flags

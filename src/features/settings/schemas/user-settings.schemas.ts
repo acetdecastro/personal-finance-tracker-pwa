@@ -10,7 +10,6 @@ export const themePreferenceSchema = z.enum(['light', 'dark', 'system'])
 export const createUserSettingsInputSchema = z.object({
   id: z.literal('primary').default('primary'),
   currency: currencySchema.default('PHP'),
-  minimumBuffer: nonNegativeMoneySchema.default(0),
   theme: themePreferenceSchema.default('system'),
   hasCompletedOnboarding: z.boolean().default(false),
 })
@@ -22,7 +21,6 @@ export const updateUserSettingsInputSchema = createUserSettingsInputSchema
 export const userSettingsSchema = z.object({
   id: z.literal('primary'),
   currency: currencySchema,
-  minimumBuffer: nonNegativeMoneySchema,
   theme: themePreferenceSchema,
   hasCompletedOnboarding: z.boolean(),
   ...timestampFieldsSchema.shape,

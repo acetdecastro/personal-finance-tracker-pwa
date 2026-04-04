@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { DASHBOARD_QUERY_KEY } from '#/features/dashboard/hooks/use-dashboard-data'
 import { recurringRuleRepository } from '../services/recurring-rule.repository'
 import type { CreateRecurringRuleInput, UpdateRecurringRuleInput } from '../schemas/recurring-rule.schemas'
 
@@ -18,6 +19,7 @@ export function useCreateRecurringRule() {
       recurringRuleRepository.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: RECURRING_RULES_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY })
     },
   })
 }
@@ -29,6 +31,7 @@ export function useUpdateRecurringRule() {
       recurringRuleRepository.update(id, changes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: RECURRING_RULES_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY })
     },
   })
 }

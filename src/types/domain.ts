@@ -28,6 +28,7 @@ export interface Account extends TimestampedEntity {
   name: string
   type: AccountType
   initialBalance: number
+  safetyBuffer: number
   isArchived: boolean
 }
 
@@ -84,7 +85,6 @@ export interface Goal extends TimestampedEntity {
 export interface UserSettings extends TimestampedEntity {
   id: 'primary'
   currency: CurrencyCode
-  minimumBuffer: number
   theme: ThemePreference
   hasCompletedOnboarding: boolean
 }

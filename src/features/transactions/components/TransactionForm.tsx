@@ -1,20 +1,23 @@
 import { useForm } from '@tanstack/react-form'
 import { format } from 'date-fns'
 import { FormField } from '#/components/common/FormField'
+import { SelectInput } from '#/components/common/SelectInput'
 import { toStoredDate } from '#/lib/dates'
-import type { Account, Category, TransactionType } from '#/types/domain'
+import type { TransactionType } from '#/types/domain'
+import type { TransactionFormOptionsDto } from '../types'
 import type { CreateTransactionInput } from '../schemas/transaction.schemas'
 
 interface TransactionFormProps {
-  accounts: Account[]
-  categories: Category[]
+  formOptions: TransactionFormOptionsDto
   onSubmit: (values: CreateTransactionInput) => Promise<void>
   onCancel?: () => void
 }
 
+const INPUT_CLS =
+  'w-full rounded-xl bg-input px-4 py-3 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring'
+
 export function TransactionForm({
-  accounts,
-  categories,
+  formOptions,
   onSubmit,
   onCancel,
 }: TransactionFormProps) {
@@ -24,23 +27,41 @@ export function TransactionForm({
     defaultValues: {
       type: 'expense' as TransactionType,
       amount: '' as unknown as number,
+      recurringTransactionId: '',
       categoryId: '',
-      accountId: accounts[0]?.id ?? '',
+      accountId: formOptions.accountOptions[0]?.value ?? '',
       note: '',
       date: todayForInput,
     },
     onSubmit: async ({ value }) => {
-      const filteredCategories = categories.filter((c) => c.type === value.type)
+      const categoryOptions =
+        value.type === 'expense'
+          ? formOptions.expenseCategoryOptions
+          : formOptions.incomeCategoryOptions
+      const recurringOptions =
+        value.type === 'expense'
+          ? formOptions.expenseRecurringTransactionOptions
+          : formOptions.incomeRecurringTransactionOptions
+      const selectedRecurringTransaction =
+        recurringOptions.find(
+          (option) => option.value === value.recurringTransactionId,
+        ) ?? null
       const input: CreateTransactionInput = {
         type: value.type as 'income' | 'expense',
         amount: Number(value.amount),
-        categoryId: value.categoryId || (filteredCategories[0]?.id ?? null),
-        accountId: value.accountId || null,
+        categoryId:
+          value.categoryId ||
+          selectedRecurringTransaction?.categoryId ||
+          (categoryOptions[0]?.value ?? null),
+        accountId:
+          value.accountId || selectedRecurringTransaction?.accountId || null,
         fromAccountId: null,
         toAccountId: null,
         note: value.note.trim() || null,
-        transactionDate: toStoredDate(new Date(value.date + 'T00:00:00.000Z')),
-        recurringRuleId: null,
+        transactionDate: toStoredDate(
+          new Date(value.date + 'T00:00:00.000Z'),
+        ),
+        recurringRuleId: selectedRecurringTransaction?.value ?? null,
       }
       await onSubmit(input)
     },
@@ -66,9 +87,9 @@ export function TransactionForm({
                 className={`rounded-xl py-2.5 text-sm font-semibold capitalize transition active:scale-[0.98] ${
                   field.state.value === t
                     ? t === 'expense'
-                      ? 'bg-red-600 text-white dark:bg-red-500'
-                      : 'bg-emerald-700 text-white dark:bg-emerald-600'
-                    : 'bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-slate-400'
+                      ? 'bg-destructive text-primary-foreground'
+                      : 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {t}
@@ -90,9 +111,13 @@ export function TransactionForm({
         }}
       >
         {(field) => (
-          <FormField label="Amount" error={field.state.meta.errors[0]?.toString()} required>
+          <FormField
+            label="Amount"
+            required
+            error={field.state.meta.errors[0]?.toString()}
+          >
             <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-slate-400">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">
                 ₱
               </span>
               <input
@@ -102,9 +127,11 @@ export function TransactionForm({
                 min="0.01"
                 placeholder="0.00"
                 autoFocus
-                className="w-full rounded-xl bg-slate-50 py-3 pl-9 pr-4 text-lg font-bold text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
+                className="w-full rounded-xl bg-input py-3 pl-9 pr-4 text-lg font-bold text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
                 value={field.state.value as unknown as string}
-                onChange={(e) => field.handleChange(e.target.value as unknown as number)}
+                onChange={(e) =>
+                  field.handleChange(e.target.value as unknown as number)
+                }
                 onBlur={field.handleBlur}
               />
             </div>
@@ -112,30 +139,97 @@ export function TransactionForm({
         )}
       </form.Field>
 
+      <form.Field name="recurringTransactionId">
+        {(field) => (
+          <form.Subscribe selector={(s) => s.values.type}>
+            {(type) => {
+              const options =
+                type === 'expense'
+                  ? formOptions.expenseRecurringTransactionOptions
+                  : formOptions.incomeRecurringTransactionOptions
+
+              if (options.length === 0) {
+                return null
+              }
+
+              return (
+                <FormField
+                  label="Link Recurring Transaction"
+                  hint="Optional. Prefills the expected occurrence, but the amount you save can differ."
+                >
+                  <SelectInput
+                    value={field.state.value}
+                    onChange={(e) => {
+                      const nextValue = e.target.value
+                      field.handleChange(nextValue)
+
+                      const selectedOption =
+                        options.find((option) => option.value === nextValue) ??
+                        null
+
+                      if (!selectedOption) {
+                        return
+                      }
+
+                      form.setFieldValue('categoryId', selectedOption.categoryId)
+                      form.setFieldValue('accountId', selectedOption.accountId)
+                      form.setFieldValue(
+                        'date',
+                        format(
+                          new Date(selectedOption.nextOccurrenceDate),
+                          'yyyy-MM-dd',
+                        ),
+                      )
+                    }}
+                  >
+                    <option value="">None</option>
+                    {options.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label} · {option.accountLabel} · Expected{' '}
+                        {option.expectedAmount.toLocaleString()}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </FormField>
+              )
+            }}
+          </form.Subscribe>
+        )}
+      </form.Field>
+
       {/* Category — filtered by type */}
       <form.Field
         name="categoryId"
-        validators={{ onChange: ({ value }) => !value ? 'Select a category' : undefined }}
+        validators={{
+          onChange: ({ value }) =>
+            !value ? 'Select a category' : undefined,
+        }}
       >
         {(field) => (
           <form.Subscribe selector={(s) => s.values.type}>
             {(type) => {
-              const filtered = categories.filter((c) => c.type === type)
+              const options =
+                type === 'expense'
+                  ? formOptions.expenseCategoryOptions
+                  : formOptions.incomeCategoryOptions
               return (
-                <FormField label="Category" error={field.state.meta.errors[0]?.toString()} required>
-                  <select
-                    className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
+                <FormField
+                  label="Category"
+                  required
+                  error={field.state.meta.errors[0]?.toString()}
+                >
+                  <SelectInput
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
                   >
                     <option value="">Select category</option>
-                    {filtered.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
+                    {options.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectInput>
                 </FormField>
               )
             }}
@@ -146,23 +240,29 @@ export function TransactionForm({
       {/* Account */}
       <form.Field
         name="accountId"
-        validators={{ onChange: ({ value }) => !value ? 'Select an account' : undefined }}
+        validators={{
+          onChange: ({ value }) =>
+            !value ? 'Select an account' : undefined,
+        }}
       >
         {(field) => (
-          <FormField label="Account" error={field.state.meta.errors[0]?.toString()} required>
-            <select
-              className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
+          <FormField
+            label="Account"
+            required
+            error={field.state.meta.errors[0]?.toString()}
+          >
+            <SelectInput
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
             >
               <option value="">Select account</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
+              {formOptions.accountOptions.map((a) => (
+                <option key={a.value} value={a.value}>
+                  {a.label}
                 </option>
               ))}
-            </select>
+            </SelectInput>
           </FormField>
         )}
       </form.Field>
@@ -170,10 +270,10 @@ export function TransactionForm({
       {/* Date */}
       <form.Field name="date">
         {(field) => (
-          <FormField label="Date">
+          <FormField label="Date" hint="Use the actual posted date for this transaction.">
             <input
               type="date"
-              className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
+              className={INPUT_CLS}
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
@@ -190,7 +290,7 @@ export function TransactionForm({
               type="text"
               placeholder="Add a note…"
               maxLength={500}
-              className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
+              className={INPUT_CLS}
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
@@ -204,7 +304,7 @@ export function TransactionForm({
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-semibold text-slate-700 transition active:scale-[0.98] dark:bg-zinc-800 dark:text-slate-200"
+            className="flex-1 rounded-xl bg-muted py-3 text-sm font-semibold text-secondary-foreground transition active:scale-[0.98]"
           >
             Cancel
           </button>
@@ -213,8 +313,8 @@ export function TransactionForm({
           {([canSubmit, isSubmitting]) => (
             <button
               type="submit"
-              disabled={!canSubmit || isSubmitting}
-              className="flex-1 rounded-xl bg-emerald-700 py-3 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-50 dark:bg-emerald-600"
+              disabled={!canSubmit || !!isSubmitting}
+              className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50"
             >
               {isSubmitting ? 'Saving…' : 'Save Transaction'}
             </button>

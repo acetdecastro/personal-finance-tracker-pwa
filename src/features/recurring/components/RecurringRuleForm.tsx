@@ -1,8 +1,9 @@
 import { useForm } from '@tanstack/react-form'
-import { format } from 'date-fns'
+import { format, getDate } from 'date-fns'
 import { FormField } from '#/components/common/FormField'
+import { SelectInput } from '#/components/common/SelectInput'
 import { toStoredDate } from '#/lib/dates'
-import type { Account, Category } from '#/types/domain'
+import type { Account, Category, RecurringRule } from '#/types/domain'
 import type { CreateRecurringRuleInput } from '../schemas/recurring-rule.schemas'
 
 interface RecurringRuleFormProps {
@@ -11,6 +12,7 @@ interface RecurringRuleFormProps {
   type?: 'income' | 'expense'
   defaultName?: string
   defaultCategoryId?: string
+  initialValues?: Partial<RecurringRule>
   onSubmit: (values: CreateRecurringRuleInput) => Promise<void>
   onCancel?: () => void
   submitLabel?: string
@@ -22,35 +24,55 @@ const CADENCE_OPTIONS = [
   { value: 'weekly', label: 'Weekly' },
 ] as const
 
+const WEEKLY_INTERVAL_OPTIONS = [
+  { value: '1', label: 'Every week' },
+  { value: '2', label: 'Every 2 weeks' },
+  { value: '3', label: 'Every 3 weeks' },
+  { value: '4', label: 'Every 4 weeks' },
+] as const
+
 export function RecurringRuleForm({
   accounts,
   categories,
   type = 'income',
   defaultName = '',
   defaultCategoryId = '',
+  initialValues,
   onSubmit,
   onCancel,
   submitLabel = 'Save',
 }: RecurringRuleFormProps) {
-  const todayForInput = format(new Date(), 'yyyy-MM-dd')
+  const initialCadence = initialValues?.cadence ?? 'semi-monthly'
+  const todayForInput = format(
+    initialValues?.nextOccurrenceDate
+      ? new Date(initialValues.nextOccurrenceDate)
+      : new Date(),
+    'yyyy-MM-dd',
+  )
+  const defaultAccountId = initialValues?.accountId || (accounts[0] ? accounts[0].id : '')
+  const [semiMonthlyDay1 = 15, semiMonthlyDay2 = 30] =
+    initialValues?.semiMonthlyDays ?? []
 
   const form = useForm({
     defaultValues: {
-      name: defaultName,
-      type,
-      amount: '' as unknown as number,
-      categoryId: defaultCategoryId,
-      accountId: accounts[0]?.id ?? '',
-      cadence: 'semi-monthly' as CreateRecurringRuleInput['cadence'],
-      semiMonthlyDay1: '15',
-      semiMonthlyDay2: '30',
-      monthlyDay: '1',
-      weeklyInterval: '1',
+      name: initialValues?.name ?? defaultName,
+      type: initialValues?.type ?? type,
+      amount: initialValues?.amount ?? ('' as unknown as number),
+      categoryId: initialValues?.categoryId ?? defaultCategoryId,
+      accountId: defaultAccountId,
+      cadence: initialCadence as CreateRecurringRuleInput['cadence'],
+      semiMonthlyDay1: String(semiMonthlyDay1),
+      semiMonthlyDay2: String(semiMonthlyDay2),
+      monthlyDay: String(initialValues?.monthlyDay ?? 1),
+      weeklyInterval: String(initialValues?.weeklyInterval ?? 1),
       nextOccurrenceDate: todayForInput,
-      isActive: true,
+      isActive: initialValues?.isActive ?? true,
     },
     onSubmit: async ({ value }) => {
       const cadence = value.cadence
+      const parsedNextOccurrenceDate = new Date(
+        value.nextOccurrenceDate + 'T00:00:00.000Z',
+      )
       const input: CreateRecurringRuleInput = {
         name: value.name,
         type: value.type,
@@ -62,11 +84,10 @@ export function RecurringRuleForm({
           cadence === 'semi-monthly'
             ? [Number(value.semiMonthlyDay1), Number(value.semiMonthlyDay2)]
             : null,
-        monthlyDay: cadence === 'monthly' ? Number(value.monthlyDay) : null,
+        monthlyDay:
+          cadence === 'monthly' ? getDate(parsedNextOccurrenceDate) : null,
         weeklyInterval: cadence === 'weekly' ? Number(value.weeklyInterval) : null,
-        nextOccurrenceDate: toStoredDate(
-          new Date(value.nextOccurrenceDate + 'T00:00:00.000Z'),
-        ),
+        nextOccurrenceDate: toStoredDate(parsedNextOccurrenceDate),
         isActive: value.isActive,
       }
       await onSubmit(input)
@@ -86,10 +107,14 @@ export function RecurringRuleForm({
         validators={{ onChange: ({ value }) => !value.trim() ? 'Name is required' : undefined }}
       >
         {(field) => (
-          <FormField label="Rule Name" error={field.state.meta.errors[0]?.toString()} required>
+          <FormField
+            label="Recurring Transaction Name"
+            error={field.state.meta.errors[0]?.toString()}
+            required
+          >
             <input
-              className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
-              placeholder="e.g. Monthly Salary"
+              className="w-full rounded-xl bg-input px-4 py-3 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
+              placeholder={`e.g. ${type === 'income' ? 'Salary' : 'Internet Bill'}`}
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
@@ -109,9 +134,14 @@ export function RecurringRuleForm({
         }}
       >
         {(field) => (
-          <FormField label="Amount" error={field.state.meta.errors[0]?.toString()} required>
+          <FormField
+            label="Expected Amount"
+            hint="Used for forecasting. Your actual posted amount can differ."
+            error={field.state.meta.errors[0]?.toString()}
+            required
+          >
             <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
                 ₱
               </span>
               <input
@@ -120,7 +150,7 @@ export function RecurringRuleForm({
                 step="0.01"
                 min="0.01"
                 placeholder="0.00"
-                className="w-full rounded-xl bg-slate-50 py-3 pl-8 pr-4 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
+                className="w-full rounded-xl bg-input py-3 pl-8 pr-4 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
                 value={field.state.value as unknown as string}
                 onChange={(e) => field.handleChange(e.target.value as unknown as number)}
                 onBlur={field.handleBlur}
@@ -133,20 +163,19 @@ export function RecurringRuleForm({
       <form.Field name="categoryId" validators={{ onChange: ({ value }) => !value ? 'Select a category' : undefined }}>
         {(field) => (
           <FormField label="Category" error={field.state.meta.errors[0]?.toString()} required>
-            <select
-              className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
+            <SelectInput
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
             >
               <option value="">Select category</option>
               {categories
-                .filter((c) => c.type === type)
+                .filter((c) => c.type === form.state.values.type)
                 .map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
                 ))}
-            </select>
+            </SelectInput>
           </FormField>
         )}
       </form.Field>
@@ -154,8 +183,7 @@ export function RecurringRuleForm({
       <form.Field name="accountId" validators={{ onChange: ({ value }) => !value ? 'Select an account' : undefined }}>
         {(field) => (
           <FormField label="Account" error={field.state.meta.errors[0]?.toString()} required>
-            <select
-              className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
+            <SelectInput
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
             >
@@ -165,7 +193,7 @@ export function RecurringRuleForm({
                   {a.name}
                 </option>
               ))}
-            </select>
+            </SelectInput>
           </FormField>
         )}
       </form.Field>
@@ -182,8 +210,8 @@ export function RecurringRuleForm({
                   onClick={() => field.handleChange(c.value)}
                   className={`rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
                     field.state.value === c.value
-                      ? 'bg-emerald-700 text-white dark:bg-emerald-600'
-                      : 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-300'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-secondary-foreground'
                   }`}
                 >
                   {c.label}
@@ -202,12 +230,15 @@ export function RecurringRuleForm({
               <div className="grid grid-cols-2 gap-3">
                 <form.Field name="semiMonthlyDay1">
                   {(field) => (
-                    <FormField label="Day 1 of month">
+                    <FormField
+                      label="1st occurrence"
+                      hint="Calendar day for the first monthly occurrence"
+                    >
                       <input
                         type="number"
                         min="1"
                         max="31"
-                        className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700"
+                        className="w-full rounded-xl bg-input px-4 py-3 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                       />
@@ -216,12 +247,15 @@ export function RecurringRuleForm({
                 </form.Field>
                 <form.Field name="semiMonthlyDay2">
                   {(field) => (
-                    <FormField label="Day 2 of month">
+                    <FormField
+                      label="2nd occurrence"
+                      hint="Calendar day for the second monthly occurrence"
+                    >
                       <input
                         type="number"
                         min="1"
                         max="31"
-                        className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700"
+                        className="w-full rounded-xl bg-input px-4 py-3 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                       />
@@ -230,34 +264,23 @@ export function RecurringRuleForm({
                 </form.Field>
               </div>
             )}
-            {cadence === 'monthly' && (
-              <form.Field name="monthlyDay">
-                {(field) => (
-                  <FormField label="Day of month">
-                    <input
-                      type="number"
-                      min="1"
-                      max="31"
-                      className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700"
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                    />
-                  </FormField>
-                )}
-              </form.Field>
-            )}
             {cadence === 'weekly' && (
               <form.Field name="weeklyInterval">
                 {(field) => (
-                  <FormField label="Every N weeks" hint="e.g. 1 = every week, 2 = every 2 weeks">
-                    <input
-                      type="number"
-                      min="1"
-                      max="52"
-                      className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700"
+                  <FormField
+                    label="Frequency"
+                    hint="Choose a weekly interval up to every 4 weeks"
+                  >
+                    <SelectInput
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
-                    />
+                    >
+                      {WEEKLY_INTERVAL_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </SelectInput>
                   </FormField>
                 )}
               </form.Field>
@@ -267,25 +290,38 @@ export function RecurringRuleForm({
       </form.Subscribe>
 
       {/* Next occurrence */}
-      <form.Field name="nextOccurrenceDate">
-        {(field) => (
-          <FormField label="Next Occurrence Date">
-            <input
-              type="date"
-              className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-            />
-          </FormField>
+      <form.Subscribe selector={(s) => s.values.cadence}>
+        {(cadence) => (
+          <form.Field name="nextOccurrenceDate">
+            {(field) => (
+              <FormField
+                label="Next Occurrence Date"
+                hint={
+                  cadence === 'monthly'
+                    ? 'We use this date to determine the repeating day each month.'
+                    : cadence === 'semi-monthly'
+                      ? 'Choose whichever of the two monthly occurrences comes next.'
+                      : 'Choose the next expected weekly occurrence.'
+                }
+              >
+                <input
+                  type="date"
+                  className="w-full rounded-xl bg-input px-4 py-3 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              </FormField>
+            )}
+          </form.Field>
         )}
-      </form.Field>
+      </form.Subscribe>
 
       <div className="flex gap-3 pt-2">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-semibold text-slate-700 transition active:scale-[0.98] dark:bg-zinc-800 dark:text-slate-200"
+            className="flex-1 rounded-xl bg-muted py-3 text-sm font-semibold text-secondary-foreground transition active:scale-[0.98]"
           >
             Cancel
           </button>
@@ -295,7 +331,7 @@ export function RecurringRuleForm({
             <button
               type="submit"
               disabled={!canSubmit || isSubmitting}
-              className="flex-1 rounded-xl bg-emerald-700 py-3 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-50 dark:bg-emerald-600"
+              className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50"
             >
               {isSubmitting ? 'Saving…' : submitLabel}
             </button>

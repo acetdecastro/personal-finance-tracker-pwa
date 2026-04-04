@@ -402,6 +402,7 @@ type Account = {
   name: string;
   type: "cash" | "bank" | "ewallet" | "other";
   initialBalance: number;
+  safetyBuffer: number;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -461,7 +462,7 @@ Since PRD marked transfer lower than core balance/forecast value, it may be defe
 
 ---
 
-## 9.4 Recurring Rule
+## 9.4 Recurring Transaction
 
 Represents future modeled events like salary or fixed bills.
 
@@ -483,6 +484,10 @@ type RecurringRule = {
   updatedAt: string;
 };
 ```
+
+Recurring transactions must be explicitly created as either `income` or `expense`.
+`income` occurrences increase projected balances, while `expense` occurrences reduce them.
+The stored amount is the expected amount used for forecasting. The actual posted transaction amount for a given occurrence may differ.
 
 ## Important MVP simplification
 
@@ -540,7 +545,6 @@ Support one active goal in UI, but schema can allow multiple goals.
 type UserSettings = {
   id: "primary";
   currency: "PHP";
-  minimumBuffer: number;
   theme: "light" | "dark" | "system";
   hasCompletedOnboarding: boolean;
   createdAt: string;
@@ -627,8 +631,8 @@ Allow user to begin quickly without excessive friction.
 - salary cadence
 - next salary date
 - at least one account
+- safety buffer for the primary account
 - optional recurring fixed expenses
-- optional minimum buffer
 
 ## UX rules
 
@@ -765,10 +769,9 @@ Manage app configuration and data portability.
 
 ## Required sections
 
-- accounts management
-- recurring rules management
+- recurring transactions management
+- recurring transaction creation must make income vs expense explicit
 - user settings
-- minimum buffer
 - export JSON
 - import JSON
 - theme toggle
@@ -779,7 +782,29 @@ Manage app configuration and data portability.
 - export creates valid JSON
 - import validates schema before writing
 - invalid import fails safely
-- recurring rules editable from settings
+- recurring transactions editable from settings
+
+---
+
+# 12.6 Accounts Page
+
+## Purpose
+
+Manage financial accounts separately from app settings.
+
+## Required sections
+
+- accounts list
+- add account
+- edit account
+- per-account safety buffer
+- archive account optional if time allows
+
+## Acceptance criteria
+
+- user can create multiple accounts
+- each account can define its own safety buffer
+- account changes flow through dashboard and forecast calculations
 
 ---
 
@@ -870,11 +895,11 @@ This is simpler and avoids fake precision.
 
 ---
 
-# 14.4 Recurring Rule Expansion
+# 14.4 Recurring Transaction Expansion
 
 ## Definition
 
-Recurring rules represent future modeled events.
+Recurring transactions represent future modeled events.
 
 For forecasting, the system must generate expected future occurrences within a forecast window.
 
@@ -897,7 +922,7 @@ Example:
 ## Acceptance criteria
 
 - recurring occurrences can be generated correctly for next 30 days
-- recurring rules do not automatically create posted transactions unless explicitly designed later
+- recurring transactions do not automatically create posted transactions unless explicitly designed later
 - forecast uses expanded future occurrences without polluting actual transaction history
 
 ---
@@ -912,7 +937,7 @@ This is the heart of the app.
 - current date
 - future recurring income occurrences
 - future recurring expense occurrences
-- minimum buffer
+- total safety buffers across active accounts
 
 ## Forecast window
 
@@ -939,7 +964,9 @@ For MVP:
 
 ```ts
 safeToSpend =
-  currentBalance - totalUpcomingFixedExpensesBeforeNextSalary - minimumBuffer;
+  currentBalance -
+  totalUpcomingFixedExpensesBeforeNextSalary -
+  totalAccountSafetyBuffers;
 ```
 
 If result is negative, display negative or zero depending on UX choice.
@@ -1086,10 +1113,13 @@ Think:
 
 ## Settings
 
-- AccountManager
 - RecurringRulesManager
 - ImportExportPanel
 - ThemeToggle
+
+## Accounts
+
+- AccountManager
 
 ---
 

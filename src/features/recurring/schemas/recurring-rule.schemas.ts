@@ -30,7 +30,7 @@ const recurringRuleBaseSchema = z.object({
   cadence: supportedRecurringCadenceSchema,
   semiMonthlyDays: z.array(dayOfMonthSchema).length(2).nullable(),
   monthlyDay: dayOfMonthSchema.nullable(),
-  weeklyInterval: z.number().int().positive().nullable(),
+  weeklyInterval: z.number().int().min(1).max(4).nullable(),
   nextOccurrenceDate: storedDateSchema,
   isActive: z.boolean().default(true),
 })

@@ -41,6 +41,7 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
     ],
   }),
   shellComponent: RootDocument,
+  notFoundComponent: RootNotFound,
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -52,7 +53,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="min-h-dvh font-sans antialiased">
         <AppProviders>{children}</AppProviders>
-        <TanStackDevtools
+        {/* <TanStackDevtools
           config={{
             position: 'bottom-right',
           }}
@@ -63,9 +64,33 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             },
             TanStackQueryDevtools,
           ]}
-        />
+        /> */}
         <Scripts />
       </body>
     </html>
+  )
+}
+
+function RootNotFound() {
+  return (
+    <main className="flex min-h-dvh flex-col items-center justify-center px-5 text-center">
+      <div className="max-w-sm space-y-3 rounded-3xl bg-card p-6 text-card-foreground shadow-sm ring-1 ring-border">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+          Not Found
+        </p>
+        <h1 className="text-2xl font-extrabold tracking-tight">
+          This page doesn&apos;t exist
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          The link may be outdated, or the page may have moved.
+        </p>
+        <a
+          href="/dashboard"
+          className="inline-flex rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
+        >
+          Go to Dashboard
+        </a>
+      </div>
+    </main>
   )
 }

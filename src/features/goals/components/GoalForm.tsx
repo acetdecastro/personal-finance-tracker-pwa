@@ -44,7 +44,7 @@ export function GoalForm({ onSubmit, onCancel }: GoalFormProps) {
         {(field) => (
           <FormField label="Goal Name" error={field.state.meta.errors[0]?.toString()} required>
             <input
-              className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
+              className="w-full rounded-xl bg-input px-4 py-3 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
               placeholder="e.g. Emergency Fund"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
@@ -67,7 +67,7 @@ export function GoalForm({ onSubmit, onCancel }: GoalFormProps) {
         {(field) => (
           <FormField label="Target Amount" error={field.state.meta.errors[0]?.toString()} required>
             <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
                 ₱
               </span>
               <input
@@ -76,7 +76,7 @@ export function GoalForm({ onSubmit, onCancel }: GoalFormProps) {
                 step="0.01"
                 min="0.01"
                 placeholder="0.00"
-                className="w-full rounded-xl bg-slate-50 py-3 pl-8 pr-4 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
+                className="w-full rounded-xl bg-input py-3 pl-8 pr-4 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
                 value={field.state.value as unknown as string}
                 onChange={(e) => field.handleChange(e.target.value as unknown as number)}
                 onBlur={field.handleBlur}
@@ -90,7 +90,7 @@ export function GoalForm({ onSubmit, onCancel }: GoalFormProps) {
         {(field) => (
           <FormField label="Already Saved" hint="Optional — how much you've saved so far">
             <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
                 ₱
               </span>
               <input
@@ -99,7 +99,7 @@ export function GoalForm({ onSubmit, onCancel }: GoalFormProps) {
                 step="0.01"
                 min="0"
                 placeholder="0.00"
-                className="w-full rounded-xl bg-slate-50 py-3 pl-8 pr-4 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
+                className="w-full rounded-xl bg-input py-3 pl-8 pr-4 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
                 value={field.state.value as unknown as string}
                 onChange={(e) => field.handleChange(e.target.value as unknown as number)}
               />
@@ -114,7 +114,7 @@ export function GoalForm({ onSubmit, onCancel }: GoalFormProps) {
             <input
               type="date"
               min={format(new Date(), 'yyyy-MM-dd')}
-              className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
+              className="w-full rounded-xl bg-input px-4 py-3 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
             />
@@ -127,7 +127,7 @@ export function GoalForm({ onSubmit, onCancel }: GoalFormProps) {
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-semibold text-slate-700 transition active:scale-[0.98] dark:bg-zinc-800 dark:text-slate-200"
+            className="flex-1 rounded-xl bg-muted py-3 text-sm font-semibold text-secondary-foreground transition active:scale-[0.98]"
           >
             Cancel
           </button>
@@ -137,7 +137,7 @@ export function GoalForm({ onSubmit, onCancel }: GoalFormProps) {
             <button
               type="submit"
               disabled={!canSubmit || isSubmitting}
-              className="flex-1 rounded-xl bg-emerald-700 py-3 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-50 dark:bg-emerald-600"
+              className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50"
             >
               {isSubmitting ? 'Saving…' : 'Create Goal'}
             </button>

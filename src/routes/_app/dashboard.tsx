@@ -1,113 +1,247 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { TrendingUp, Wallet, CalendarClock, ShieldCheck } from 'lucide-react'
+import {
+  ArrowDownLeft,
+  ArrowLeftRight,
+  ArrowUpRight,
+  CalendarClock,
+  Receipt,
+  ShieldCheck,
+  Target,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react'
 import { SectionHeader } from '#/components/common/SectionHeader'
 import { EmptyState } from '#/components/common/EmptyState'
-import { TransactionList } from '#/features/transactions/components/TransactionList'
+import { BudgetList } from '#/features/budgets/components/BudgetList'
 import { GoalCard } from '#/features/goals/components/GoalCard'
-import { useTransactions } from '#/features/transactions/hooks/use-transactions'
-import { useAccounts } from '#/features/accounts/hooks/use-accounts'
-import { useCategories } from '#/features/categories/hooks/use-categories'
-import { useRecurringRules } from '#/features/recurring/hooks/use-recurring-rules'
-import { useGoals } from '#/features/goals/hooks/use-goals'
+import { useDashboardData } from '#/features/dashboard/hooks/use-dashboard-data'
 import { formatPhpCurrency } from '#/lib/format/number.utils'
 import { formatDisplayDate } from '#/lib/dates'
+import type {
+  DashboardRecentTransactionDto,
+  UpcomingBillDto,
+} from '#/types/dto'
 
 export const Route = createFileRoute('/_app/dashboard')({
   component: DashboardRoute,
 })
 
 function DashboardRoute() {
-  const { data: transactions = [] } = useTransactions()
-  const { data: accounts = [] } = useAccounts()
-  const { data: categories = [] } = useCategories()
-  const { data: recurringRules = [] } = useRecurringRules()
-  const { data: goals = [] } = useGoals()
+  const { data: dashboardData, isLoading } = useDashboardData()
 
-  const recentTransactions = transactions.slice(0, 5)
-
-  // Next salary: first active income recurring rule, ordered by nextOccurrenceDate
-  const nextSalaryRule =
-    recurringRules
-      .filter((r) => r.type === 'income' && r.isActive)
-      .sort((a, b) => a.nextOccurrenceDate.localeCompare(b.nextOccurrenceDate))
-      .at(0) ?? null
-
-  const primaryGoal = goals.at(0) ?? null
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-3xl bg-card p-6 text-sm text-muted-foreground">
+          Loading your dashboard…
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
-      {/* Balance hero — placeholder until Codex wires balance engine */}
-      <div className="rounded-3xl bg-gradient-to-br from-emerald-700 to-emerald-800 p-6 dark:from-emerald-800 dark:to-emerald-900">
+      <div className="rounded-3xl bg-linear-to-br from-emerald-700 to-emerald-800 p-6 dark:from-emerald-800 dark:to-emerald-900">
         <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-white/70">
           Total Balance
         </p>
         <p className="text-4xl font-extrabold tracking-tight text-white">
-          {formatPhpCurrency(0)}
+          {formatPhpCurrency(dashboardData?.currentBalance ?? 0)}
         </p>
         <p className="mt-1 text-xs text-white/50">
-          Balance calculation coming in Phase 2
+          Live total from accounts and posted transactions
         </p>
       </div>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3">
         <SummaryCard
           label="Safe to Spend"
-          value={formatPhpCurrency(0)}
+          value={formatPhpCurrency(dashboardData?.safeToSpend ?? 0)}
           Icon={ShieldCheck}
-          color="text-emerald-700 dark:text-emerald-400"
-          bgColor="bg-emerald-50 dark:bg-emerald-950/30"
-          note="Phase 2"
+          color="text-primary"
+          bgColor="bg-primary-subtle"
         />
         <SummaryCard
           label="Next Salary"
-          value={nextSalaryRule ? formatDisplayDate(nextSalaryRule.nextOccurrenceDate) : '—'}
+          value={
+            dashboardData?.nextSalaryDate
+              ? formatDisplayDate(dashboardData.nextSalaryDate)
+              : '—'
+          }
           Icon={CalendarClock}
-          color="text-teal-600 dark:text-teal-400"
-          bgColor="bg-teal-50 dark:bg-teal-950/30"
+          color="text-accent"
+          bgColor="bg-accent-subtle"
         />
         <SummaryCard
           label="In 7 Days"
-          value={formatPhpCurrency(0)}
+          value={formatPhpCurrency(dashboardData?.projectedBalance7d ?? 0)}
           Icon={TrendingUp}
-          color="text-slate-500 dark:text-slate-400"
-          bgColor="bg-slate-100 dark:bg-zinc-800"
-          note="Phase 2"
+          color="text-muted-foreground"
+          bgColor="bg-muted"
         />
         <SummaryCard
           label="In 30 Days"
-          value={formatPhpCurrency(0)}
+          value={formatPhpCurrency(dashboardData?.projectedBalance30d ?? 0)}
           Icon={Wallet}
-          color="text-slate-500 dark:text-slate-400"
-          bgColor="bg-slate-100 dark:bg-zinc-800"
-          note="Phase 2"
+          color="text-muted-foreground"
+          bgColor="bg-muted"
         />
       </div>
 
-      {/* Goal */}
-      {primaryGoal && (
+      <div className="space-y-3">
+        <SectionHeader title="Upcoming Bills" />
+        {!dashboardData || dashboardData.upcomingBills.length === 0 ? (
+          <EmptyState
+            title="No upcoming bills"
+            description="Recurring expenses will appear here once you add them in Settings."
+          />
+        ) : (
+          <UpcomingBillsList bills={dashboardData.upcomingBills} />
+        )}
+      </div>
+
+      {dashboardData?.goal && (
         <div className="space-y-3">
           <SectionHeader title="Savings Goal" />
-          <GoalCard goal={primaryGoal} />
+          <GoalCard goal={dashboardData.goal} />
         </div>
       )}
 
-      {/* Recent transactions */}
+      <div className="space-y-3">
+        <SectionHeader title="Budget Health" />
+        {!dashboardData || dashboardData.budgets.length === 0 ? (
+          <EmptyState
+            title="No budgets yet"
+            description="Set monthly limits in Budget to see your spending health here."
+          />
+        ) : (
+          <BudgetList budgets={dashboardData.budgets.slice(0, 3)} />
+        )}
+      </div>
+
+      {dashboardData?.goal && (
+        <div className="rounded-2xl bg-card p-4">
+          <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground/70">
+            <Target className="size-3.5" />
+            Goal Progress
+          </div>
+          <p className="text-sm text-secondary-foreground">
+            You still need{' '}
+            <span className="font-semibold text-foreground">
+              {formatPhpCurrency(dashboardData.goal.remainingAmount)}
+            </span>{' '}
+            to complete {dashboardData.goal.name}.
+          </p>
+        </div>
+      )}
+
       <div className="space-y-3">
         <SectionHeader title="Recent Activity" />
-        {recentTransactions.length === 0 ? (
+        {!dashboardData || dashboardData.recentTransactions.length === 0 ? (
           <EmptyState
             title="No transactions yet"
             description="Add your first transaction from the Transactions tab."
           />
         ) : (
-          <TransactionList
-            transactions={recentTransactions}
-            accounts={accounts}
-            categories={categories}
+          <RecentActivityList
+            transactions={dashboardData.recentTransactions}
           />
         )}
       </div>
+    </div>
+  )
+}
+
+const ACTIVITY_TYPE_CONFIG = {
+  income: {
+    Icon: ArrowDownLeft,
+    color: 'text-primary',
+    bg: 'bg-primary-subtle',
+    sign: '+',
+    amountColor: 'text-primary',
+  },
+  expense: {
+    Icon: ArrowUpRight,
+    color: 'text-muted-foreground',
+    bg: 'bg-muted',
+    sign: '-',
+    amountColor: 'text-foreground',
+  },
+  transfer: {
+    Icon: ArrowLeftRight,
+    color: 'text-accent',
+    bg: 'bg-accent-subtle',
+    sign: '',
+    amountColor: 'text-accent',
+  },
+} as const
+
+function UpcomingBillsList({ bills }: { bills: UpcomingBillDto[] }) {
+  return (
+    <div className="space-y-2">
+      {bills.map((bill) => (
+        <div
+          key={bill.id}
+          className="flex items-center justify-between rounded-2xl bg-card p-4"
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted">
+              <Receipt className="size-5 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-foreground">
+                {bill.name}
+              </p>
+              <p className="text-xs text-muted-foreground/70">
+                Due {formatDisplayDate(bill.date)}
+              </p>
+            </div>
+          </div>
+          <p className="shrink-0 text-sm font-bold text-foreground">
+            {formatPhpCurrency(bill.amount)}
+          </p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function RecentActivityList({
+  transactions,
+}: {
+  transactions: DashboardRecentTransactionDto[]
+}) {
+  return (
+    <div className="space-y-1">
+      {transactions.map((transaction) => {
+        const config = ACTIVITY_TYPE_CONFIG[transaction.type]
+        const Icon = config.Icon
+
+        return (
+          <div
+            key={transaction.id}
+            className="flex items-center gap-3 rounded-2xl bg-card p-4"
+          >
+            <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${config.bg}`}>
+              <Icon className={`size-5 ${config.color}`} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-foreground">
+                {transaction.categoryName ?? transaction.note ?? transaction.type}
+              </p>
+              <p className="text-xs text-muted-foreground/70">
+                {transaction.accountName ?? 'Unassigned'}
+                {' · '}
+                {formatDisplayDate(transaction.transactionDate)}
+              </p>
+            </div>
+            <p className={`shrink-0 text-sm font-bold ${config.amountColor}`}>
+              {config.sign}
+              {formatPhpCurrency(transaction.amount)}
+            </p>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -123,15 +257,15 @@ interface SummaryCardProps {
 
 function SummaryCard({ label, value, Icon, color, bgColor, note }: SummaryCardProps) {
   return (
-    <div className="rounded-2xl bg-white p-4 dark:bg-zinc-900">
+    <div className="rounded-2xl bg-card p-4">
       <div className={`mb-2 flex size-8 items-center justify-center rounded-xl ${bgColor}`}>
         <Icon className={`size-4 ${color}`} />
       </div>
-      <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+      <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70">
         {label}
       </p>
-      <p className="mt-0.5 text-base font-bold text-slate-900 dark:text-slate-100">{value}</p>
-      {note && <p className="text-[10px] text-slate-300 dark:text-slate-600">{note}</p>}
+      <p className="mt-0.5 text-base font-bold text-foreground">{value}</p>
+      {note && <p className="text-[10px] text-muted-foreground/40">{note}</p>}
     </div>
   )
 }

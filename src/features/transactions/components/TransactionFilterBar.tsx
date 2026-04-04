@@ -18,8 +18,8 @@ export function TransactionFilterBar() {
           onClick={() => setTransactionType(tab.value)}
           className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
             transactionType === tab.value
-              ? 'bg-emerald-700 text-white dark:bg-emerald-600'
-              : 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-300'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-secondary-foreground'
           }`}
         >
           {tab.label}

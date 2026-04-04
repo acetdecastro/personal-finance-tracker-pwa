@@ -5,6 +5,7 @@ import { formatDisplayDate } from '#/lib/dates'
 
 interface RecurringRuleListProps {
   rules: RecurringRule[]
+  onSelect?: (rule: RecurringRule) => void
 }
 
 const CADENCE_LABELS: Record<string, string> = {
@@ -14,22 +15,25 @@ const CADENCE_LABELS: Record<string, string> = {
   custom: 'Custom',
 }
 
-export function RecurringRuleList({ rules }: RecurringRuleListProps) {
+export function RecurringRuleList({ rules, onSelect }: RecurringRuleListProps) {
   return (
     <div className="space-y-2">
       {rules.map((rule) => (
-        <div
+        <button
+          type="button"
           key={rule.id}
-          className="flex items-center gap-3 rounded-2xl bg-white p-4 dark:bg-zinc-900"
+          onClick={() => onSelect?.(rule)}
+          className="flex w-full items-center gap-3 rounded-2xl bg-card p-4 text-left transition hover:bg-muted/50"
         >
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-zinc-800">
-            <RefreshCw className="size-5 text-slate-500 dark:text-slate-400" />
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted">
+            <RefreshCw className="size-5 text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <p className="truncate text-sm font-semibold text-foreground">
               {rule.name}
             </p>
-            <p className="text-xs text-slate-400 dark:text-slate-500">
+            <p className="text-xs text-muted-foreground/70">
+              {rule.type === 'income' ? 'Income' : 'Expense'} ·{' '}
               {CADENCE_LABELS[rule.cadence]} · Next{' '}
               {formatDisplayDate(rule.nextOccurrenceDate)}
             </p>
@@ -37,16 +41,24 @@ export function RecurringRuleList({ rules }: RecurringRuleListProps) {
           <div className="text-right shrink-0">
             <p className={`text-sm font-bold ${
               rule.type === 'income'
-                ? 'text-emerald-700 dark:text-emerald-400'
-                : 'text-slate-900 dark:text-slate-100'
+                ? 'text-primary'
+                : 'text-foreground'
             }`}>
               {rule.type === 'income' ? '+' : '-'}{formatPhpCurrency(rule.amount)}
             </p>
+            <p className="text-[11px] text-muted-foreground/70">
+              Expected
+            </p>
             {!rule.isActive && (
-              <p className="text-xs text-slate-400 dark:text-slate-500">Inactive</p>
+              <p className="text-xs text-muted-foreground/70">Inactive</p>
+            )}
+            {onSelect && (
+              <p className="text-[11px] font-medium text-primary">
+                Edit
+              </p>
             )}
           </div>
-        </div>
+        </button>
       ))}
     </div>
   )

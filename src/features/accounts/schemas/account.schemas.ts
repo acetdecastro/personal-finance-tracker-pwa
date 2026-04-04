@@ -12,6 +12,7 @@ export const createAccountInputSchema = z.object({
   name: trimmedNameSchema,
   type: accountTypeSchema,
   initialBalance: nonNegativeMoneySchema,
+  safetyBuffer: nonNegativeMoneySchema.default(0),
   isArchived: z.boolean().default(false),
 })
 
@@ -22,6 +23,7 @@ export const accountSchema = z.object({
   name: trimmedNameSchema,
   type: accountTypeSchema,
   initialBalance: nonNegativeMoneySchema,
+  safetyBuffer: nonNegativeMoneySchema,
   isArchived: z.boolean(),
   ...timestampFieldsSchema.shape,
 })

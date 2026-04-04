@@ -6,6 +6,7 @@ type ResolvedTheme = 'light' | 'dark'
 interface UIStore {
   themeMode: ThemeMode
   resolvedTheme: ResolvedTheme
+  initializeTheme: () => void
   setThemeMode: (mode: ThemeMode) => void
 }
 
@@ -37,12 +38,16 @@ function getStoredTheme(): ThemeMode {
   return 'system'
 }
 
-const initialMode = getStoredTheme()
-const initialResolved = resolveTheme(initialMode)
-
 export const useUIStore = create<UIStore>((set) => ({
-  themeMode: initialMode,
-  resolvedTheme: initialResolved,
+  // Keep SSR and first client render deterministic; hydrate from browser state later.
+  themeMode: 'system',
+  resolvedTheme: 'light',
+  initializeTheme: () => {
+    const mode = getStoredTheme()
+    const resolved = resolveTheme(mode)
+    applyTheme(resolved)
+    set({ themeMode: mode, resolvedTheme: resolved })
+  },
   setThemeMode: (mode) => {
     const resolved = resolveTheme(mode)
     localStorage.setItem('theme', mode)

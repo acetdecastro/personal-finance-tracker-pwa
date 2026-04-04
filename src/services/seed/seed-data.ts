@@ -42,7 +42,6 @@ export const DEFAULT_USER_SETTINGS: Omit<
 > = {
   id: 'primary',
   currency: 'PHP',
-  minimumBuffer: 0,
   theme: 'system',
   hasCompletedOnboarding: false,
 }

@@ -1,17 +1,16 @@
 import { useForm } from '@tanstack/react-form'
 import { FormField } from '#/components/common/FormField'
-import type { Category } from '#/types/domain'
+import { SelectInput } from '#/components/common/SelectInput'
+import type { CategoryOptionDto } from '#/types/dto'
 import type { CreateBudgetInput } from '../schemas/budget.schemas'
 
 interface BudgetFormProps {
-  categories: Category[]
+  categories: CategoryOptionDto[]
   onSubmit: (values: CreateBudgetInput) => Promise<void>
   onCancel?: () => void
 }
 
 export function BudgetForm({ categories, onSubmit, onCancel }: BudgetFormProps) {
-  const expenseCategories = categories.filter((c) => c.type === 'expense')
-
   const form = useForm({
     defaultValues: {
       categoryId: '',
@@ -40,18 +39,17 @@ export function BudgetForm({ categories, onSubmit, onCancel }: BudgetFormProps) 
       >
         {(field) => (
           <FormField label="Category" error={field.state.meta.errors[0]?.toString()} required>
-            <select
-              className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
+            <SelectInput
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
             >
               <option value="">Select category</option>
-              {expenseCategories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
+              {categories.map((category) => (
+                <option key={category.value} value={category.value}>
+                  {category.label}
                 </option>
               ))}
-            </select>
+            </SelectInput>
           </FormField>
         )}
       </form.Field>
@@ -69,7 +67,7 @@ export function BudgetForm({ categories, onSubmit, onCancel }: BudgetFormProps) 
         {(field) => (
           <FormField label="Monthly Limit" error={field.state.meta.errors[0]?.toString()} required>
             <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
                 ₱
               </span>
               <input
@@ -78,7 +76,7 @@ export function BudgetForm({ categories, onSubmit, onCancel }: BudgetFormProps) 
                 step="0.01"
                 min="0.01"
                 placeholder="0.00"
-                className="w-full rounded-xl bg-slate-50 py-3 pl-8 pr-4 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-emerald-600 dark:bg-zinc-800 dark:text-slate-100 dark:ring-zinc-700 dark:focus:ring-emerald-500"
+                className="w-full rounded-xl bg-input py-3 pl-8 pr-4 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
                 value={field.state.value as unknown as string}
                 onChange={(e) => field.handleChange(e.target.value as unknown as number)}
                 onBlur={field.handleBlur}
@@ -93,7 +91,7 @@ export function BudgetForm({ categories, onSubmit, onCancel }: BudgetFormProps) 
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-semibold text-slate-700 transition active:scale-[0.98] dark:bg-zinc-800 dark:text-slate-200"
+            className="flex-1 rounded-xl bg-muted py-3 text-sm font-semibold text-secondary-foreground transition active:scale-[0.98]"
           >
             Cancel
           </button>
@@ -103,7 +101,7 @@ export function BudgetForm({ categories, onSubmit, onCancel }: BudgetFormProps) 
             <button
               type="submit"
               disabled={!canSubmit || isSubmitting}
-              className="flex-1 rounded-xl bg-emerald-700 py-3 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-50 dark:bg-emerald-600"
+              className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50"
             >
               {isSubmitting ? 'Saving…' : 'Set Budget'}
             </button>

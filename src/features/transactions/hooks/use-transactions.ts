@@ -1,37 +1,40 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { transactionRepository } from '../services/transaction.repository'
-import type { CreateTransactionInput, UpdateTransactionInput } from '../schemas/transaction.schemas'
-import type { TransactionType } from '#/types/domain'
+import { BUDGET_PAGE_QUERY_KEY } from '#/features/budgets/hooks/use-budgets'
+import { DASHBOARD_QUERY_KEY } from '#/features/dashboard/hooks/use-dashboard-data'
+import { transactionService } from '../services/transaction.service'
+import type { TransactionFiltersDto } from '../types'
+import type {
+  CreateTransactionInput,
+  UpdateTransactionInput,
+} from '../schemas/transaction.schemas'
 
 export const TRANSACTIONS_QUERY_KEY = ['transactions'] as const
+export const TRANSACTION_FORM_OPTIONS_QUERY_KEY = [
+  'transaction-form-options',
+] as const
 
-export function useTransactions(filters?: {
-  type?: TransactionType | null
-  accountId?: string | null
-  categoryId?: string | null
-}) {
+export function useTransactions(filters?: TransactionFiltersDto) {
   return useQuery({
-    queryKey: TRANSACTIONS_QUERY_KEY,
-    queryFn: async () => {
-      const all = await transactionRepository.list()
-      if (!filters) return all
-      return all.filter((t) => {
-        if (filters.type && t.type !== filters.type) return false
-        if (filters.accountId && t.accountId !== filters.accountId) return false
-        if (filters.categoryId && t.categoryId !== filters.categoryId) return false
-        return true
-      })
-    },
+    queryKey: [...TRANSACTIONS_QUERY_KEY, filters],
+    queryFn: () => transactionService.list(filters ?? undefined),
+  })
+}
+
+export function useTransactionFormOptions() {
+  return useQuery({
+    queryKey: TRANSACTION_FORM_OPTIONS_QUERY_KEY,
+    queryFn: () => transactionService.getFormOptions(),
   })
 }
 
 export function useCreateTransaction() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: CreateTransactionInput) =>
-      transactionRepository.create(input),
+    mutationFn: (input: CreateTransactionInput) => transactionService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: BUDGET_PAGE_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY })
     },
   })
 }
@@ -39,10 +42,17 @@ export function useCreateTransaction() {
 export function useUpdateTransaction() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, changes }: { id: string; changes: UpdateTransactionInput }) =>
-      transactionRepository.update(id, changes),
+    mutationFn: ({
+      id,
+      changes,
+    }: {
+      id: string
+      changes: UpdateTransactionInput
+    }) => transactionService.update(id, changes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: BUDGET_PAGE_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY })
     },
   })
 }
@@ -50,9 +60,11 @@ export function useUpdateTransaction() {
 export function useDeleteTransaction() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => transactionRepository.remove(id),
+    mutationFn: (id: string) => transactionService.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: BUDGET_PAGE_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY })
     },
   })
 }
