@@ -29,7 +29,7 @@ export function AccountList({ accounts, onSelect }: AccountListProps) {
             <div className="flex size-10 items-center justify-center rounded-xl bg-muted">
               <Icon className="size-5 text-muted-foreground" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-foreground">
                 {account.name}
               </p>

@@ -1,5 +1,6 @@
 import type { BudgetSnapshotDto } from '#/types/dto'
 import { formatPhpCurrency } from '#/lib/format/number.utils'
+import { cn } from '#/lib/utils/cn'
 
 interface BudgetListProps {
   budgets: BudgetSnapshotDto[]
@@ -15,13 +16,23 @@ export function BudgetList({ budgets }: BudgetListProps) {
               <p className="text-sm font-semibold text-foreground">
                 {budget.categoryName}
               </p>
-              <p className={`text-xs font-bold ${budget.isOverBudget ? 'text-destructive' : 'text-muted-foreground/70'}`}>
+              <p
+                className={cn(
+                  'text-xs font-bold',
+                  budget.isOverBudget
+                    ? 'text-destructive'
+                    : 'text-muted-foreground/70',
+                )}
+              >
                 {budget.isOverBudget ? 'Over budget' : `${budget.percentUsed}%`}
               </p>
             </div>
             <div className="mb-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className={`h-full rounded-full transition-all ${budget.isOverBudget ? 'bg-destructive' : 'bg-primary'}`}
+                className={cn(
+                  'h-full rounded-full transition-all',
+                  budget.isOverBudget ? 'bg-destructive' : 'bg-primary',
+                )}
                 style={{ width: `${Math.max(Math.min(budget.percentUsed, 100), 0)}%` }}
               />
             </div>

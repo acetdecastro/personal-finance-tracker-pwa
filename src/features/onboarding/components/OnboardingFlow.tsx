@@ -9,9 +9,14 @@ import {
   Trash2,
 } from 'lucide-react'
 import { AccountForm } from '#/features/accounts/components/AccountForm'
+import { Button } from '#/components/common/Button'
+import { CurrencyInput } from '#/components/common/CurrencyInput'
+import { DateInput } from '#/components/common/DateInput'
 import { FormField } from '#/components/common/FormField'
+import { Input } from '#/components/common/Input'
 import { SelectInput } from '#/components/common/SelectInput'
 import { toStoredDate } from '#/lib/dates'
+import { cn } from '#/lib/utils/cn'
 import { useOnboardingBootstrap, useCompleteOnboarding } from '../hooks/use-onboarding'
 import type { CreateAccountInput } from '#/features/accounts/schemas/account.schemas'
 import type { CompleteOnboardingInput } from '../schemas/onboarding.schemas'
@@ -41,15 +46,6 @@ const WEEKLY_INTERVAL_OPTIONS = [
   { value: '3', label: 'Every 3 weeks' },
   { value: '4', label: 'Every 4 weeks' },
 ] as const
-
-const INPUT_CLS =
-  'w-full rounded-xl bg-input px-4 py-3 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring'
-
-const BTN_PRIMARY =
-  'flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50'
-
-const BTN_SECONDARY =
-  'flex-1 rounded-xl bg-muted py-3 text-sm font-semibold text-secondary-foreground transition active:scale-[0.98]'
 
 interface OnboardingFlowProps {
   onComplete: () => void
@@ -177,9 +173,9 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         <p className="text-sm text-muted-foreground">
           {submitError ?? 'An unexpected error occurred.'}
         </p>
-        <button onClick={handleFinish} className={BTN_PRIMARY}>
+        <Button onClick={handleFinish} fullWidth>
           Try Again
-        </button>
+        </Button>
       </div>
     )
   }
@@ -224,13 +220,13 @@ function WelcomeStep({ onStart }: { onStart: () => void }) {
         ))}
       </div>
 
-      <button
+      <Button
         onClick={onStart}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
+        className="flex w-full items-center justify-center gap-2"
       >
         Get Started
         <ChevronRight className="size-4" />
-      </button>
+      </Button>
     </div>
   )
 }
@@ -250,12 +246,12 @@ function DoneStep({ onComplete }: { onComplete: () => void }) {
           position.
         </p>
       </div>
-      <button
+      <Button
         onClick={onComplete}
-        className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
+        className="w-full"
       >
         Go to Dashboard
-      </button>
+      </Button>
     </div>
   )
 }
@@ -322,8 +318,7 @@ function SalaryStep({
             label="Label"
             error={field.state.meta.errors[0]?.toString()}
           >
-            <input
-              className={INPUT_CLS}
+            <Input
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
@@ -348,25 +343,15 @@ function SalaryStep({
             required
             error={field.state.meta.errors[0]?.toString()}
           >
-            <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">
-                ₱
-              </span>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                autoFocus
-                className="w-full rounded-xl bg-input py-3 pl-9 pr-4 text-lg font-bold text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
-                value={field.state.value as unknown as string}
-                onChange={(e) =>
-                  field.handleChange(e.target.value as unknown as number)
-                }
-                onBlur={field.handleBlur}
-              />
-            </div>
+            <CurrencyInput
+              autoFocus
+              className="pl-9 pr-4 text-lg"
+              value={field.state.value as unknown as string}
+              onChange={(e) =>
+                field.handleChange(e.target.value as unknown as number)
+              }
+              onBlur={field.handleBlur}
+            />
           </FormField>
         )}
       </form.Field>
@@ -376,18 +361,18 @@ function SalaryStep({
           <FormField label="Frequency" required>
             <div className="grid grid-cols-3 gap-2">
               {CADENCE_OPTIONS.map((c) => (
-                <button
+                <Button
                   key={c.value}
-                  type="button"
                   onClick={() => field.handleChange(c.value)}
-                  className={`rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
+                  className={cn(
+                    'rounded-xl px-3 py-2.5 text-xs font-semibold transition',
                     field.state.value === c.value
                       ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-secondary-foreground'
-                  }`}
+                      : 'bg-muted text-secondary-foreground',
+                  )}
                 >
                   {c.label}
-                </button>
+                </Button>
               ))}
             </div>
           </FormField>
@@ -405,11 +390,10 @@ function SalaryStep({
                       label="1st occurrence"
                       hint="Calendar day for the first monthly occurrence"
                     >
-                      <input
+                      <Input
                         type="number"
                         min="1"
                         max="31"
-                        className={INPUT_CLS}
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                       />
@@ -422,11 +406,10 @@ function SalaryStep({
                       label="2nd occurrence"
                       hint="Calendar day for the second monthly occurrence"
                     >
-                      <input
+                      <Input
                         type="number"
                         min="1"
                         max="31"
-                        className={INPUT_CLS}
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                       />
@@ -474,9 +457,7 @@ function SalaryStep({
                       : 'Choose the next expected weekly salary date.'
                 }
               >
-                <input
-                  type="date"
-                  className={INPUT_CLS}
+                <DateInput
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
@@ -488,18 +469,18 @@ function SalaryStep({
       </form.Field>
 
       <div className="flex gap-3 pt-2">
-        <button type="button" onClick={onBack} className={BTN_SECONDARY}>
+        <Button onClick={onBack} variant="secondary" fullWidth>
           Back
-        </button>
+        </Button>
         <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <button
+            <Button
               type="submit"
               disabled={!canSubmit || !!isSubmitting}
-              className={BTN_PRIMARY}
+              fullWidth
             >
               {isSubmitting ? 'Saving…' : 'Continue'}
-            </button>
+            </Button>
           )}
         </form.Subscribe>
       </div>
@@ -544,12 +525,13 @@ function ExpensesStep({
                   {expense.cadence} · ₱{expense.amount.toLocaleString()}
                 </p>
               </div>
-              <button
+              <Button
                 onClick={() => onRemove(i)}
-                className="rounded-lg p-1.5 text-muted-foreground transition hover:text-destructive"
+                variant="icon"
+                className="p-1.5 hover:text-destructive"
               >
                 <Trash2 className="size-4" />
-              </button>
+              </Button>
             </div>
           ))}
         </div>
@@ -567,23 +549,23 @@ function ExpensesStep({
           onCancel={() => setShowForm(false)}
         />
       ) : (
-        <button
-          type="button"
+        <Button
           onClick={() => setShowForm(true)}
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-medium text-muted-foreground transition hover:border-primary hover:text-primary"
+          variant='inline-primary'
         >
           <Plus className="size-4" />
           Add a recurring expense
-        </button>
+        </Button>
       )}
 
       <div className="flex gap-3 pt-2">
-        <button type="button" onClick={onBack} className={BTN_SECONDARY}>
+        <Button onClick={onBack} variant="secondary" fullWidth>
           Back
-        </button>
-        <button type="button" onClick={onFinish} className={BTN_PRIMARY}>
+        </Button>
+        <Button onClick={onFinish} fullWidth>
           {expenses.length === 0 ? 'Skip & Finish' : 'Finish Setup'}
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -659,10 +641,9 @@ function ExpenseAddForm({
               required
               error={field.state.meta.errors[0]?.toString()}
             >
-              <input
+              <Input
                 autoFocus
                 placeholder="e.g. Rent, Netflix"
-                className={INPUT_CLS}
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
@@ -687,24 +668,13 @@ function ExpenseAddForm({
               required
               error={field.state.meta.errors[0]?.toString()}
             >
-              <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
-                  ₱
-                </span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  min="0.01"
-                  placeholder="0.00"
-                  className="w-full rounded-xl bg-input py-3 pl-8 pr-4 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
-                  value={field.state.value as unknown as string}
-                  onChange={(e) =>
-                    field.handleChange(e.target.value as unknown as number)
-                  }
-                  onBlur={field.handleBlur}
-                />
-              </div>
+              <CurrencyInput
+                value={field.state.value as unknown as string}
+                onChange={(e) =>
+                  field.handleChange(e.target.value as unknown as number)
+                }
+                onBlur={field.handleBlur}
+              />
             </FormField>
           )}
         </form.Field>
@@ -712,8 +682,7 @@ function ExpenseAddForm({
         <form.Field
           name="categoryId"
           validators={{
-            onChange: ({ value }) =>
-              !value ? 'Select a category' : undefined,
+            onChange: ({ value }) => (!value ? 'Select a category' : undefined),
           }}
         >
           {(field) => (
@@ -745,18 +714,18 @@ function ExpenseAddForm({
             <FormField label="Frequency">
               <div className="grid grid-cols-3 gap-2">
                 {CADENCE_OPTIONS.map((c) => (
-                  <button
+                  <Button
                     key={c.value}
-                    type="button"
                     onClick={() => field.handleChange(c.value)}
-                    className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                    className={cn(
+                      'rounded-xl px-3 py-2 text-xs font-semibold transition',
                       field.state.value === c.value
                         ? 'bg-primary text-primary-foreground'
-                        : 'bg-card text-secondary-foreground'
-                    }`}
+                        : 'bg-card text-secondary-foreground',
+                    )}
                   >
                     {c.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </FormField>
@@ -774,11 +743,10 @@ function ExpenseAddForm({
                         label="1st occurrence"
                         hint="Calendar day for the first monthly occurrence"
                       >
-                        <input
+                        <Input
                           type="number"
                           min="1"
                           max="31"
-                          className={INPUT_CLS}
                           value={field.state.value}
                           onChange={(e) => field.handleChange(e.target.value)}
                         />
@@ -791,11 +759,10 @@ function ExpenseAddForm({
                         label="2nd occurrence"
                         hint="Calendar day for the second monthly occurrence"
                       >
-                        <input
+                        <Input
                           type="number"
                           min="1"
                           max="31"
-                          className={INPUT_CLS}
                           value={field.state.value}
                           onChange={(e) => field.handleChange(e.target.value)}
                         />
@@ -843,9 +810,7 @@ function ExpenseAddForm({
                         : 'Choose the next expected weekly occurrence.'
                   }
                 >
-                  <input
-                    type="date"
-                    className={INPUT_CLS}
+                  <DateInput
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
@@ -856,22 +821,23 @@ function ExpenseAddForm({
         </form.Field>
 
         <div className="flex gap-2 pt-1">
-          <button
-            type="button"
+          <Button
             onClick={onCancel}
-            className="flex-1 rounded-xl bg-card py-2.5 text-sm font-semibold text-secondary-foreground transition active:scale-[0.98]"
+            variant="secondary"
+            fullWidth
+            className="bg-card py-2.5"
           >
             Cancel
-          </button>
+          </Button>
           <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
             {([canSubmit, isSubmitting]) => (
-              <button
+              <Button
                 type="submit"
                 disabled={!canSubmit || !!isSubmitting}
-                className={BTN_PRIMARY}
+                fullWidth
               >
                 {isSubmitting ? 'Adding…' : 'Add'}
-              </button>
+              </Button>
             )}
           </form.Subscribe>
         </div>
@@ -916,11 +882,10 @@ function StepIndicator({
       {Array.from({ length: total }, (_, i) => (
         <div
           key={i}
-          className={`h-1 rounded-full transition-all ${
-            i < current
-              ? 'flex-1 bg-primary'
-              : 'w-6 flex-none bg-muted'
-          }`}
+          className={cn(
+            'h-1 rounded-full transition-all',
+            i < current ? 'flex-1 bg-primary' : 'w-6 flex-none bg-muted',
+          )}
         />
       ))}
     </div>

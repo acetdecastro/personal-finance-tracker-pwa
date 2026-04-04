@@ -2,6 +2,7 @@ import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Trash2 } from 'lucide-reac
 import type { Account, Category, Transaction } from '#/types/domain'
 import { formatPhpCurrency } from '#/lib/format/number.utils'
 import { formatDisplayDate } from '#/lib/dates'
+import { cn } from '#/lib/utils/cn'
 
 interface TransactionListProps {
   transactions: Transaction[]
@@ -56,10 +57,15 @@ export function TransactionList({
             key={t.id}
             className="flex items-center gap-3 rounded-2xl p-4 hover:bg-muted/50"
           >
-            <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${cfg.bg}`}>
-              <Icon className={`size-5 ${cfg.color}`} />
+            <div
+              className={cn(
+                'flex size-10 shrink-0 items-center justify-center rounded-xl',
+                cfg.bg,
+              )}
+            >
+              <Icon className={cn('size-5', cfg.color)} />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-foreground">
                 {categoryName ?? t.note ?? t.type}
               </p>
@@ -69,8 +75,8 @@ export function TransactionList({
                 {formatDisplayDate(t.transactionDate)}
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <p className={`text-sm font-bold ${cfg.amountColor}`}>
+            <div className="flex shrink-0 items-center gap-2">
+              <p className={cn('text-sm font-bold', cfg.amountColor)}>
                 {cfg.sign}{formatPhpCurrency(t.amount)}
               </p>
               {onDelete && (

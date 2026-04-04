@@ -17,6 +17,7 @@ import { GoalCard } from '#/features/goals/components/GoalCard'
 import { useDashboardData } from '#/features/dashboard/hooks/use-dashboard-data'
 import { formatPhpCurrency } from '#/lib/format/number.utils'
 import { formatDisplayDate } from '#/lib/dates'
+import { cn } from '#/lib/utils/cn'
 import type {
   DashboardRecentTransactionDto,
   UpcomingBillDto,
@@ -222,8 +223,13 @@ function RecentActivityList({
             key={transaction.id}
             className="flex items-center gap-3 rounded-2xl bg-card p-4"
           >
-            <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${config.bg}`}>
-              <Icon className={`size-5 ${config.color}`} />
+            <div
+              className={cn(
+                'flex size-10 shrink-0 items-center justify-center rounded-xl',
+                config.bg,
+              )}
+            >
+              <Icon className={cn('size-5', config.color)} />
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-foreground">
@@ -235,7 +241,7 @@ function RecentActivityList({
                 {formatDisplayDate(transaction.transactionDate)}
               </p>
             </div>
-            <p className={`shrink-0 text-sm font-bold ${config.amountColor}`}>
+            <p className={cn('shrink-0 text-sm font-bold', config.amountColor)}>
               {config.sign}
               {formatPhpCurrency(transaction.amount)}
             </p>
@@ -258,8 +264,13 @@ interface SummaryCardProps {
 function SummaryCard({ label, value, Icon, color, bgColor, note }: SummaryCardProps) {
   return (
     <div className="rounded-2xl bg-card p-4">
-      <div className={`mb-2 flex size-8 items-center justify-center rounded-xl ${bgColor}`}>
-        <Icon className={`size-4 ${color}`} />
+      <div
+        className={cn(
+          'mb-2 flex size-8 items-center justify-center rounded-xl',
+          bgColor,
+        )}
+      >
+        <Icon className={cn('size-4', color)} />
       </div>
       <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70">
         {label}

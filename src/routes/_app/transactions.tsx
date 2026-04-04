@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { Loader2, Plus, X } from 'lucide-react'
+import { Loader2, Plus } from 'lucide-react'
+import { Button } from '#/components/common/Button'
+import { BottomSheet } from '#/components/common/BottomSheet'
 import { TransactionList } from '#/features/transactions/components/TransactionList'
 import { TransactionForm } from '#/features/transactions/components/TransactionForm'
 import { TransactionFilterBar } from '#/features/transactions/components/TransactionFilterBar'
@@ -71,36 +73,17 @@ function TransactionsRoute() {
       </div>
 
       {/* FAB */}
-      <button
+      <Button
         onClick={() => setShowForm(true)}
-        className="fixed bottom-24 right-5 z-30 flex size-14 items-center justify-center rounded-2xl bg-primary shadow-lg transition active:scale-90"
+        variant="fab"
         aria-label="Add transaction"
       >
         <Plus className="size-6 text-primary-foreground" />
-      </button>
+      </Button>
 
       {/* Bottom sheet */}
       {showForm && (
-        <div
-          className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40"
-          onClick={() => setShowForm(false)}
-        >
-          <div
-            className="max-h-[90dvh] overflow-y-auto rounded-t-3xl bg-popover px-5 pb-8 pt-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-base font-bold text-foreground">
-                Add Transaction
-              </h2>
-              <button
-                onClick={() => setShowForm(false)}
-                className="rounded-lg p-1 text-muted-foreground hover:text-foreground"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-
+        <BottomSheet title="Add Transaction" onClose={() => setShowForm(false)}>
             {formOptionsLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="size-5 animate-spin text-primary" />
@@ -116,8 +99,7 @@ function TransactionsRoute() {
                 onCancel={() => setShowForm(false)}
               />
             )}
-          </div>
-        </div>
+        </BottomSheet>
       )}
     </>
   )

@@ -1,6 +1,10 @@
 import { useForm } from '@tanstack/react-form'
 import { format } from 'date-fns'
+import { Button } from '#/components/common/Button'
+import { CurrencyInput } from '#/components/common/CurrencyInput'
+import { DateInput } from '#/components/common/DateInput'
 import { FormField } from '#/components/common/FormField'
+import { Input } from '#/components/common/Input'
 import { toStoredDate } from '#/lib/dates'
 import type { CreateGoalInput } from '../schemas/goal.schemas'
 
@@ -43,8 +47,7 @@ export function GoalForm({ onSubmit, onCancel }: GoalFormProps) {
       >
         {(field) => (
           <FormField label="Goal Name" error={field.state.meta.errors[0]?.toString()} required>
-            <input
-              className="w-full rounded-xl bg-input px-4 py-3 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
+            <Input
               placeholder="e.g. Emergency Fund"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
@@ -66,22 +69,11 @@ export function GoalForm({ onSubmit, onCancel }: GoalFormProps) {
       >
         {(field) => (
           <FormField label="Target Amount" error={field.state.meta.errors[0]?.toString()} required>
-            <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
-                ₱
-              </span>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                className="w-full rounded-xl bg-input py-3 pl-8 pr-4 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
-                value={field.state.value as unknown as string}
-                onChange={(e) => field.handleChange(e.target.value as unknown as number)}
-                onBlur={field.handleBlur}
-              />
-            </div>
+            <CurrencyInput
+              value={field.state.value as unknown as string}
+              onChange={(e) => field.handleChange(e.target.value as unknown as number)}
+              onBlur={field.handleBlur}
+            />
           </FormField>
         )}
       </form.Field>
@@ -89,21 +81,10 @@ export function GoalForm({ onSubmit, onCancel }: GoalFormProps) {
       <form.Field name="currentAmount">
         {(field) => (
           <FormField label="Already Saved" hint="Optional — how much you've saved so far">
-            <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
-                ₱
-              </span>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                className="w-full rounded-xl bg-input py-3 pl-8 pr-4 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
-                value={field.state.value as unknown as string}
-                onChange={(e) => field.handleChange(e.target.value as unknown as number)}
-              />
-            </div>
+            <CurrencyInput
+              value={field.state.value as unknown as string}
+              onChange={(e) => field.handleChange(e.target.value as unknown as number)}
+            />
           </FormField>
         )}
       </form.Field>
@@ -111,10 +92,8 @@ export function GoalForm({ onSubmit, onCancel }: GoalFormProps) {
       <form.Field name="targetDate">
         {(field) => (
           <FormField label="Target Date" hint="Optional">
-            <input
-              type="date"
+            <DateInput
               min={format(new Date(), 'yyyy-MM-dd')}
-              className="w-full rounded-xl bg-input px-4 py-3 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
             />
@@ -124,23 +103,19 @@ export function GoalForm({ onSubmit, onCancel }: GoalFormProps) {
 
       <div className="flex gap-3 pt-2">
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="flex-1 rounded-xl bg-muted py-3 text-sm font-semibold text-secondary-foreground transition active:scale-[0.98]"
-          >
+          <Button onClick={onCancel} variant="secondary" fullWidth>
             Cancel
-          </button>
+          </Button>
         )}
         <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <button
+            <Button
               type="submit"
               disabled={!canSubmit || isSubmitting}
-              className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50"
+              fullWidth
             >
               {isSubmitting ? 'Saving…' : 'Create Goal'}
-            </button>
+            </Button>
           )}
         </form.Subscribe>
       </div>

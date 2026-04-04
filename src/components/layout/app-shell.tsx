@@ -7,6 +7,7 @@ import {
   Settings,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { cn } from '#/lib/utils/cn'
 
 const mainNavItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -68,7 +69,9 @@ function NavItem({
       inactiveProps={{
         className: 'text-muted-foreground',
       }}
-      className="flex flex-col items-center gap-1 px-1 py-2 text-center transition-colors active:scale-95"
+      className={cn(
+        'flex flex-col items-center gap-1 px-1 py-2 text-center transition-colors active:scale-95',
+      )}
     >
       {children}
       <span className="text-[10px] font-medium leading-none">

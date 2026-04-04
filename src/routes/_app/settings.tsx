@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Plus, X } from 'lucide-react'
+import { Plus } from 'lucide-react'
+import { Button } from '#/components/common/Button'
+import { BottomSheet } from '#/components/common/BottomSheet'
 import { ThemeToggle } from '#/features/settings/components/ThemeToggle'
 import { RecurringRuleForm } from '#/features/recurring/components/RecurringRuleForm'
 import { RecurringRuleList } from '#/features/recurring/components/RecurringRuleList'
@@ -15,6 +17,10 @@ import {
 } from '#/features/recurring/hooks/use-recurring-rules'
 import type { RecurringRule } from '#/types/domain'
 import type { CreateRecurringRuleInput } from '#/features/recurring/schemas/recurring-rule.schemas'
+import {
+  DISABLED_BUTTON_CLS,
+  PRIMARY_LINK_BUTTON_CLS,
+} from '#/lib/constants/ui-classes'
 
 export const Route = createFileRoute('/_app/settings')({
   component: SettingsRoute,
@@ -75,7 +81,7 @@ function SettingsRoute() {
             </p>
             <Link
               to="/accounts"
-              className="inline-flex rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
+              className={PRIMARY_LINK_BUTTON_CLS}
             >
               Open Accounts
             </Link>
@@ -87,20 +93,20 @@ function SettingsRoute() {
             title="Recurring Transactions"
             action={
               <div className="flex items-center gap-2">
-                <button
+                <Button
                   onClick={() => setSheetState({ mode: 'create', type: 'income' })}
-                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-primary transition hover:bg-primary-subtle"
+                  variant="inline-primary"
                 >
                   <Plus className="size-3.5" />
                   Income
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setSheetState({ mode: 'create', type: 'expense' })}
-                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-secondary-foreground transition hover:bg-muted"
+                  variant="inline-secondary"
                 >
                   <Plus className="size-3.5" />
                   Expense
-                </button>
+                </Button>
               </div>
             }
           />
@@ -126,13 +132,13 @@ function SettingsRoute() {
             <div className="flex gap-3">
               <button
                 disabled
-                className="flex-1 rounded-xl bg-muted py-2.5 text-sm font-semibold text-muted-foreground/70"
+                className={DISABLED_BUTTON_CLS}
               >
                 Export JSON
               </button>
               <button
                 disabled
-                className="flex-1 rounded-xl bg-muted py-2.5 text-sm font-semibold text-muted-foreground/70"
+                className={DISABLED_BUTTON_CLS}
               >
                 Import JSON
               </button>
@@ -168,40 +174,5 @@ function SettingsRoute() {
         </BottomSheet>
       )}
     </>
-  )
-}
-
-function BottomSheet({
-  title,
-  onClose,
-  children,
-}: {
-  title: string
-  onClose: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40"
-      onClick={onClose}
-    >
-      <div
-        className="max-h-[90dvh] overflow-y-auto rounded-t-3xl bg-popover px-5 pb-8 pt-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-base font-bold text-foreground">
-            {title}
-          </h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-muted-foreground hover:text-foreground"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
   )
 }

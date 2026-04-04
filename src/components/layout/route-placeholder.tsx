@@ -1,16 +1,20 @@
+import { cn } from '#/lib/utils/cn'
+
 interface RoutePlaceholderProps {
   eyebrow: string
   title: string
   description: string
+  className?: string
 }
 
 export function RoutePlaceholder({
   eyebrow,
   title,
   description,
+  className,
 }: RoutePlaceholderProps) {
   return (
-    <section className="rounded-2xl bg-card/80 p-6">
+    <section className={cn('rounded-2xl bg-card/80 p-6', className)}>
       <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-primary">
         {eyebrow}
       </p>

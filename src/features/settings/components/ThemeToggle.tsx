@@ -1,4 +1,5 @@
 import { Sun, Moon, Monitor } from 'lucide-react'
+import { cn } from '#/lib/utils/cn'
 import { useUIStore } from '#/stores/ui-store'
 
 type ThemeMode = 'light' | 'dark' | 'system'
@@ -18,11 +19,12 @@ export function ThemeToggle() {
         <button
           key={value}
           onClick={() => setThemeMode(value)}
-          className={`flex flex-col items-center gap-1.5 rounded-xl py-3 text-xs font-semibold transition active:scale-[0.98] ${
+          className={cn(
+            'flex flex-col items-center gap-1.5 rounded-xl py-3 text-xs font-semibold transition active:scale-[0.98]',
             themeMode === value
               ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-secondary-foreground'
-          }`}
+              : 'bg-muted text-secondary-foreground',
+          )}
         >
           <Icon className="size-4" />
           {label}

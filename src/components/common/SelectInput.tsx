@@ -1,5 +1,6 @@
 import type { ComponentPropsWithoutRef } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { cn } from '#/lib/utils/cn'
 
 type SelectInputProps = ComponentPropsWithoutRef<'select'>
 
@@ -13,10 +14,7 @@ export function SelectInput({
 }: SelectInputProps) {
   return (
     <div className="relative">
-      <select
-        className={`${BASE_SELECT_CLS}${className ? ` ${className}` : ''}`}
-        {...props}
-      >
+      <select className={cn(BASE_SELECT_CLS, className)} {...props}>
         {children}
       </select>
       <ChevronDown className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

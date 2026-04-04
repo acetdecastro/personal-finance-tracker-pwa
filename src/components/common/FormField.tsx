@@ -1,14 +1,24 @@
+import { cn } from '#/lib/utils/cn'
+
 interface FormFieldProps {
   label: string
   error?: string
   required?: boolean
   children: React.ReactNode
   hint?: string
+  className?: string
 }
 
-export function FormField({ label, error, required, children, hint }: FormFieldProps) {
+export function FormField({
+  label,
+  error,
+  required,
+  children,
+  hint,
+  className,
+}: FormFieldProps) {
   return (
-    <div className="space-y-1.5">
+    <div className={cn('space-y-1.5', className)}>
       <label className="block text-sm font-medium text-secondary-foreground">
         {label}
         {required && <span className="ml-0.5 text-destructive">*</span>}

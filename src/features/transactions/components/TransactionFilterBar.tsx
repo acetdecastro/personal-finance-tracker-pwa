@@ -1,4 +1,5 @@
 import { useFiltersStore } from '#/stores/filters-store'
+import { cn } from '#/lib/utils/cn'
 import type { TransactionType } from '#/types/domain'
 
 const FILTER_TABS: { label: string; value: TransactionType | null }[] = [
@@ -16,11 +17,12 @@ export function TransactionFilterBar() {
         <button
           key={tab.label}
           onClick={() => setTransactionType(tab.value)}
-          className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+          className={cn(
+            'shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition',
             transactionType === tab.value
               ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-secondary-foreground'
-          }`}
+              : 'bg-muted text-secondary-foreground',
+          )}
         >
           {tab.label}
         </button>

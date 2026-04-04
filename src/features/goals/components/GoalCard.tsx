@@ -14,7 +14,7 @@ export function GoalCard({ goal }: GoalCardProps) {
         <div className="flex size-10 items-center justify-center rounded-xl bg-accent-subtle">
           <Target className="size-5 text-accent" />
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold text-foreground">
             {goal.name}
           </p>
