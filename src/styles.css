@@ -1,0 +1,77 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* --- Dark mode via class strategy (Tailwind v4) --- */
+@variant dark (&:where(.dark, .dark *));
+
+/* --- Theme tokens --- */
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* --- Base layer --- */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #app {
+    min-height: 100%;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: theme(--color-gray-50);
+    color: theme(--color-slate-900);
+  }
+
+  .dark body {
+    background-color: theme(--color-zinc-950);
+    color: theme(--color-slate-100);
+  }
+
+  /* Selection color aligned with brand */
+  ::selection {
+    background-color: oklch(from theme(--color-emerald-200) l c h / 0.4);
+  }
+
+  .dark ::selection {
+    background-color: oklch(from theme(--color-emerald-800) l c h / 0.4);
+  }
+}
+
+/* --- Utility layer: minimal reusable patterns --- */
+@layer utilities {
+  /* Hide scrollbar utility */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Safe area insets for PWA */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
