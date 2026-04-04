@@ -1,0 +1,60 @@
+import { describe, expect, it } from 'vitest'
+import {
+  createTransactionInputSchema,
+  transactionSchema,
+} from '../schemas/transaction.schemas'
+
+describe('transaction schemas', () => {
+  it('accepts a standard expense transaction', () => {
+    const parsed = createTransactionInputSchema.parse({
+      type: 'expense',
+      amount: 350,
+      categoryId: crypto.randomUUID(),
+      accountId: crypto.randomUUID(),
+      fromAccountId: null,
+      toAccountId: null,
+      note: 'Lunch',
+      transactionDate: '2026-04-04T00:00:00.000Z',
+      recurringRuleId: null,
+    })
+
+    expect(parsed.type).toBe('expense')
+  })
+
+  it('rejects transfer records that still carry category or accountId', () => {
+    expect(() =>
+      createTransactionInputSchema.parse({
+        type: 'transfer',
+        amount: 100,
+        categoryId: crypto.randomUUID(),
+        accountId: crypto.randomUUID(),
+        fromAccountId: crypto.randomUUID(),
+        toAccountId: crypto.randomUUID(),
+        note: null,
+        transactionDate: '2026-04-04T00:00:00.000Z',
+        recurringRuleId: null,
+      }),
+    ).toThrow()
+  })
+
+  it('accepts a persisted transfer shape', () => {
+    const id = crypto.randomUUID()
+
+    expect(
+      transactionSchema.parse({
+        id,
+        type: 'transfer',
+        amount: 100,
+        categoryId: null,
+        accountId: null,
+        fromAccountId: crypto.randomUUID(),
+        toAccountId: crypto.randomUUID(),
+        note: null,
+        transactionDate: '2026-04-04T00:00:00.000Z',
+        recurringRuleId: null,
+        createdAt: '2026-04-04T00:00:00.000Z',
+        updatedAt: '2026-04-04T00:00:00.000Z',
+      }).id,
+    ).toBe(id)
+  })
+})

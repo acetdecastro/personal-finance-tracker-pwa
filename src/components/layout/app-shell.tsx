@@ -34,9 +34,9 @@ export function AppShell() {
       {/* Bottom navigation */}
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/60 bg-white/90 pb-safe backdrop-blur-xl dark:border-zinc-800/60 dark:bg-zinc-950/90"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200/90 bg-white/90 pb-safe backdrop-blur-xl dark:border-emerald-800/90 dark:bg-zinc-900/50 rounded-tl-4xl rounded-tr-4xl"
       >
-        <div className="mx-auto grid max-w-lg grid-cols-4">
+        <div className="flex items-center justify-between mx-auto max-w-lg">
           {mainNavItems.map((item) => (
             <NavItem key={item.to} to={item.to} label={item.label}>
               <item.icon className="size-5" />

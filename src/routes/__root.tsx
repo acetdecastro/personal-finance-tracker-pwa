@@ -5,7 +5,8 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { AppProviders, type AppRouterContext } from '../app/providers'
+import { AppProviders  } from '../app/providers'
+import type { AppRouterContext } from '../app/providers';
 
 import TanStackQueryDevtools from '../app/query-devtools'
 

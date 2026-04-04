@@ -17,6 +17,11 @@ const config = defineConfig({
     viteReact(),
     VitePWA({ registerType: 'autoUpdate' }),
   ],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.ts'],
+  },
 })
 
 export default config

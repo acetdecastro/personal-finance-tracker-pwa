@@ -1,18 +1,20 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { RoutePlaceholder } from '../components/layout/route-placeholder'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { OnboardingFlow } from '#/features/onboarding/components/OnboardingFlow'
 
 export const Route = createFileRoute('/onboarding')({
   component: OnboardingRoute,
 })
 
 function OnboardingRoute() {
+  const navigate = useNavigate()
+
+  function handleComplete() {
+    navigate({ to: '/dashboard' })
+  }
+
   return (
-    <main className="page-wrap px-4 pb-8 pt-10">
-      <RoutePlaceholder
-        eyebrow="Onboarding"
-        title="Setup flow placeholder"
-        description="This standalone route is reserved for the initial setup experience before the user enters the main app shell."
-      />
+    <main className="mx-auto min-h-dvh max-w-lg px-5 py-10">
+      <OnboardingFlow onComplete={handleComplete} />
     </main>
   )
 }
