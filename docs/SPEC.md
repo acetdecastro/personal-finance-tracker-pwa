@@ -398,15 +398,15 @@ Represents where money is stored.
 
 ```ts
 type Account = {
-  id: string;
-  name: string;
-  type: "cash" | "bank" | "ewallet" | "other";
-  initialBalance: number;
-  safetyBuffer: number;
-  isArchived: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+  id: string
+  name: string
+  type: 'cash' | 'bank' | 'ewallet' | 'other'
+  initialBalance: number
+  safetyBuffer: number
+  isArchived: boolean
+  createdAt: string
+  updatedAt: string
+}
 ```
 
 ---
@@ -417,13 +417,13 @@ Represents expense or income category.
 
 ```ts
 type Category = {
-  id: string;
-  name: string;
-  type: "income" | "expense";
-  isSystem: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+  id: string
+  name: string
+  type: 'income' | 'expense'
+  isSystem: boolean
+  createdAt: string
+  updatedAt: string
+}
 ```
 
 ---
@@ -434,19 +434,19 @@ Represents actual posted financial activity.
 
 ```ts
 type Transaction = {
-  id: string;
-  type: "income" | "expense" | "transfer";
-  amount: number;
-  categoryId: string | null;
-  fromAccountId: string | null;
-  toAccountId: string | null;
-  accountId: string | null;
-  note: string | null;
-  transactionDate: string;
-  recurringRuleId: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+  id: string
+  type: 'income' | 'expense' | 'transfer'
+  amount: number
+  categoryId: string | null
+  fromAccountId: string | null
+  toAccountId: string | null
+  accountId: string | null
+  note: string | null
+  transactionDate: string
+  recurringRuleId: string | null
+  createdAt: string
+  updatedAt: string
+}
 ```
 
 ## Notes
@@ -468,21 +468,21 @@ Represents future modeled events like salary or fixed bills.
 
 ```ts
 type RecurringRule = {
-  id: string;
-  name: string;
-  type: "income" | "expense";
-  amount: number;
-  categoryId: string;
-  accountId: string;
-  cadence: "weekly" | "semi-monthly" | "monthly" | "custom";
-  semiMonthlyDays: number[] | null;
-  monthlyDay: number | null;
-  weeklyInterval: number | null;
-  nextOccurrenceDate: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+  id: string
+  name: string
+  type: 'income' | 'expense'
+  amount: number
+  categoryId: string
+  accountId: string
+  cadence: 'weekly' | 'semi-monthly' | 'monthly' | 'custom'
+  semiMonthlyDays: number[] | null
+  monthlyDay: number | null
+  weeklyInterval: number | null
+  nextOccurrenceDate: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
 ```
 
 Recurring transactions must be explicitly created as either `income` or `expense`.
@@ -504,13 +504,13 @@ Do not overbuild cron-like recurrence complexity.
 
 ```ts
 type Budget = {
-  id: string;
-  categoryId: string;
-  amount: number;
-  periodType: "monthly";
-  createdAt: string;
-  updatedAt: string;
-};
+  id: string
+  categoryId: string
+  amount: number
+  periodType: 'monthly'
+  createdAt: string
+  updatedAt: string
+}
 ```
 
 ## MVP note
@@ -519,23 +519,23 @@ Only monthly budget is required for MVP.
 
 ---
 
-## 9.6 Savings Goal
+## 9.6 Savings Goals
 
 ```ts
 type Goal = {
-  id: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number | null;
-  targetDate: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+  id: string
+  name: string
+  targetAmount: number
+  currentAmount: number | null
+  targetDate: string | null
+  createdAt: string
+  updatedAt: string
+}
 ```
 
-## MVP simplification
+## MVP note
 
-Support one active goal in UI, but schema can allow multiple goals.
+Support multiple savings goals in UI and schema.
 
 ---
 
@@ -543,13 +543,13 @@ Support one active goal in UI, but schema can allow multiple goals.
 
 ```ts
 type UserSettings = {
-  id: "primary";
-  currency: "PHP";
-  theme: "light" | "dark" | "system";
-  hasCompletedOnboarding: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+  id: 'primary'
+  currency: 'PHP'
+  theme: 'light' | 'dark' | 'system'
+  hasCompletedOnboarding: boolean
+  createdAt: string
+  updatedAt: string
+}
 ```
 
 ---
@@ -572,16 +572,16 @@ Recommended Dexie tables:
 
 ```ts
 db.version(1).stores({
-  accounts: "id, name, type, isArchived, createdAt, updatedAt",
-  categories: "id, name, type, isSystem, createdAt, updatedAt",
+  accounts: 'id, name, type, isArchived, createdAt, updatedAt',
+  categories: 'id, name, type, isSystem, createdAt, updatedAt',
   transactions:
-    "id, type, categoryId, accountId, transactionDate, recurringRuleId, createdAt, updatedAt",
+    'id, type, categoryId, accountId, transactionDate, recurringRuleId, createdAt, updatedAt',
   recurringRules:
-    "id, type, categoryId, accountId, cadence, nextOccurrenceDate, isActive, createdAt, updatedAt",
-  budgets: "id, categoryId, periodType, createdAt, updatedAt",
-  goals: "id, createdAt, updatedAt",
-  userSettings: "id, createdAt, updatedAt",
-});
+    'id, type, categoryId, accountId, cadence, nextOccurrenceDate, isActive, createdAt, updatedAt',
+  budgets: 'id, categoryId, periodType, createdAt, updatedAt',
+  goals: 'id, createdAt, updatedAt',
+  userSettings: 'id, createdAt, updatedAt',
+})
 ```
 
 ## 10.3 Storage rule
@@ -966,7 +966,7 @@ For MVP:
 safeToSpend =
   currentBalance -
   totalUpcomingFixedExpensesBeforeNextSalary -
-  totalAccountSafetyBuffers;
+  totalAccountSafetyBuffers
 ```
 
 If result is negative, display negative or zero depending on UX choice.
@@ -1004,10 +1004,10 @@ Recommended:
 
 ```ts
 type ExportMetadata = {
-  appVersion: string;
-  exportedAt: string;
-  schemaVersion: number;
-};
+  appVersion: string
+  exportedAt: string
+  schemaVersion: number
+}
 ```
 
 ## Acceptance criteria
@@ -1339,46 +1339,46 @@ These should be locked early.
 
 ```ts
 type DashboardData = {
-  currentBalance: number;
-  safeToSpend: number;
-  nextSalaryDate: string | null;
-  projectedBalance7d: number;
-  projectedBalance14d: number;
-  projectedBalance30d: number;
-  lowestProjectedBalance30d: number;
+  currentBalance: number
+  safeToSpend: number
+  nextSalaryDate: string | null
+  projectedBalance7d: number
+  projectedBalance14d: number
+  projectedBalance30d: number
+  lowestProjectedBalance30d: number
   upcomingBills: Array<{
-    id: string;
-    name: string;
-    amount: number;
-    date: string;
-  }>;
+    id: string
+    name: string
+    amount: number
+    date: string
+  }>
   budgets: Array<{
-    categoryId: string;
-    categoryName: string;
-    budgetAmount: number;
-    spentAmount: number;
-    remainingAmount: number;
-    percentUsed: number;
-    isOverBudget: boolean;
-  }>;
-  goal: {
-    id: string;
-    name: string;
-    targetAmount: number;
-    currentAmount: number;
-    remainingAmount: number;
-    percentComplete: number;
-  } | null;
+    categoryId: string
+    categoryName: string
+    budgetAmount: number
+    spentAmount: number
+    remainingAmount: number
+    percentUsed: number
+    isOverBudget: boolean
+  }>
+  goals: Array<{
+    id: string
+    name: string
+    targetAmount: number
+    currentAmount: number
+    remainingAmount: number
+    percentComplete: number
+  }>
   recentTransactions: Array<{
-    id: string;
-    type: "income" | "expense" | "transfer";
-    amount: number;
-    categoryName: string | null;
-    accountName: string | null;
-    note: string | null;
-    transactionDate: string;
-  }>;
-};
+    id: string
+    type: 'income' | 'expense' | 'transfer'
+    amount: number
+    categoryName: string | null
+    accountName: string | null
+    note: string | null
+    transactionDate: string
+  }>
+}
 ```
 
 Claude should build UI against DTO contracts like this, not raw table structure where avoidable.

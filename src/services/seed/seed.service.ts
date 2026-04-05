@@ -14,7 +14,9 @@ export async function seedCoreData(
     database.categories,
     database.userSettings,
     async () => {
-      const existingCategoryIds = new Set(await database.categories.toCollection().primaryKeys())
+      const existingCategoryIds = new Set(
+        await database.categories.toCollection().primaryKeys(),
+      )
       const categoriesToCreate = DEFAULT_CATEGORY_SEED.filter(
         (category) => !existingCategoryIds.has(category.id),
       ).map((category) =>

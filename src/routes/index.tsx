@@ -22,7 +22,7 @@ function HomeRoute() {
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center px-5">
-      <Loader2 className="size-6 animate-spin text-primary" />
+      <Loader2 className="text-primary size-6 animate-spin" />
     </main>
   )
 }

@@ -3,11 +3,15 @@ import { Button } from '#/components/common/Button'
 import { CurrencyInput } from '#/components/common/CurrencyInput'
 import { FormField } from '#/components/common/FormField'
 import { Input } from '#/components/common/Input'
+import { ENTITY_NAME_MAX_LENGTH, MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 import { cn } from '#/lib/utils/cn'
 import type { CreateAccountInput } from '../schemas/account.schemas'
 
 interface AccountFormProps {
   onSubmit: (values: CreateAccountInput) => Promise<void>
+  onArchive?: () => Promise<void>
+  onRestore?: () => Promise<void>
+  onDelete?: () => Promise<void>
   onCancel?: () => void
   submitLabel?: string
   initialValues?: Partial<CreateAccountInput>
@@ -23,8 +27,11 @@ const ACCOUNT_TYPES = [
 
 export function AccountForm({
   onSubmit,
+  onArchive,
+  onRestore,
+  onDelete,
   onCancel,
-  submitLabel = 'Add Account',
+  submitLabel = 'Save',
   initialValues,
   showSafetyBuffer = true,
 }: AccountFormProps) {
@@ -55,11 +62,34 @@ export function AccountForm({
     >
       <form.Field
         name="name"
-        validators={{ onChange: ({ value }) => !value.trim() ? 'Name is required' : undefined }}
+        validators={{
+          onChange: ({ value }) => {
+            const trimmedValue = value.trim()
+
+            if (!trimmedValue) {
+              return 'Name is required'
+            }
+
+            if (trimmedValue.length > ENTITY_NAME_MAX_LENGTH) {
+              return `Name must be ${ENTITY_NAME_MAX_LENGTH} characters or fewer`
+            }
+
+            return undefined
+          },
+        }}
       >
         {(field) => (
-          <FormField label="Account Name" error={field.state.meta.errors[0]?.toString()} required>
+          <FormField
+            label="Account Name"
+            htmlFor="account-name"
+            error={field.state.meta.errors[0]?.toString()}
+            counter={`${field.state.value.length}/${ENTITY_NAME_MAX_LENGTH}`}
+            required
+          >
             <Input
+              id="account-name"
+              name="account-name"
+              maxLength={ENTITY_NAME_MAX_LENGTH}
               placeholder="e.g. BDO Savings"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
@@ -97,13 +127,24 @@ export function AccountForm({
         validators={{
           onChange: ({ value }) => {
             const n = Number(value || 0)
-            return n < 0 ? 'Balance cannot be negative' : undefined
+            if (n < 0) return 'Balance cannot be negative'
+            if (n > MONEY_MAX_AMOUNT) {
+              return `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`
+            }
+            return undefined
           },
         }}
       >
         {(field) => (
-          <FormField label="Starting Balance" error={field.state.meta.errors[0]?.toString()} hint="Current amount in this account">
+          <FormField
+            label="Starting Balance"
+            htmlFor="account-initial-balance"
+            error={field.state.meta.errors[0]?.toString()}
+            hint="Current amount in this account"
+          >
             <CurrencyInput
+              id="account-initial-balance"
+              name="account-initial-balance"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
@@ -118,17 +159,24 @@ export function AccountForm({
           validators={{
             onChange: ({ value }) => {
               const n = Number(value || 0)
-              return n < 0 ? 'Safety buffer cannot be negative' : undefined
+              if (n < 0) return 'Safety buffer cannot be negative'
+              if (n > MONEY_MAX_AMOUNT) {
+                return `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`
+              }
+              return undefined
             },
           }}
         >
           {(field) => (
             <FormField
               label="Safety Buffer"
+              htmlFor="account-safety-buffer"
               error={field.state.meta.errors[0]?.toString()}
               hint="Reserved amount to keep untouched in this account"
             >
               <CurrencyInput
+                id="account-safety-buffer"
+                name="account-safety-buffer"
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
@@ -144,7 +192,37 @@ export function AccountForm({
             Cancel
           </Button>
         )}
-        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+        {onRestore && (
+          <Button
+            onClick={() => void onRestore()}
+            variant="secondary"
+            fullWidth
+          >
+            Restore
+          </Button>
+        )}
+        {onArchive && (
+          <Button
+            onClick={() => void onArchive()}
+            variant="secondary"
+            fullWidth
+          >
+            Archive
+          </Button>
+        )}
+        {onDelete && (
+          <Button
+            onClick={() => void onDelete()}
+            variant="secondary"
+            className="bg-destructive/10 text-destructive hover:bg-destructive/15"
+            fullWidth
+          >
+            Delete
+          </Button>
+        )}
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+        >
           {([canSubmit, isSubmitting]) => (
             <Button
               type="submit"

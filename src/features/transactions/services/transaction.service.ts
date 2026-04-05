@@ -34,7 +34,9 @@ export function createTransactionService(
     categories: Awaited<ReturnType<typeof categoryRepository.list>>
     type: 'income' | 'expense'
   }): RecurringTransactionOptionDto[] {
-    const accountMap = new Map(input.accounts.map((account) => [account.id, account]))
+    const accountMap = new Map(
+      input.accounts.map((account) => [account.id, account]),
+    )
     const categoryMap = new Map(
       input.categories.map((category) => [category.id, category]),
     )
@@ -61,7 +63,9 @@ export function createTransactionService(
           nextOccurrenceDate: rule.nextOccurrenceDate,
         }
       })
-      .filter((option): option is RecurringTransactionOptionDto => option !== null)
+      .filter(
+        (option): option is RecurringTransactionOptionDto => option !== null,
+      )
       .sort(
         (left, right) =>
           new Date(left.nextOccurrenceDate).getTime() -
@@ -86,7 +90,10 @@ export function createTransactionService(
           return false
         }
 
-        if (filters.categoryId && transaction.categoryId !== filters.categoryId) {
+        if (
+          filters.categoryId &&
+          transaction.categoryId !== filters.categoryId
+        ) {
           return false
         }
 
@@ -113,23 +120,32 @@ export function createTransactionService(
         accountOptions,
         incomeCategoryOptions,
         expenseCategoryOptions,
+        transferCategory,
         recurringRules,
         accounts,
         categories,
-      ] =
-        await Promise.all([
-          accountQueryService.listActiveAccountOptions(),
-          categoryQueryService.listOptionsByType('income'),
-          categoryQueryService.listOptionsByType('expense'),
-          recurringRuleRepository.list(),
-          accountRepository.list(),
-          categoryRepository.list(),
-        ])
+      ] = await Promise.all([
+        accountQueryService.listActiveAccountOptions(),
+        categoryQueryService.listOptionsByType('income'),
+        categoryQueryService.listOptionsByType('expense'),
+        categoryQueryService.getTransferCategory(),
+        recurringRuleRepository.list(),
+        accountRepository.list(),
+        categoryRepository.list(),
+      ])
 
       return {
         accountOptions,
         incomeCategoryOptions,
         expenseCategoryOptions,
+        transferCategoryOption: transferCategory
+          ? {
+              value: transferCategory.id,
+              label: transferCategory.name,
+              type: transferCategory.type,
+              isSystem: transferCategory.isSystem,
+            }
+          : null,
         incomeRecurringTransactionOptions: buildRecurringTransactionOptions({
           recurringRules,
           accounts,

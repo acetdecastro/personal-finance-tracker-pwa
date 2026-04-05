@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { expandRecurringOccurrences } from './recurring-expansion.service'
 import type { RecurringRule, Transaction } from '#/types/domain'
 
-function createRule(
-  overrides: Partial<RecurringRule> = {},
-): RecurringRule {
+function createRule(overrides: Partial<RecurringRule> = {}): RecurringRule {
   return {
     id: 'rule-1',
     name: 'Salary',

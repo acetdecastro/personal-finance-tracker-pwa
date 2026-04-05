@@ -1,42 +1,92 @@
-import { Target } from 'lucide-react'
+import { Button } from '#/components/common/Button'
 import type { GoalSnapshotDto } from '#/types/dto'
 import { formatPhpCurrency } from '#/lib/format/number.utils'
 import { formatDisplayDate } from '#/lib/dates'
 
 interface GoalCardProps {
   goal: GoalSnapshotDto
+  onSelect?: (goalId: string) => void
+  onAddSavings?: (goalId: string) => void
+  onTransferOut?: (goalId: string) => void
 }
 
-export function GoalCard({ goal }: GoalCardProps) {
+export function GoalCard({
+  goal,
+  onSelect,
+  onAddSavings,
+  onTransferOut,
+}: GoalCardProps) {
   return (
-    <div className="rounded-2xl bg-card p-5">
+    <div
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      onClick={() => onSelect?.(goal.id)}
+      onKeyDown={(event) => {
+        if (!onSelect) return
+
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onSelect(goal.id)
+        }
+      }}
+      className="bg-card block w-full rounded-2xl p-4 text-left shadow"
+    >
       <div className="mb-3 flex items-center gap-3">
-        <div className="flex size-10 items-center justify-center rounded-xl bg-accent-subtle">
-          <Target className="size-5 text-accent" />
-        </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold text-foreground">
+          <p className="text-foreground truncate text-xs font-bold">
             {goal.name}
           </p>
           {goal.targetDate && (
-            <p className="text-xs text-muted-foreground/70">
+            <p className="text-muted-foreground/70 text-[10px]">
               Target: {formatDisplayDate(goal.targetDate)}
             </p>
           )}
         </div>
-        <p className="text-sm font-bold text-accent">
-          {goal.percentComplete}%
-        </p>
+        <div className="text-right">
+          <p className="text-accent text-xs font-bold">
+            {goal.percentComplete}%
+          </p>
+        </div>
       </div>
-      <div className="mb-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+      <div className="bg-muted mb-1.5 h-1.5 w-full overflow-hidden rounded-full">
         <div
-          className="h-full rounded-full bg-accent transition-all"
+          className="bg-accent h-full rounded-full transition-all"
           style={{ width: `${goal.percentComplete}%` }}
         />
       </div>
-      <div className="flex justify-between text-xs text-muted-foreground/70">
+      <div className="text-muted-foreground/70 flex justify-between text-[10px]">
         <span>{formatPhpCurrency(goal.currentAmount)} saved</span>
-        <span>{formatPhpCurrency(goal.remainingAmount)} remaining</span>
+        <div className="flex items-center">
+          <span>{formatPhpCurrency(goal.remainingAmount)} remaining</span>
+        </div>
+      </div>
+      <div className="flex justify-end">
+        {onAddSavings && (
+          <Button
+            type="button"
+            variant="inline-primary"
+            className="-mr-2 text-[10px]"
+            onClick={(event) => {
+              event.stopPropagation()
+              onAddSavings(goal.id)
+            }}
+          >
+            Add Savings
+          </Button>
+        )}
+        {onTransferOut && goal.currentAmount > 0 && (
+          <Button
+            type="button"
+            variant="inline-primary"
+            className="-mr-2 text-[10px]"
+            onClick={(event) => {
+              event.stopPropagation()
+              onTransferOut(goal.id)
+            }}
+          >
+            Transfer Out
+          </Button>
+        )}
       </div>
     </div>
   )

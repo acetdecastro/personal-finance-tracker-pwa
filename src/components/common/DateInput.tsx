@@ -11,12 +11,8 @@ const BASE_DATE_CLS =
 export function DateInput({ className, ...props }: DateInputProps) {
   return (
     <div className="relative">
-      <Input
-        {...props}
-        type="date"
-        className={cn(BASE_DATE_CLS, className)}
-      />
-      <CalendarDays className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Input {...props} type="date" className={cn(BASE_DATE_CLS, className)} />
+      <CalendarDays className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2" />
     </div>
   )
 }

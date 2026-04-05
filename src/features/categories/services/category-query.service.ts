@@ -54,6 +54,11 @@ export function createCategoryQueryService(
       const incomeCategories = await this.listByType('income')
       return incomeCategories.find((category) => category.name === 'Salary')
     },
+
+    async getTransferCategory() {
+      const transferCategories = await this.listByType('transfer')
+      return transferCategories.find((category) => category.name === 'Transfer')
+    },
   }
 }
 

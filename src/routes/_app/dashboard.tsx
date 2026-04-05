@@ -1,27 +1,21 @@
-import { createFileRoute } from '@tanstack/react-router'
-import {
-  ArrowDownLeft,
-  ArrowLeftRight,
-  ArrowUpRight,
-  CalendarClock,
-  Receipt,
-  ShieldCheck,
-  Target,
-  TrendingUp,
-  Wallet,
-} from 'lucide-react'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { SectionHeader } from '#/components/common/SectionHeader'
 import { EmptyState } from '#/components/common/EmptyState'
 import { BudgetList } from '#/features/budgets/components/BudgetList'
 import { GoalCard } from '#/features/goals/components/GoalCard'
+import { TransactionRow } from '#/features/transactions/components/TransactionRow'
 import { useDashboardData } from '#/features/dashboard/hooks/use-dashboard-data'
-import { formatPhpCurrency } from '#/lib/format/number.utils'
-import { formatDisplayDate } from '#/lib/dates'
+import {
+  formatPhpCurrency,
+  getCurrencyTextSizeClass,
+} from '#/lib/format/number.utils'
+import { formatCompactDisplayDate, formatDisplayDate } from '#/lib/dates'
 import { cn } from '#/lib/utils/cn'
 import type {
   DashboardRecentTransactionDto,
   UpcomingBillDto,
 } from '#/types/dto'
+import { TYPE_CONFIG } from '#/features/transactions/components/TransactionList'
 
 export const Route = createFileRoute('/_app/dashboard')({
   component: DashboardRoute,
@@ -29,11 +23,14 @@ export const Route = createFileRoute('/_app/dashboard')({
 
 function DashboardRoute() {
   const { data: dashboardData, isLoading } = useDashboardData()
+  const totalBalanceLabel = formatPhpCurrency(
+    dashboardData?.currentBalance ?? 0,
+  )
 
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="rounded-3xl bg-card p-6 text-sm text-muted-foreground">
+        <div className="bg-card text-muted-foreground rounded-3xl p-6 text-sm">
           Loading your dashboard…
         </div>
       </div>
@@ -42,25 +39,29 @@ function DashboardRoute() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl bg-linear-to-br from-emerald-700 to-emerald-800 p-6 dark:from-emerald-800 dark:to-emerald-900">
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-white/70">
+      <div className="rounded-3xl bg-linear-to-br from-emerald-800 to-lime-600/90 p-6 shadow-lg">
+        <p className="mb-1 text-[11px] font-bold tracking-widest text-white/70 uppercase">
           Total Balance
         </p>
-        <p className="text-4xl font-extrabold tracking-tight text-white">
-          {formatPhpCurrency(dashboardData?.currentBalance ?? 0)}
+        <p
+          title={totalBalanceLabel}
+          className={cn(
+            'truncate font-extrabold tracking-tight text-white tabular-nums',
+            getCurrencyTextSizeClass(totalBalanceLabel, 'hero'),
+          )}
+        >
+          {totalBalanceLabel}
         </p>
         <p className="mt-1 text-xs text-white/50">
           Live total from accounts and posted transactions
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="space-y-3">
         <SummaryCard
           label="Safe to Spend"
           value={formatPhpCurrency(dashboardData?.safeToSpend ?? 0)}
-          Icon={ShieldCheck}
-          color="text-primary"
-          bgColor="bg-primary-subtle"
+          description="Available after buffers and fixed bills."
         />
         <SummaryCard
           label="Next Salary"
@@ -69,47 +70,54 @@ function DashboardRoute() {
               ? formatDisplayDate(dashboardData.nextSalaryDate)
               : '—'
           }
-          Icon={CalendarClock}
-          color="text-accent"
-          bgColor="bg-accent-subtle"
+          description="Next expected income date."
         />
         <SummaryCard
           label="In 7 Days"
           value={formatPhpCurrency(dashboardData?.projectedBalance7d ?? 0)}
-          Icon={TrendingUp}
-          color="text-muted-foreground"
-          bgColor="bg-muted"
+          description="Projected balance in one week."
         />
         <SummaryCard
           label="In 30 Days"
           value={formatPhpCurrency(dashboardData?.projectedBalance30d ?? 0)}
-          Icon={Wallet}
-          color="text-muted-foreground"
-          bgColor="bg-muted"
+          description="Projected balance in one month."
         />
       </div>
 
       <div className="space-y-3">
-        <SectionHeader title="Upcoming Bills" />
+        <SectionHeader
+          title="Upcoming Bills"
+          action={<SeeAllLink to="/settings" />}
+        />
         {!dashboardData || dashboardData.upcomingBills.length === 0 ? (
           <EmptyState
             title="No upcoming bills"
             description="Recurring expenses will appear here once you add them in Settings."
           />
         ) : (
-          <UpcomingBillsList bills={dashboardData.upcomingBills} />
+          <UpcomingBillsList bills={dashboardData.upcomingBills.slice(0, 3)} />
         )}
       </div>
 
-      {dashboardData?.goal && (
+      {!!dashboardData?.goals.length && (
         <div className="space-y-3">
-          <SectionHeader title="Savings Goal" />
-          <GoalCard goal={dashboardData.goal} />
+          <SectionHeader
+            title="Savings Goals"
+            action={<SeeAllLink to="/budget" />}
+          />
+          <div className="space-y-3">
+            {dashboardData.goals.slice(0, 3).map((goal) => (
+              <GoalCard key={goal.id} goal={goal} />
+            ))}
+          </div>
         </div>
       )}
 
       <div className="space-y-3">
-        <SectionHeader title="Budget Health" />
+        <SectionHeader
+          title="Budget Health"
+          action={<SeeAllLink to="/budget" />}
+        />
         {!dashboardData || dashboardData.budgets.length === 0 ? (
           <EmptyState
             title="No budgets yet"
@@ -120,32 +128,19 @@ function DashboardRoute() {
         )}
       </div>
 
-      {dashboardData?.goal && (
-        <div className="rounded-2xl bg-card p-4">
-          <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground/70">
-            <Target className="size-3.5" />
-            Goal Progress
-          </div>
-          <p className="text-sm text-secondary-foreground">
-            You still need{' '}
-            <span className="font-semibold text-foreground">
-              {formatPhpCurrency(dashboardData.goal.remainingAmount)}
-            </span>{' '}
-            to complete {dashboardData.goal.name}.
-          </p>
-        </div>
-      )}
-
       <div className="space-y-3">
-        <SectionHeader title="Recent Activity" />
+        <SectionHeader
+          title="Recent Transactions"
+          action={<SeeAllLink to="/transactions" />}
+        />
         {!dashboardData || dashboardData.recentTransactions.length === 0 ? (
           <EmptyState
             title="No transactions yet"
             description="Add your first transaction from the Transactions tab."
           />
         ) : (
-          <RecentActivityList
-            transactions={dashboardData.recentTransactions}
+          <RecentTransactionsList
+            transactions={dashboardData.recentTransactions.slice(0, 3)}
           />
         )}
       </div>
@@ -153,52 +148,42 @@ function DashboardRoute() {
   )
 }
 
-const ACTIVITY_TYPE_CONFIG = {
-  income: {
-    Icon: ArrowDownLeft,
-    color: 'text-primary',
-    bg: 'bg-primary-subtle',
-    sign: '+',
-    amountColor: 'text-primary',
-  },
-  expense: {
-    Icon: ArrowUpRight,
-    color: 'text-muted-foreground',
-    bg: 'bg-muted',
-    sign: '-',
-    amountColor: 'text-foreground',
-  },
-  transfer: {
-    Icon: ArrowLeftRight,
-    color: 'text-accent',
-    bg: 'bg-accent-subtle',
-    sign: '',
-    amountColor: 'text-accent',
-  },
-} as const
+function SeeAllLink({ to }: { to: string }) {
+  return (
+    <Link
+      to={to}
+      className="text-foreground text-sm font-semibold transition-opacity hover:opacity-70"
+    >
+      See all
+    </Link>
+  )
+}
 
 function UpcomingBillsList({ bills }: { bills: UpcomingBillDto[] }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {bills.map((bill) => (
         <div
           key={bill.id}
-          className="flex items-center justify-between rounded-2xl bg-card p-4"
+          className="bg-card flex items-start justify-between rounded-2xl p-4 shadow"
         >
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted">
-              <Receipt className="size-5 text-muted-foreground" />
-            </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-foreground">
+              <p className="text-foreground truncate text-xs font-semibold">
                 {bill.name}
               </p>
-              <p className="text-xs text-muted-foreground/70">
+              <p className="text-muted-foreground/70 text-[10px]">
                 Due {formatDisplayDate(bill.date)}
               </p>
             </div>
           </div>
-          <p className="shrink-0 text-sm font-bold text-foreground">
+          <p
+            title={formatPhpCurrency(bill.amount)}
+            className={cn(
+              'text-foreground max-w-34 shrink-0 truncate text-right font-bold tabular-nums',
+              getCurrencyTextSizeClass(formatPhpCurrency(bill.amount), 'list'),
+            )}
+          >
             {formatPhpCurrency(bill.amount)}
           </p>
         </div>
@@ -207,45 +192,46 @@ function UpcomingBillsList({ bills }: { bills: UpcomingBillDto[] }) {
   )
 }
 
-function RecentActivityList({
+function RecentTransactionsList({
   transactions,
 }: {
   transactions: DashboardRecentTransactionDto[]
 }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-4">
       {transactions.map((transaction) => {
-        const config = ACTIVITY_TYPE_CONFIG[transaction.type]
+        const config = TYPE_CONFIG[transaction.type]
         const Icon = config.Icon
+        const label =
+          transaction.type === 'transfer'
+            ? (transaction.note ?? transaction.categoryName ?? 'Transfer')
+            : (transaction.categoryName ?? transaction.note ?? transaction.type)
+        const subLabel =
+          transaction.type === 'transfer'
+            ? transaction.note?.startsWith('Goal Transfer Out')
+              ? transaction.accountName
+                ? `To ${transaction.accountName}`
+                : 'Transfer'
+              : transaction.accountName
+                ? `From ${transaction.accountName}`
+                : 'Transfer'
+            : (transaction.accountName ?? 'Unassigned')
 
         return (
-          <div
+          <TransactionRow
             key={transaction.id}
-            className="flex items-center gap-3 rounded-2xl bg-card p-4"
-          >
-            <div
-              className={cn(
-                'flex size-10 shrink-0 items-center justify-center rounded-xl',
-                config.bg,
-              )}
-            >
-              <Icon className={cn('size-5', config.color)} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-foreground">
-                {transaction.categoryName ?? transaction.note ?? transaction.type}
-              </p>
-              <p className="text-xs text-muted-foreground/70">
-                {transaction.accountName ?? 'Unassigned'}
-                {' · '}
-                {formatDisplayDate(transaction.transactionDate)}
-              </p>
-            </div>
-            <p className={cn('shrink-0 text-sm font-bold', config.amountColor)}>
-              {config.sign}
-              {formatPhpCurrency(transaction.amount)}
-            </p>
-          </div>
+            className="bg-card p-4 shadow"
+            label={label}
+            subLabel={subLabel}
+            amountLabel={`${config.sign}${formatPhpCurrency(transaction.amount)}`}
+            rightSecondaryLabel={formatCompactDisplayDate(
+              transaction.transactionDate,
+            )}
+            amountColor={config.amountColor}
+            Icon={Icon}
+            iconColor={config.color}
+            iconBg={config.bg}
+          />
         )
       })}
     </div>
@@ -255,28 +241,46 @@ function RecentActivityList({
 interface SummaryCardProps {
   label: string
   value: string
-  Icon: React.ElementType
-  color: string
-  bgColor: string
+  description?: string
+  Icon?: React.ElementType
+  color?: string
+  bgColor?: string
   note?: string
 }
 
-function SummaryCard({ label, value, Icon, color, bgColor, note }: SummaryCardProps) {
+function SummaryCard({ label, value, description, note }: SummaryCardProps) {
   return (
-    <div className="rounded-2xl bg-card p-4">
-      <div
-        className={cn(
-          'mb-2 flex size-8 items-center justify-center rounded-xl',
-          bgColor,
-        )}
-      >
-        <Icon className={cn('size-4', color)} />
+    <div className="bg-card rounded-2xl p-4 shadow">
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-foreground text-[10px] font-bold tracking-widest uppercase">
+                {label}
+              </p>
+              {description && (
+                <p className="text-muted-foreground/70 mt-0.5 line-clamp-3 text-[10px] leading-snug">
+                  {description}
+                </p>
+              )}
+              {note && (
+                <p className="text-muted-foreground/70 mt-1 text-[10px]">
+                  {note}
+                </p>
+              )}
+            </div>
+            <p
+              title={value}
+              className={cn(
+                'text-foreground max-w-36 shrink-0 truncate text-right font-bold tabular-nums',
+                getCurrencyTextSizeClass(value, 'summary'),
+              )}
+            >
+              {value}
+            </p>
+          </div>
+        </div>
       </div>
-      <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70">
-        {label}
-      </p>
-      <p className="mt-0.5 text-base font-bold text-foreground">{value}</p>
-      {note && <p className="text-[10px] text-muted-foreground/40">{note}</p>}
     </div>
   )
 }

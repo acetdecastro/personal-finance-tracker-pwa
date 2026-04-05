@@ -7,6 +7,7 @@ import { FormField } from '#/components/common/FormField'
 import { Input } from '#/components/common/Input'
 import { SelectInput } from '#/components/common/SelectInput'
 import { toStoredDate } from '#/lib/dates'
+import { ENTITY_NAME_MAX_LENGTH, MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 import { cn } from '#/lib/utils/cn'
 import type { Account, Category, RecurringRule } from '#/types/domain'
 import type { CreateRecurringRuleInput } from '../schemas/recurring-rule.schemas'
@@ -54,7 +55,8 @@ export function RecurringRuleForm({
       : new Date(),
     'yyyy-MM-dd',
   )
-  const defaultAccountId = initialValues?.accountId || (accounts[0] ? accounts[0].id : '')
+  const defaultAccountId =
+    initialValues?.accountId || (accounts[0] ? accounts[0].id : '')
   const [semiMonthlyDay1 = 15, semiMonthlyDay2 = 30] =
     initialValues?.semiMonthlyDays ?? []
 
@@ -91,7 +93,8 @@ export function RecurringRuleForm({
             : null,
         monthlyDay:
           cadence === 'monthly' ? getDate(parsedNextOccurrenceDate) : null,
-        weeklyInterval: cadence === 'weekly' ? Number(value.weeklyInterval) : null,
+        weeklyInterval:
+          cadence === 'weekly' ? Number(value.weeklyInterval) : null,
         nextOccurrenceDate: toStoredDate(parsedNextOccurrenceDate),
         isActive: value.isActive,
       }
@@ -109,15 +112,34 @@ export function RecurringRuleForm({
     >
       <form.Field
         name="name"
-        validators={{ onChange: ({ value }) => !value.trim() ? 'Name is required' : undefined }}
+        validators={{
+          onChange: ({ value }) => {
+            const trimmedValue = value.trim()
+
+            if (!trimmedValue) {
+              return 'Name is required'
+            }
+
+            if (trimmedValue.length > ENTITY_NAME_MAX_LENGTH) {
+              return `Name must be ${ENTITY_NAME_MAX_LENGTH} characters or fewer`
+            }
+
+            return undefined
+          },
+        }}
       >
         {(field) => (
           <FormField
             label="Recurring Transaction Name"
+            htmlFor="rule-name"
             error={field.state.meta.errors[0]?.toString()}
+            counter={`${field.state.value.length}/${ENTITY_NAME_MAX_LENGTH}`}
             required
           >
             <Input
+              id="rule-name"
+              name="rule-name"
+              maxLength={ENTITY_NAME_MAX_LENGTH}
               placeholder={`e.g. ${type === 'income' ? 'Salary' : 'Internet Bill'}`}
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
@@ -133,6 +155,9 @@ export function RecurringRuleForm({
           onChange: ({ value }) => {
             const n = Number(value)
             if (!value || isNaN(n) || n <= 0) return 'Enter a valid amount'
+            if (n > MONEY_MAX_AMOUNT) {
+              return `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`
+            }
             return undefined
           },
         }}
@@ -140,23 +165,40 @@ export function RecurringRuleForm({
         {(field) => (
           <FormField
             label="Expected Amount"
+            htmlFor="rule-amount"
             hint="Used for forecasting. Your actual posted amount can differ."
             error={field.state.meta.errors[0]?.toString()}
             required
           >
             <CurrencyInput
+              id="rule-amount"
+              name="rule-amount"
               value={field.state.value as unknown as string}
-              onChange={(e) => field.handleChange(e.target.value as unknown as number)}
+              onChange={(e) =>
+                field.handleChange(e.target.value as unknown as number)
+              }
               onBlur={field.handleBlur}
             />
           </FormField>
         )}
       </form.Field>
 
-      <form.Field name="categoryId" validators={{ onChange: ({ value }) => !value ? 'Select a category' : undefined }}>
+      <form.Field
+        name="categoryId"
+        validators={{
+          onChange: ({ value }) => (!value ? 'Select a category' : undefined),
+        }}
+      >
         {(field) => (
-          <FormField label="Category" error={field.state.meta.errors[0]?.toString()} required>
+          <FormField
+            label="Category"
+            htmlFor="rule-category"
+            error={field.state.meta.errors[0]?.toString()}
+            required
+          >
             <SelectInput
+              id="rule-category"
+              name="rule-category"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
             >
@@ -173,10 +215,22 @@ export function RecurringRuleForm({
         )}
       </form.Field>
 
-      <form.Field name="accountId" validators={{ onChange: ({ value }) => !value ? 'Select an account' : undefined }}>
+      <form.Field
+        name="accountId"
+        validators={{
+          onChange: ({ value }) => (!value ? 'Select an account' : undefined),
+        }}
+      >
         {(field) => (
-          <FormField label="Account" error={field.state.meta.errors[0]?.toString()} required>
+          <FormField
+            label="Account"
+            htmlFor="rule-account"
+            error={field.state.meta.errors[0]?.toString()}
+            required
+          >
             <SelectInput
+              id="rule-account"
+              name="rule-account"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
             >
@@ -225,9 +279,12 @@ export function RecurringRuleForm({
                   {(field) => (
                     <FormField
                       label="1st occurrence"
+                      htmlFor="rule-semi-day-1"
                       hint="Calendar day for the first monthly occurrence"
                     >
                       <Input
+                        id="rule-semi-day-1"
+                        name="rule-semi-day-1"
                         type="number"
                         min="1"
                         max="31"
@@ -241,9 +298,12 @@ export function RecurringRuleForm({
                   {(field) => (
                     <FormField
                       label="2nd occurrence"
+                      htmlFor="rule-semi-day-2"
                       hint="Calendar day for the second monthly occurrence"
                     >
                       <Input
+                        id="rule-semi-day-2"
+                        name="rule-semi-day-2"
                         type="number"
                         min="1"
                         max="31"
@@ -260,9 +320,12 @@ export function RecurringRuleForm({
                 {(field) => (
                   <FormField
                     label="Frequency"
+                    htmlFor="rule-weekly-interval"
                     hint="Choose a weekly interval up to every 4 weeks"
                   >
                     <SelectInput
+                      id="rule-weekly-interval"
+                      name="rule-weekly-interval"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                     >
@@ -287,6 +350,7 @@ export function RecurringRuleForm({
             {(field) => (
               <FormField
                 label="Next Occurrence Date"
+                htmlFor="rule-next-date"
                 hint={
                   cadence === 'monthly'
                     ? 'We use this date to determine the repeating day each month.'
@@ -296,6 +360,8 @@ export function RecurringRuleForm({
                 }
               >
                 <DateInput
+                  id="rule-next-date"
+                  name="rule-next-date"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
@@ -311,7 +377,9 @@ export function RecurringRuleForm({
             Cancel
           </Button>
         )}
-        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+        >
           {([canSubmit, isSubmitting]) => (
             <Button
               type="submit"

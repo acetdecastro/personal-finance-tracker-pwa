@@ -46,6 +46,15 @@ export function calculateCurrentBalance(
       return sum - transaction.amount
     }
 
+    if (transaction.goalId) {
+      return (
+        sum +
+        (transaction.goalTransferDirection === 'out'
+          ? transaction.amount
+          : -transaction.amount)
+      )
+    }
+
     return sum
   }, 0)
 
@@ -134,7 +143,9 @@ export function calculateForecastSummary({
   return {
     currentBalance,
     safeToSpend:
-      currentBalance - totalUpcomingFixedExpensesBeforeNextSalary - totalSafetyBuffers,
+      currentBalance -
+      totalUpcomingFixedExpensesBeforeNextSalary -
+      totalSafetyBuffers,
     nextSalaryDate,
     projectedBalance7d,
     projectedBalance14d,

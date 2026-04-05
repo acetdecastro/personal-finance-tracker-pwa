@@ -6,15 +6,13 @@ export type ThemePreference = 'light' | 'dark' | 'system'
 
 export type AccountType = 'cash' | 'bank' | 'ewallet' | 'other'
 
-export type CategoryType = 'income' | 'expense'
+export type CategoryType = 'income' | 'expense' | 'transfer'
+export type RecurringRuleType = 'income' | 'expense'
 
 export type TransactionType = 'income' | 'expense' | 'transfer'
+export type GoalTransferDirection = 'in' | 'out'
 
-export type RecurringCadence =
-  | 'weekly'
-  | 'semi-monthly'
-  | 'monthly'
-  | 'custom'
+export type RecurringCadence = 'weekly' | 'semi-monthly' | 'monthly' | 'custom'
 
 export type SupportedRecurringCadence = Exclude<RecurringCadence, 'custom'>
 
@@ -47,6 +45,8 @@ export interface Transaction extends TimestampedEntity {
   accountId: EntityId | null
   fromAccountId: EntityId | null
   toAccountId: EntityId | null
+  goalId: EntityId | null
+  goalTransferDirection?: GoalTransferDirection | null
   note: string | null
   transactionDate: string
   recurringRuleId: EntityId | null
@@ -55,7 +55,7 @@ export interface Transaction extends TimestampedEntity {
 export interface RecurringRule extends TimestampedEntity {
   id: EntityId
   name: string
-  type: CategoryType
+  type: RecurringRuleType
   amount: number
   categoryId: EntityId
   accountId: EntityId

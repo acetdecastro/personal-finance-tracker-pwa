@@ -5,7 +5,7 @@ import {
   trimmedNameSchema,
 } from '#/lib/utils/schema'
 
-export const categoryTypeSchema = z.enum(['income', 'expense'])
+export const categoryTypeSchema = z.enum(['income', 'expense', 'transfer'])
 
 export const createCategoryInputSchema = z.object({
   name: trimmedNameSchema,

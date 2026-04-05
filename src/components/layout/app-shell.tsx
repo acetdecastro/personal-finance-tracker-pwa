@@ -30,19 +30,19 @@ export function AppShell() {
       </header> */}
 
       {/* Main content area */}
-      <main className="flex-1 px-5 pb-24 pt-6">
+      <main className="flex-1 px-5 pt-6 pb-24">
         <Outlet />
       </main>
 
       {/* Bottom navigation */}
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-card/90 pb-safe backdrop-blur-xl rounded-tl-4xl rounded-tr-4xl"
+        className="border-border/60 bg-card/90 pb-safe fixed inset-x-0 bottom-0 z-40 rounded-tl-4xl rounded-tr-4xl border-t backdrop-blur-xl"
       >
-        <div className="flex items-center justify-between mx-auto px-4 max-w-lg">
+        <div className="mx-auto flex max-w-lg items-center justify-between px-4">
           {mainNavItems.map((item) => (
             <NavItem key={item.to} to={item.to} label={item.label}>
-              <item.icon className="size-[18px]" />
+              <item.icon className="size-4.5" />
             </NavItem>
           ))}
         </div>
@@ -70,11 +70,11 @@ function NavItem({
         className: 'text-muted-foreground',
       }}
       className={cn(
-        'flex flex-col items-center gap-1 px-1 py-2 text-center transition-colors active:scale-95',
+        'focus-visible:ring-ring focus-visible:ring-offset-background flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-95',
       )}
     >
       {children}
-      <span className="text-[10px] font-medium leading-none">
+      <span className="xs:block hidden text-[10px] leading-none font-medium">
         {label}
       </span>
     </Link>

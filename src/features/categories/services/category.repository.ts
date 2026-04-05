@@ -1,6 +1,10 @@
 import type { FinanceTrackerDatabase } from '#/db/dexie'
 import { db } from '#/db/dexie'
-import { createEntityId, createTimestamps, touchUpdatedAt } from '#/lib/utils/entity'
+import {
+  createEntityId,
+  createTimestamps,
+  touchUpdatedAt,
+} from '#/lib/utils/entity'
 import type { Category, CategoryType } from '#/types/domain'
 import {
   categoryListSchema,

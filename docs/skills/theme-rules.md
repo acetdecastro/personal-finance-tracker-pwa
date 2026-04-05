@@ -15,6 +15,7 @@ Default: `system` (respects OS preference).
 ## Dark Mode Strategy
 
 Uses Tailwind v4 class strategy:
+
 ```css
 @variant dark (&:where(.dark, .dark *));
 ```

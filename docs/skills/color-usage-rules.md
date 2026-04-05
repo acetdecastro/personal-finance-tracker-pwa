@@ -4,13 +4,13 @@
 
 Only these Tailwind color families are permitted:
 
-| Role | Light | Dark | Usage |
-|---|---|---|---|
-| **Primary** | `emerald-700` | `emerald-600` / `emerald-400` (text) | Brand, buttons, primary actions, positive values |
-| **Accent** | `teal-600` | `teal-400` | Goals, links, secondary highlights |
-| **Neutral** | `slate-500` | `slate-400` | Secondary icons, muted text, labels |
-| **Danger** | `red-600` | `red-500` | Overspending, over-budget, destructive actions |
-| **Background** | `gray-50` | `zinc-950` | Page background |
+| Role           | Light         | Dark                                 | Usage                                            |
+| -------------- | ------------- | ------------------------------------ | ------------------------------------------------ |
+| **Primary**    | `emerald-700` | `emerald-600` / `emerald-400` (text) | Brand, buttons, primary actions, positive values |
+| **Accent**     | `teal-600`    | `teal-400`                           | Goals, links, secondary highlights               |
+| **Neutral**    | `slate-500`   | `slate-400`                          | Secondary icons, muted text, labels              |
+| **Danger**     | `red-600`     | `red-500`                            | Overspending, over-budget, destructive actions   |
+| **Background** | `gray-50`     | `zinc-950`                           | Page background                                  |
 
 ## Neutral Surfaces
 

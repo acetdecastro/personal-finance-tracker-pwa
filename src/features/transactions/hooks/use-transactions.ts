@@ -30,7 +30,8 @@ export function useTransactionFormOptions() {
 export function useCreateTransaction() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: CreateTransactionInput) => transactionService.create(input),
+    mutationFn: (input: CreateTransactionInput) =>
+      transactionService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: BUDGET_PAGE_QUERY_KEY })

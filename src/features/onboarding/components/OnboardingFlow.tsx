@@ -1,13 +1,8 @@
 import { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { format, getDate } from 'date-fns'
-import {
-  CheckCircle,
-  ChevronRight,
-  Loader2,
-  Plus,
-  Trash2,
-} from 'lucide-react'
+import { CheckCircle, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react'
+import { InfoBanner } from '#/components/common/InfoBanner'
 import { AccountForm } from '#/features/accounts/components/AccountForm'
 import { Button } from '#/components/common/Button'
 import { CurrencyInput } from '#/components/common/CurrencyInput'
@@ -16,8 +11,12 @@ import { FormField } from '#/components/common/FormField'
 import { Input } from '#/components/common/Input'
 import { SelectInput } from '#/components/common/SelectInput'
 import { toStoredDate } from '#/lib/dates'
+import { ENTITY_NAME_MAX_LENGTH, MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 import { cn } from '#/lib/utils/cn'
-import { useOnboardingBootstrap, useCompleteOnboarding } from '../hooks/use-onboarding'
+import {
+  useOnboardingBootstrap,
+  useCompleteOnboarding,
+} from '../hooks/use-onboarding'
 import type { CreateAccountInput } from '#/features/accounts/schemas/account.schemas'
 import type { CompleteOnboardingInput } from '../schemas/onboarding.schemas'
 import type { CategoryOptionDto } from '#/types/dto'
@@ -156,8 +155,8 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   if (step === 'submitting') {
     return (
       <div className="flex flex-col items-center gap-4 py-16 text-center">
-        <Loader2 className="size-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">
+        <Loader2 className="text-primary size-8 animate-spin" />
+        <p className="text-muted-foreground text-sm">
           Setting up your account…
         </p>
       </div>
@@ -167,10 +166,8 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   if (step === 'error') {
     return (
       <div className="space-y-6 py-8 text-center">
-        <p className="text-sm font-semibold text-destructive">
-          Setup failed
-        </p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-destructive text-sm font-semibold">Setup failed</p>
+        <p className="text-muted-foreground text-sm">
           {submitError ?? 'An unexpected error occurred.'}
         </p>
         <Button onClick={handleFinish} fullWidth>
@@ -190,13 +187,13 @@ function WelcomeStep({ onStart }: { onStart: () => void }) {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+        <p className="text-primary text-[11px] font-bold tracking-widest uppercase">
           Welcome
         </p>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
+        <h1 className="text-foreground text-2xl font-extrabold tracking-tight">
           Let&apos;s get you set up
         </h1>
-        <p className="text-sm leading-relaxed text-muted-foreground">
+        <p className="text-muted-foreground text-sm leading-relaxed">
           Takes about 2 minutes. You can always change these later in Accounts
           and Settings.
         </p>
@@ -210,15 +207,17 @@ function WelcomeStep({ onStart }: { onStart: () => void }) {
         ].map((item, i) => (
           <div
             key={i}
-            className="flex items-center gap-3 text-sm text-secondary-foreground"
+            className="text-secondary-foreground flex items-center gap-3 text-sm"
           >
-            <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+            <div className="bg-primary text-primary-foreground flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold">
               {i + 1}
             </div>
             {item}
           </div>
         ))}
       </div>
+
+      <InfoBanner message="Your data is stored locally on this device and browser. Clearing browser data or uninstalling the app may remove it. Export backups regularly." />
 
       <Button
         onClick={onStart}
@@ -234,22 +233,19 @@ function WelcomeStep({ onStart }: { onStart: () => void }) {
 function DoneStep({ onComplete }: { onComplete: () => void }) {
   return (
     <div className="flex flex-col items-center gap-6 py-8 text-center">
-      <div className="flex size-16 items-center justify-center rounded-full bg-primary-subtle">
-        <CheckCircle className="size-8 text-primary" />
+      <div className="bg-primary-subtle flex size-16 items-center justify-center rounded-full">
+        <CheckCircle className="text-primary size-8" />
       </div>
       <div className="space-y-2">
-        <h2 className="text-2xl font-extrabold tracking-tight text-foreground">
+        <h2 className="text-foreground text-2xl font-extrabold tracking-tight">
           You&apos;re all set!
         </h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">
+        <p className="text-muted-foreground text-sm leading-relaxed">
           Your dashboard is ready. Start logging transactions to track your cash
           position.
         </p>
       </div>
-      <Button
-        onClick={onComplete}
-        className="w-full"
-      >
+      <Button onClick={onComplete} className="w-full">
         Go to Dashboard
       </Button>
     </div>
@@ -309,16 +305,32 @@ function SalaryStep({
       <form.Field
         name="name"
         validators={{
-          onChange: ({ value }) =>
-            !value.trim() ? 'Name is required' : undefined,
+          onChange: ({ value }) => {
+            const trimmedValue = value.trim()
+
+            if (!trimmedValue) {
+              return 'Name is required'
+            }
+
+            if (trimmedValue.length > ENTITY_NAME_MAX_LENGTH) {
+              return `Name must be ${ENTITY_NAME_MAX_LENGTH} characters or fewer`
+            }
+
+            return undefined
+          },
         }}
       >
         {(field) => (
           <FormField
             label="Label"
+            htmlFor="salary-name"
             error={field.state.meta.errors[0]?.toString()}
+            counter={`${field.state.value.length}/${ENTITY_NAME_MAX_LENGTH}`}
           >
             <Input
+              id="salary-name"
+              name="salary-name"
+              maxLength={ENTITY_NAME_MAX_LENGTH}
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
@@ -333,6 +345,9 @@ function SalaryStep({
           onChange: ({ value }) => {
             const n = Number(value)
             if (!value || isNaN(n) || n <= 0) return 'Enter a valid amount'
+            if (n > MONEY_MAX_AMOUNT) {
+              return `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`
+            }
             return undefined
           },
         }}
@@ -340,12 +355,15 @@ function SalaryStep({
         {(field) => (
           <FormField
             label="Amount"
+            htmlFor="salary-amount"
             required
             error={field.state.meta.errors[0]?.toString()}
           >
             <CurrencyInput
+              id="salary-amount"
+              name="salary-amount"
               autoFocus
-              className="pl-9 pr-4 text-lg"
+              className="pr-4 pl-9 text-lg"
               value={field.state.value as unknown as string}
               onChange={(e) =>
                 field.handleChange(e.target.value as unknown as number)
@@ -388,9 +406,12 @@ function SalaryStep({
                   {(field) => (
                     <FormField
                       label="1st occurrence"
+                      htmlFor="salary-semi-day-1"
                       hint="Calendar day for the first monthly occurrence"
                     >
                       <Input
+                        id="salary-semi-day-1"
+                        name="salary-semi-day-1"
                         type="number"
                         min="1"
                         max="31"
@@ -404,9 +425,12 @@ function SalaryStep({
                   {(field) => (
                     <FormField
                       label="2nd occurrence"
+                      htmlFor="salary-semi-day-2"
                       hint="Calendar day for the second monthly occurrence"
                     >
                       <Input
+                        id="salary-semi-day-2"
+                        name="salary-semi-day-2"
                         type="number"
                         min="1"
                         max="31"
@@ -423,9 +447,12 @@ function SalaryStep({
                 {(field) => (
                   <FormField
                     label="Frequency"
+                    htmlFor="salary-weekly-interval"
                     hint="Choose a weekly interval up to every 4 weeks"
                   >
                     <SelectInput
+                      id="salary-weekly-interval"
+                      name="salary-weekly-interval"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                     >
@@ -449,6 +476,7 @@ function SalaryStep({
             {(cadence) => (
               <FormField
                 label="Next pay date"
+                htmlFor="salary-next-date"
                 hint={
                   cadence === 'monthly'
                     ? 'We use this date to determine the repeating day each month.'
@@ -458,6 +486,8 @@ function SalaryStep({
                 }
               >
                 <DateInput
+                  id="salary-next-date"
+                  name="salary-next-date"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
@@ -511,24 +541,24 @@ function ExpensesStep({
     <div className="space-y-4">
       {/* Added expenses list */}
       {expenses.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {expenses.map((expense, i) => (
             <div
               key={i}
-              className="flex items-center justify-between rounded-xl bg-input px-4 py-3"
+              className="bg-input flex items-center justify-between rounded-xl px-4 py-3"
             >
               <div>
-                <p className="text-sm font-semibold text-foreground">
+                <p className="text-foreground text-sm font-semibold">
                   {expense.name}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   {expense.cadence} · ₱{expense.amount.toLocaleString()}
                 </p>
               </div>
               <Button
                 onClick={() => onRemove(i)}
                 variant="icon"
-                className="p-1.5 hover:text-destructive"
+                className="hover:text-destructive p-1.5"
               >
                 <Trash2 className="size-4" />
               </Button>
@@ -551,8 +581,8 @@ function ExpensesStep({
       ) : (
         <Button
           onClick={() => setShowForm(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-medium text-muted-foreground transition hover:border-primary hover:text-primary"
-          variant='inline-primary'
+          className="border-border text-muted-foreground hover:border-primary hover:text-primary flex w-full items-center justify-center gap-2 rounded-xl border border-dashed py-3 text-sm font-medium transition"
+          variant="inline-primary"
         >
           <Plus className="size-4" />
           Add a recurring expense
@@ -620,229 +650,264 @@ function ExpenseAddForm({
   })
 
   return (
-    <div className="rounded-xl bg-input p-4">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          form.handleSubmit()
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        form.handleSubmit()
+      }}
+      className="space-y-3"
+    >
+      <form.Field
+        name="name"
+        validators={{
+          onChange: ({ value }) => {
+            const trimmedValue = value.trim()
+
+            if (!trimmedValue) {
+              return 'Name is required'
+            }
+
+            if (trimmedValue.length > ENTITY_NAME_MAX_LENGTH) {
+              return `Name must be ${ENTITY_NAME_MAX_LENGTH} characters or fewer`
+            }
+
+            return undefined
+          },
         }}
-        className="space-y-3"
       >
-        <form.Field
-          name="name"
-          validators={{
-            onChange: ({ value }) =>
-              !value.trim() ? 'Name is required' : undefined,
-          }}
-        >
-          {(field) => (
-            <FormField
-              label="Name"
-              required
-              error={field.state.meta.errors[0]?.toString()}
-            >
-              <Input
-                autoFocus
-                placeholder="e.g. Rent, Netflix"
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-                onBlur={field.handleBlur}
-              />
-            </FormField>
-          )}
-        </form.Field>
+        {(field) => (
+          <FormField
+            label="Name"
+            htmlFor="expense-name"
+            required
+            error={field.state.meta.errors[0]?.toString()}
+            counter={`${field.state.value.length}/${ENTITY_NAME_MAX_LENGTH}`}
+          >
+            <Input
+              id="expense-name"
+              name="expense-name"
+              autoFocus
+              maxLength={ENTITY_NAME_MAX_LENGTH}
+              placeholder="e.g. Rent, Netflix"
+              value={field.state.value}
+              onChange={(e) => field.handleChange(e.target.value)}
+              onBlur={field.handleBlur}
+            />
+          </FormField>
+        )}
+      </form.Field>
 
-        <form.Field
-          name="amount"
-          validators={{
-            onChange: ({ value }) => {
-              const n = Number(value)
-              if (!value || isNaN(n) || n <= 0) return 'Enter a valid amount'
-              return undefined
-            },
-          }}
-        >
-          {(field) => (
-            <FormField
-              label="Amount"
-              required
-              error={field.state.meta.errors[0]?.toString()}
-            >
-              <CurrencyInput
-                value={field.state.value as unknown as string}
-                onChange={(e) =>
-                  field.handleChange(e.target.value as unknown as number)
-                }
-                onBlur={field.handleBlur}
-              />
-            </FormField>
-          )}
-        </form.Field>
+      <form.Field
+        name="amount"
+        validators={{
+          onChange: ({ value }) => {
+            const n = Number(value)
+            if (!value || isNaN(n) || n <= 0) return 'Enter a valid amount'
+            if (n > MONEY_MAX_AMOUNT) {
+              return `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`
+            }
+            return undefined
+          },
+        }}
+      >
+        {(field) => (
+          <FormField
+            label="Amount"
+            htmlFor="expense-amount"
+            required
+            error={field.state.meta.errors[0]?.toString()}
+          >
+            <CurrencyInput
+              id="expense-amount"
+              name="expense-amount"
+              value={field.state.value as unknown as string}
+              onChange={(e) =>
+                field.handleChange(e.target.value as unknown as number)
+              }
+              onBlur={field.handleBlur}
+            />
+          </FormField>
+        )}
+      </form.Field>
 
-        <form.Field
-          name="categoryId"
-          validators={{
-            onChange: ({ value }) => (!value ? 'Select a category' : undefined),
-          }}
-        >
-          {(field) => (
-            <FormField
-              label="Category"
-              required
-              error={field.state.meta.errors[0]?.toString()}
+      <form.Field
+        name="categoryId"
+        validators={{
+          onChange: ({ value }) => (!value ? 'Select a category' : undefined),
+        }}
+      >
+        {(field) => (
+          <FormField
+            label="Category"
+            htmlFor="expense-category"
+            required
+            error={field.state.meta.errors[0]?.toString()}
+          >
+            <SelectInput
+              id="expense-category"
+              name="expense-category"
+              value={field.state.value}
+              onChange={(e) => field.handleChange(e.target.value)}
+              disabled={isLoadingCategories}
             >
-              <SelectInput
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-                disabled={isLoadingCategories}
-              >
-                <option value="">
-                  {isLoadingCategories ? 'Loading…' : 'Select category'}
+              <option value="">
+                {isLoadingCategories ? 'Loading…' : 'Select category'}
+              </option>
+              {categoryOptions.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
                 </option>
-                {categoryOptions.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </SelectInput>
-            </FormField>
-          )}
-        </form.Field>
+              ))}
+            </SelectInput>
+          </FormField>
+        )}
+      </form.Field>
 
-        <form.Field name="cadence">
-          {(field) => (
-            <FormField label="Frequency">
-              <div className="grid grid-cols-3 gap-2">
-                {CADENCE_OPTIONS.map((c) => (
-                  <Button
-                    key={c.value}
-                    onClick={() => field.handleChange(c.value)}
-                    className={cn(
-                      'rounded-xl px-3 py-2 text-xs font-semibold transition',
-                      field.state.value === c.value
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-card text-secondary-foreground',
-                    )}
-                  >
-                    {c.label}
-                  </Button>
-                ))}
-              </div>
-            </FormField>
-          )}
-        </form.Field>
+      <form.Field name="cadence">
+        {(field) => (
+          <FormField label="Frequency">
+            <div className="grid grid-cols-3 gap-2">
+              {CADENCE_OPTIONS.map((c) => (
+                <Button
+                  key={c.value}
+                  onClick={() => field.handleChange(c.value)}
+                  className={cn(
+                    'rounded-xl px-3 py-2 text-xs font-semibold transition',
+                    field.state.value === c.value
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card text-secondary-foreground',
+                  )}
+                >
+                  {c.label}
+                </Button>
+              ))}
+            </div>
+          </FormField>
+        )}
+      </form.Field>
 
-        <form.Subscribe selector={(s) => s.values.cadence}>
-          {(cadence) => (
-            <>
-              {cadence === 'semi-monthly' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <form.Field name="semiMonthlyDay1">
-                    {(field) => (
-                      <FormField
-                        label="1st occurrence"
-                        hint="Calendar day for the first monthly occurrence"
-                      >
-                        <Input
-                          type="number"
-                          min="1"
-                          max="31"
-                          value={field.state.value}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                        />
-                      </FormField>
-                    )}
-                  </form.Field>
-                  <form.Field name="semiMonthlyDay2">
-                    {(field) => (
-                      <FormField
-                        label="2nd occurrence"
-                        hint="Calendar day for the second monthly occurrence"
-                      >
-                        <Input
-                          type="number"
-                          min="1"
-                          max="31"
-                          value={field.state.value}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                        />
-                      </FormField>
-                    )}
-                  </form.Field>
-                </div>
-              )}
-              {cadence === 'weekly' && (
-                <form.Field name="weeklyInterval">
+      <form.Subscribe selector={(s) => s.values.cadence}>
+        {(cadence) => (
+          <>
+            {cadence === 'semi-monthly' && (
+              <div className="grid grid-cols-2 gap-3">
+                <form.Field name="semiMonthlyDay1">
                   {(field) => (
                     <FormField
-                      label="Frequency"
-                      hint="Choose a weekly interval up to every 4 weeks"
+                      label="1st occurrence"
+                      htmlFor="expense-semi-day-1"
+                      hint="Calendar day for the first monthly occurrence"
                     >
-                      <SelectInput
+                      <Input
+                        id="expense-semi-day-1"
+                        name="expense-semi-day-1"
+                        type="number"
+                        min="1"
+                        max="31"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
-                      >
-                        {WEEKLY_INTERVAL_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </SelectInput>
+                      />
                     </FormField>
                   )}
                 </form.Field>
-              )}
-            </>
-          )}
-        </form.Subscribe>
+                <form.Field name="semiMonthlyDay2">
+                  {(field) => (
+                    <FormField
+                      label="2nd occurrence"
+                      htmlFor="expense-semi-day-2"
+                      hint="Calendar day for the second monthly occurrence"
+                    >
+                      <Input
+                        id="expense-semi-day-2"
+                        name="expense-semi-day-2"
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                      />
+                    </FormField>
+                  )}
+                </form.Field>
+              </div>
+            )}
+            {cadence === 'weekly' && (
+              <form.Field name="weeklyInterval">
+                {(field) => (
+                  <FormField
+                    label="Frequency"
+                    htmlFor="expense-weekly-interval"
+                    hint="Choose a weekly interval up to every 4 weeks"
+                  >
+                    <SelectInput
+                      id="expense-weekly-interval"
+                      name="expense-weekly-interval"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                    >
+                      {WEEKLY_INTERVAL_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </FormField>
+                )}
+              </form.Field>
+            )}
+          </>
+        )}
+      </form.Subscribe>
 
-        <form.Field name="nextOccurrenceDate">
-          {(field) => (
-            <form.Subscribe selector={(s) => s.values.cadence}>
-              {(cadence) => (
-                <FormField
-                  label="Next occurrence"
-                  hint={
-                    cadence === 'monthly'
-                      ? 'We use this date to determine the repeating day each month.'
-                      : cadence === 'semi-monthly'
-                        ? 'Choose whichever of the two monthly occurrences comes next.'
-                        : 'Choose the next expected weekly occurrence.'
-                  }
-                >
-                  <DateInput
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                  />
-                </FormField>
-              )}
-            </form.Subscribe>
-          )}
-        </form.Field>
-
-        <div className="flex gap-2 pt-1">
-          <Button
-            onClick={onCancel}
-            variant="secondary"
-            fullWidth
-            className="bg-card py-2.5"
-          >
-            Cancel
-          </Button>
-          <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
-            {([canSubmit, isSubmitting]) => (
-              <Button
-                type="submit"
-                disabled={!canSubmit || !!isSubmitting}
-                fullWidth
+      <form.Field name="nextOccurrenceDate">
+        {(field) => (
+          <form.Subscribe selector={(s) => s.values.cadence}>
+            {(cadence) => (
+              <FormField
+                label="Next occurrence"
+                htmlFor="expense-next-date"
+                hint={
+                  cadence === 'monthly'
+                    ? 'We use this date to determine the repeating day each month.'
+                    : cadence === 'semi-monthly'
+                      ? 'Choose whichever of the two monthly occurrences comes next.'
+                      : 'Choose the next expected weekly occurrence.'
+                }
               >
-                {isSubmitting ? 'Adding…' : 'Add'}
-              </Button>
+                <DateInput
+                  id="expense-next-date"
+                  name="expense-next-date"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              </FormField>
             )}
           </form.Subscribe>
-        </div>
-      </form>
-    </div>
+        )}
+      </form.Field>
+
+      <div className="flex gap-2 pt-1">
+        <Button
+          onClick={onCancel}
+          variant="secondary"
+          fullWidth
+          className="bg-card py-2.5"
+        >
+          Cancel
+        </Button>
+        <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
+          {([canSubmit, isSubmitting]) => (
+            <Button
+              type="submit"
+              disabled={!canSubmit || !!isSubmitting}
+              fullWidth
+            >
+              {isSubmitting ? 'Saving…' : 'Save'}
+            </Button>
+          )}
+        </form.Subscribe>
+      </div>
+    </form>
   )
 }
 
@@ -862,21 +927,15 @@ function StepHeader({
   return (
     <div className="space-y-2">
       <StepIndicator current={current} total={total} />
-      <h2 className="text-xl font-bold tracking-tight text-foreground">
+      <h2 className="text-foreground text-xl font-bold tracking-tight">
         {title}
       </h2>
-      <p className="text-sm text-muted-foreground">{desc}</p>
+      <p className="text-muted-foreground text-sm">{desc}</p>
     </div>
   )
 }
 
-function StepIndicator({
-  current,
-  total,
-}: {
-  current: number
-  total: number
-}) {
+function StepIndicator({ current, total }: { current: number; total: number }) {
   return (
     <div className="flex items-center gap-1.5 pb-1">
       {Array.from({ length: total }, (_, i) => (
@@ -884,7 +943,7 @@ function StepIndicator({
           key={i}
           className={cn(
             'h-1 rounded-full transition-all',
-            i < current ? 'flex-1 bg-primary' : 'w-6 flex-none bg-muted',
+            i < current ? 'bg-primary flex-1' : 'bg-muted w-6 flex-none',
           )}
         />
       ))}

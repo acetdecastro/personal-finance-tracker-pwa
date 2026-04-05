@@ -15,7 +15,7 @@ afterEach(async () => {
 })
 
 describe('budgetPageQueryService', () => {
-  it('returns budget snapshots, expense category options, and primary goal snapshot for the budget page', async () => {
+  it('returns budget snapshots, expense category options, and goal snapshots for the budget page', async () => {
     const database = createTestDatabase()
     databases.push(database)
 
@@ -57,7 +57,7 @@ describe('budgetPageQueryService', () => {
 
     expect(result.budgetSnapshots[0]?.spentAmount).toBe(350)
     expect(result.budgetSnapshots[0]?.categoryName).toBe('Food')
-    expect(result.primaryGoal?.percentComplete).toBe(30)
+    expect(result.goals[0]?.percentComplete).toBe(30)
     expect(
       result.expenseCategoryOptions.some((option) => option.label === 'Food'),
     ).toBe(true)

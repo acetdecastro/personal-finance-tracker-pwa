@@ -1,6 +1,10 @@
 import type { FinanceTrackerDatabase } from '#/db/dexie'
 import { db } from '#/db/dexie'
-import { createEntityId, createTimestamps, touchUpdatedAt } from '#/lib/utils/entity'
+import {
+  createEntityId,
+  createTimestamps,
+  touchUpdatedAt,
+} from '#/lib/utils/entity'
 import type { Transaction } from '#/types/domain'
 import {
   createTransactionInputSchema,
@@ -19,7 +23,10 @@ export function createTransactionRepository(
   return {
     async list(): Promise<Transaction[]> {
       return transactionListSchema.parse(
-        await database.transactions.orderBy('transactionDate').reverse().toArray(),
+        await database.transactions
+          .orderBy('transactionDate')
+          .reverse()
+          .toArray(),
       )
     },
 

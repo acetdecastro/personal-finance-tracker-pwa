@@ -5,6 +5,7 @@ import { createGoalRepository } from '#/features/goals/services/goal.repository'
 import { createRecurringRuleRepository } from '#/features/recurring/services/recurring-rule.repository'
 import { createTransactionRepository } from '#/features/transactions/services/transaction.repository'
 import { seedCoreData } from '#/services/seed/seed.service'
+import { DEFAULT_TRANSFER_CATEGORIES } from '#/services/seed/seed-data'
 import { createDashboardQueryService } from '../services/dashboard-query.service'
 import { createTestDatabase, destroyTestDatabase } from '#/test/test-db'
 
@@ -100,7 +101,47 @@ describe('dashboardQueryService', () => {
     expect(dashboardData.nextSalaryDate).toBe('2026-04-15T00:00:00.000Z')
     expect(dashboardData.upcomingBills[0]?.name).toBe('Rent')
     expect(dashboardData.budgets[0]?.spentAmount).toBe(200)
-    expect(dashboardData.goal?.percentComplete).toBe(20)
+    expect(dashboardData.goals[0]?.percentComplete).toBe(20)
     expect(dashboardData.recentTransactions[0]?.categoryName).toBe('Food')
+  })
+
+  it('labels linked transfer history against a missing goal as Deleted Goal', async () => {
+    const database = createTestDatabase()
+    databases.push(database)
+
+    const accountRepository = createAccountRepository(database)
+    const transactionRepository = createTransactionRepository(database)
+    const dashboardQueryService = createDashboardQueryService(database)
+
+    await seedCoreData(database)
+
+    const account = await accountRepository.create({
+      name: 'Main Wallet',
+      type: 'ewallet',
+      initialBalance: 1000,
+      safetyBuffer: 0,
+      isArchived: false,
+    })
+
+    await transactionRepository.create({
+      type: 'transfer',
+      amount: 300,
+      categoryId: DEFAULT_TRANSFER_CATEGORIES[0].id,
+      accountId: null,
+      fromAccountId: account.id,
+      toAccountId: null,
+      goalId: 'deleted-goal-id',
+      note: 'Goal Savings · Old Name',
+      transactionDate: '2026-04-05T00:00:00.000Z',
+      recurringRuleId: null,
+    })
+
+    const dashboardData = await dashboardQueryService.getDashboardData({
+      now: '2026-04-05T00:00:00.000Z',
+    })
+
+    expect(dashboardData.recentTransactions[0]?.note).toBe(
+      'Goal Savings · Deleted Goal',
+    )
   })
 })

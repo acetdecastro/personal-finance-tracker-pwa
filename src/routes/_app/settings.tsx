@@ -1,11 +1,15 @@
-import { useState } from 'react'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { Plus } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
+import { toast } from 'sonner'
+import { useQueryClient } from '@tanstack/react-query'
+import { CheckCircle, Download, Minus, Plus, Share } from 'lucide-react'
 import { Button } from '#/components/common/Button'
 import { BottomSheet } from '#/components/common/BottomSheet'
 import { ThemeToggle } from '#/features/settings/components/ThemeToggle'
 import { RecurringRuleForm } from '#/features/recurring/components/RecurringRuleForm'
 import { RecurringRuleList } from '#/features/recurring/components/RecurringRuleList'
+import { InfoBanner } from '#/components/common/InfoBanner'
+import { cn } from '#/lib/utils/cn'
 import { SectionHeader } from '#/components/common/SectionHeader'
 import { EmptyState } from '#/components/common/EmptyState'
 import { useAccounts } from '#/features/accounts/hooks/use-accounts'
@@ -15,12 +19,16 @@ import {
   useCreateRecurringRule,
   useUpdateRecurringRule,
 } from '#/features/recurring/hooks/use-recurring-rules'
+import {
+  exportData,
+  parseImportFile,
+  importData,
+} from '#/services/import-export/import-export.service'
+import type { ExportPayload } from '#/services/import-export/import-export.service'
 import type { RecurringRule } from '#/types/domain'
 import type { CreateRecurringRuleInput } from '#/features/recurring/schemas/recurring-rule.schemas'
-import {
-  DISABLED_BUTTON_CLS,
-  PRIMARY_LINK_BUTTON_CLS,
-} from '#/lib/constants/ui-classes'
+import { PRIMARY_LINK_BUTTON_CLS } from '#/lib/constants/ui-classes'
+import { useInstallPrompt } from '#/features/settings/hooks/use-install-prompt'
 
 export const Route = createFileRoute('/_app/settings')({
   component: SettingsRoute,
@@ -29,28 +37,98 @@ export const Route = createFileRoute('/_app/settings')({
 type SheetState =
   | { mode: 'create'; type: 'income' | 'expense' }
   | { mode: 'edit'; rule: RecurringRule }
+  | { mode: 'import-confirm'; payload: ExportPayload }
   | null
+
+type RecurringFilter = 'all' | 'income' | 'expense'
 
 function SettingsRoute() {
   const [sheetState, setSheetState] = useState<SheetState>(null)
+  const [recurringFilter, setRecurringFilter] = useState<RecurringFilter>('all')
+  const [isExporting, setIsExporting] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const queryClient = useQueryClient()
+  const router = useRouter()
 
   const { data: accounts = [] } = useAccounts()
   const { data: categories = [] } = useCategories()
   const { data: recurringRules = [] } = useRecurringRules()
+  const filteredRules =
+    recurringFilter === 'all'
+      ? recurringRules
+      : recurringRules.filter((r) => r.type === recurringFilter)
   const createRecurringRule = useCreateRecurringRule()
   const updateRecurringRule = useUpdateRecurringRule()
 
   async function handleRecurringSubmit(values: CreateRecurringRuleInput) {
-    if (sheetState?.mode === 'edit') {
-      await updateRecurringRule.mutateAsync({
-        id: sheetState.rule.id,
-        changes: values,
-      })
-    } else {
-      await createRecurringRule.mutateAsync(values)
+    try {
+      if (sheetState?.mode === 'edit') {
+        await updateRecurringRule.mutateAsync({
+          id: sheetState.rule.id,
+          changes: values,
+        })
+        toast.success('Recurring rule updated')
+      } else {
+        await createRecurringRule.mutateAsync(values)
+        toast.success('Recurring rule added')
+      }
+      setSheetState(null)
+    } catch {
+      toast.error(
+        sheetState?.mode === 'edit'
+          ? 'Failed to update recurring rule'
+          : 'Failed to add recurring rule',
+      )
     }
-    setSheetState(null)
   }
+
+  async function handleExport() {
+    setIsExporting(true)
+    try {
+      await exportData()
+      toast.success('Backup downloaded')
+    } catch {
+      toast.error('Export failed. Please try again.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  async function handleImportFileChange(
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const payload = await parseImportFile(file)
+      setSheetState({ mode: 'import-confirm', payload })
+    } catch {
+      toast.error(
+        'Invalid file. Make sure you select a Finance Tracker backup.',
+      )
+    }
+  }
+
+  async function handleImportConfirm(payload: ExportPayload) {
+    setIsImporting(true)
+    try {
+      await importData(payload)
+      queryClient.clear()
+      setSheetState(null)
+      toast.success('Data restored successfully')
+      void router.navigate({ to: '/dashboard' })
+    } catch {
+      toast.error('Import failed. Your data was not changed.')
+      setSheetState(null)
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
+  const { installState, triggerInstall } = useInstallPrompt()
 
   const recurringType =
     sheetState?.mode === 'edit'
@@ -62,27 +140,88 @@ function SettingsRoute() {
   return (
     <>
       <div className="space-y-8">
-        <div className="space-y-3">
-          <SectionHeader title="Appearance" />
-          <div className="rounded-2xl bg-card p-4">
-            <p className="mb-3 text-sm font-medium text-secondary-foreground">
-              Theme
-            </p>
-            <ThemeToggle />
+        {installState !== 'unavailable' && (
+          <div className="space-y-3">
+            <SectionHeader title="Install App" />
+            <div className="bg-card space-y-3 rounded-2xl p-4 shadow">
+              {installState === 'standalone' && (
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="text-primary size-5 shrink-0" />
+                  <div>
+                    <p className="text-foreground text-sm font-medium">
+                      Already installed
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      You're running Finance Tracker as an installed app.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {installState === 'promptable' && (
+                <>
+                  <p className="text-muted-foreground text-sm">
+                    Install Finance Tracker on your device for quick access,
+                    offline support, and a full-screen experience.
+                  </p>
+                  <Button
+                    onClick={() => void triggerInstall()}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="size-4" />
+                    Install App
+                  </Button>
+                </>
+              )}
+
+              {installState === 'ios' && (
+                <>
+                  <p className="text-muted-foreground text-sm">
+                    Install Finance Tracker on your iPhone or iPad for quick
+                    access and a full-screen experience.
+                  </p>
+                  <ol className="space-y-2">
+                    {[
+                      {
+                        icon: Share,
+                        text: "Tap the Share button in Safari's toolbar",
+                      },
+                      {
+                        icon: null,
+                        text: 'Scroll down and tap "Add to Home Screen"',
+                      },
+                      { icon: null, text: 'Tap "Add" to confirm' },
+                    ].map((step, i) => (
+                      <li
+                        key={i}
+                        className="text-secondary-foreground flex items-start gap-3 text-sm"
+                      >
+                        <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+                          {i + 1}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          {step.text}
+                          {step.icon && (
+                            <step.icon className="inline size-3.5 shrink-0" />
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="space-y-3">
           <SectionHeader title="Accounts" />
-          <div className="rounded-2xl bg-card p-4">
-            <p className="mb-3 text-sm text-muted-foreground">
+          <div className="bg-card rounded-2xl p-4 shadow">
+            <p className="text-muted-foreground mb-3 text-sm">
               Manage accounts and per-account safety buffers from the Accounts
               tab.
             </p>
-            <Link
-              to="/accounts"
-              className={PRIMARY_LINK_BUTTON_CLS}
-            >
+            <Link to="/accounts" className={PRIMARY_LINK_BUTTON_CLS}>
               Open Accounts
             </Link>
           </div>
@@ -94,60 +233,111 @@ function SettingsRoute() {
             action={
               <div className="flex items-center gap-2">
                 <Button
-                  onClick={() => setSheetState({ mode: 'create', type: 'income' })}
+                  onClick={() =>
+                    setSheetState({ mode: 'create', type: 'income' })
+                  }
                   variant="inline-primary"
                 >
                   <Plus className="size-3.5" />
                   Income
                 </Button>
                 <Button
-                  onClick={() => setSheetState({ mode: 'create', type: 'expense' })}
+                  onClick={() =>
+                    setSheetState({ mode: 'create', type: 'expense' })
+                  }
                   variant="inline-secondary"
                 >
-                  <Plus className="size-3.5" />
+                  <Minus className="size-3.5" />
                   Expense
                 </Button>
               </div>
             }
           />
-          {recurringRules.length === 0 ? (
+          <div className="no-scrollbar flex gap-2 overflow-x-auto px-0.5 py-1">
+            {(
+              [
+                { label: 'All', value: 'all' },
+                { label: 'Income', value: 'income' },
+                { label: 'Expense', value: 'expense' },
+              ] as { label: string; value: RecurringFilter }[]
+            ).map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setRecurringFilter(tab.value)}
+                className={cn(
+                  'focus-visible:ring-ring focus-visible:ring-offset-background shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                  recurringFilter === tab.value
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-secondary-foreground',
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          {filteredRules.length === 0 ? (
             <EmptyState
-              title="No recurring transactions"
+              title={
+                recurringFilter === 'all'
+                  ? 'No recurring transactions'
+                  : `No ${recurringFilter} rules`
+              }
               description="Add expected salary or fixed expenses for forecasting."
             />
           ) : (
             <RecurringRuleList
-              rules={recurringRules}
+              rules={filteredRules}
+              categories={categories}
               onSelect={(rule) => setSheetState({ mode: 'edit', rule })}
             />
           )}
         </div>
 
         <div className="space-y-3">
-          <SectionHeader title="Data" />
-          <div className="rounded-2xl bg-card p-4">
-            <p className="mb-3 text-xs text-muted-foreground/70">
-              Export and import coming in Phase 5.
+          <SectionHeader title="Appearance" />
+          <div className="bg-card rounded-2xl p-4 shadow">
+            <p className="text-secondary-foreground mb-3 text-sm font-medium">
+              Theme
             </p>
+            <ThemeToggle />
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <SectionHeader title="Data" />
+          <div className="bg-card space-y-3 rounded-2xl p-4 shadow">
+            <InfoBanner message="Your data is stored locally on this device and browser. Clearing browser data or uninstalling the app may remove it. Export backups regularly." />
             <div className="flex gap-3">
-              <button
-                disabled
-                className={DISABLED_BUTTON_CLS}
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={handleExport}
+                disabled={isExporting}
               >
-                Export JSON
-              </button>
-              <button
-                disabled
-                className={DISABLED_BUTTON_CLS}
+                {isExporting ? 'Exporting…' : 'Export JSON'}
+              </Button>
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isImporting}
               >
-                Import JSON
-              </button>
+                {isImporting ? 'Importing…' : 'Import JSON'}
+              </Button>
             </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json,application/json"
+              className="sr-only"
+              onChange={handleImportFileChange}
+            />
           </div>
         </div>
       </div>
 
-      {sheetState && (
+      {(sheetState?.mode === 'create' || sheetState?.mode === 'edit') && (
         <BottomSheet
           title={
             sheetState.mode === 'edit'
@@ -167,10 +357,47 @@ function SettingsRoute() {
             }
             onSubmit={handleRecurringSubmit}
             onCancel={() => setSheetState(null)}
-            submitLabel={
-              sheetState.mode === 'edit' ? 'Save Changes' : 'Save'
-            }
+            submitLabel={'Save'}
           />
+        </BottomSheet>
+      )}
+
+      {sheetState?.mode === 'import-confirm' && (
+        <BottomSheet
+          title="Replace all data?"
+          onClose={() => setSheetState(null)}
+        >
+          <div className="space-y-4">
+            <p className="text-muted-foreground text-sm">
+              This will overwrite all your current data with the backup. This
+              cannot be undone.
+            </p>
+            <ul className="text-foreground space-y-1 text-sm">
+              <li>{sheetState.payload.accounts.length} accounts</li>
+              <li>{sheetState.payload.transactions.length} transactions</li>
+              <li>{sheetState.payload.goals.length} goals</li>
+              <li>{sheetState.payload.budgets.length} budgets</li>
+              <li>
+                {sheetState.payload.recurringRules.length} recurring rules
+              </li>
+            </ul>
+            <div className="flex gap-3">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setSheetState(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="secondary"
+                className="text-destructive flex-1"
+                onClick={() => handleImportConfirm(sheetState.payload)}
+              >
+                Replace All Data
+              </Button>
+            </div>
+          </div>
         </BottomSheet>
       )}
     </>

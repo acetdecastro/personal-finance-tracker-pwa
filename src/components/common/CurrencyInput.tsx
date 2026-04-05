@@ -1,14 +1,12 @@
-import type {
-  ChangeEvent,
-  FocusEvent,
-  InputHTMLAttributes,
-} from 'react'
+import type { ChangeEvent, FocusEvent, InputHTMLAttributes } from 'react'
 import { useEffect, useState } from 'react'
 import { Input } from '#/components/common/Input'
 import { cn } from '#/lib/utils/cn'
 
-interface CurrencyInputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'inputMode'> {
+interface CurrencyInputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'inputMode'
+> {
   symbol?: string
 }
 
@@ -79,12 +77,16 @@ export function CurrencyInput({
   }, [rawValue])
 
   const shouldShowPlaceholder =
-    !hasInteracted && (rawValue === '' || rawValue === '0' || rawValue === '0.00')
+    !hasInteracted &&
+    (rawValue === '' || rawValue === '0' || rawValue === '0.00')
   const displayValue = shouldShowPlaceholder
     ? ''
     : formatCurrencyDisplay(rawValue)
 
-  function emitChange(nextRawValue: string, event: ChangeEvent<HTMLInputElement>) {
+  function emitChange(
+    nextRawValue: string,
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
     if (!onChange) return
 
     const nextEvent = {
@@ -98,14 +100,14 @@ export function CurrencyInput({
 
   return (
     <div className="relative">
-      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
+      <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-sm font-medium">
         {symbol}
       </span>
       <Input
         {...props}
         type="text"
         inputMode="decimal"
-        className={cn('pl-8 pr-4', className)}
+        className={cn('pr-4 pl-8', className)}
         placeholder={placeholder}
         value={displayValue}
         onChange={(event) => {

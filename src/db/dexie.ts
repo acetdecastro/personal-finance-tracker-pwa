@@ -11,7 +11,7 @@ import type {
 } from '#/types/domain'
 
 export const APP_DB_NAME = 'personal-finance-tracker-pwa'
-export const APP_SCHEMA_VERSION = 2
+export const APP_SCHEMA_VERSION = 4
 
 export class FinanceTrackerDatabase extends Dexie {
   accounts!: EntityTable<Account, 'id'>
@@ -56,9 +56,9 @@ export class FinanceTrackerDatabase extends Dexie {
           | ({ minimumBuffer?: number } & Record<string, unknown>)
           | undefined
         const legacyMinimumBuffer = settings?.minimumBuffer ?? 0
-        const accounts = (await transaction.table('accounts').toArray()) as Array<
-          Record<string, unknown>
-        >
+        const accounts = (await transaction
+          .table('accounts')
+          .toArray()) as Array<Record<string, unknown>>
 
         let hasAssignedLegacyBuffer = false
 
@@ -81,6 +81,67 @@ export class FinanceTrackerDatabase extends Dexie {
         if (settings && 'minimumBuffer' in settings) {
           const { minimumBuffer: _minimumBuffer, ...nextSettings } = settings
           await transaction.table('userSettings').put(nextSettings)
+        }
+      })
+
+    this.version(3)
+      .stores({
+        accounts: 'id, name, type, isArchived, createdAt, updatedAt',
+        categories: 'id, name, type, isSystem, createdAt, updatedAt',
+        transactions:
+          'id, type, categoryId, accountId, fromAccountId, toAccountId, goalId, transactionDate, recurringRuleId, createdAt, updatedAt',
+        recurringRules:
+          'id, type, categoryId, accountId, cadence, nextOccurrenceDate, isActive, createdAt, updatedAt',
+        budgets: 'id, categoryId, periodType, createdAt, updatedAt',
+        goals: 'id, createdAt, updatedAt',
+        userSettings: 'id, createdAt, updatedAt',
+      })
+      .upgrade(async (transaction) => {
+        const transactions = (await transaction
+          .table('transactions')
+          .toArray()) as Array<Record<string, unknown>>
+
+        for (const item of transactions) {
+          await transaction.table('transactions').put({
+            ...item,
+            goalId: 'goalId' in item ? (item.goalId ?? null) : null,
+          })
+        }
+      })
+
+    this.version(4)
+      .stores({
+        accounts: 'id, name, type, isArchived, createdAt, updatedAt',
+        categories: 'id, name, type, isSystem, createdAt, updatedAt',
+        transactions:
+          'id, type, categoryId, accountId, fromAccountId, toAccountId, goalId, goalTransferDirection, transactionDate, recurringRuleId, createdAt, updatedAt',
+        recurringRules:
+          'id, type, categoryId, accountId, cadence, nextOccurrenceDate, isActive, createdAt, updatedAt',
+        budgets: 'id, categoryId, periodType, createdAt, updatedAt',
+        goals: 'id, createdAt, updatedAt',
+        userSettings: 'id, createdAt, updatedAt',
+      })
+      .upgrade(async (transaction) => {
+        const transactions = (await transaction
+          .table('transactions')
+          .toArray()) as Array<Record<string, unknown>>
+
+        for (const item of transactions) {
+          const goalId = 'goalId' in item ? (item.goalId ?? null) : null
+          const goalTransferDirection =
+            'goalTransferDirection' in item
+              ? (item.goalTransferDirection ?? null)
+              : goalId
+                ? item.toAccountId
+                  ? 'out'
+                  : 'in'
+                : null
+
+          await transaction.table('transactions').put({
+            ...item,
+            goalId,
+            goalTransferDirection,
+          })
         }
       })
   }

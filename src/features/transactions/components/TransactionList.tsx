@@ -1,33 +1,34 @@
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Trash2 } from 'lucide-react'
-import type { Account, Category, Transaction } from '#/types/domain'
+import { ArrowUpRight, ArrowUp, ArrowDown } from 'lucide-react'
+import type { Account, Category, Goal, Transaction } from '#/types/domain'
 import { formatPhpCurrency } from '#/lib/format/number.utils'
-import { formatDisplayDate } from '#/lib/dates'
-import { cn } from '#/lib/utils/cn'
+import { formatCompactDisplayDate } from '#/lib/dates'
+import { TransactionRow } from './TransactionRow'
 
 interface TransactionListProps {
   transactions: Transaction[]
   accounts: Account[]
   categories: Category[]
-  onDelete?: (id: string) => void
+  goals?: Goal[]
+  onEdit?: (transaction: Transaction) => void
 }
 
-const TYPE_CONFIG = {
+export const TYPE_CONFIG = {
   income: {
-    Icon: ArrowDownLeft,
+    Icon: ArrowUp,
     color: 'text-primary',
     bg: 'bg-primary-subtle',
     sign: '+',
     amountColor: 'text-primary',
   },
   expense: {
-    Icon: ArrowUpRight,
+    Icon: ArrowDown,
     color: 'text-muted-foreground',
     bg: 'bg-muted',
     sign: '-',
-    amountColor: 'text-foreground',
+    amountColor: 'text-warning',
   },
   transfer: {
-    Icon: ArrowLeftRight,
+    Icon: ArrowUpRight,
     color: 'text-accent',
     bg: 'bg-accent-subtle',
     sign: '',
@@ -35,61 +36,114 @@ const TYPE_CONFIG = {
   },
 } as const
 
+function getTransactionLabel(
+  transaction: Transaction,
+  categoryName: string | null,
+  goalMap: Map<string, Goal>,
+) {
+  if (transaction.type === 'transfer') {
+    if (transaction.goalId) {
+      return `${transaction.goalTransferDirection === 'out' ? 'Goal Transfer Out' : 'Goal Savings'} · ${goalMap.get(transaction.goalId)?.name ?? 'Deleted Goal'}`
+    }
+
+    if (transaction.note) {
+      return transaction.note
+    }
+
+    if (categoryName) {
+      return categoryName
+    }
+
+    return 'Transfer'
+  }
+
+  if (categoryName) {
+    return categoryName
+  }
+
+  if (transaction.note) {
+    return transaction.note
+  }
+
+  return transaction.type
+}
+
+function getTransactionSubLabel(
+  transaction: Transaction,
+  accountMap: Map<string, Account>,
+) {
+  if (transaction.type === 'transfer') {
+    const fromAccountName = transaction.fromAccountId
+      ? (accountMap.get(transaction.fromAccountId)?.name ?? null)
+      : null
+    const toAccountName = transaction.toAccountId
+      ? (accountMap.get(transaction.toAccountId)?.name ?? null)
+      : null
+
+    if (fromAccountName && toAccountName) {
+      return `From ${fromAccountName} to ${toAccountName}`
+    }
+
+    if (
+      transaction.goalId &&
+      transaction.goalTransferDirection === 'out' &&
+      toAccountName
+    ) {
+      return `To ${toAccountName}`
+    }
+
+    if (fromAccountName) {
+      return `From ${fromAccountName}`
+    }
+
+    if (toAccountName) {
+      return `To ${toAccountName}`
+    }
+
+    return 'Transfer'
+  }
+
+  return transaction.accountId
+    ? (accountMap.get(transaction.accountId)?.name ?? null)
+    : null
+}
+
 export function TransactionList({
   transactions,
   accounts,
   categories,
-  onDelete,
+  goals = [],
+  onEdit,
 }: TransactionListProps) {
   const accountMap = new Map(accounts.map((a) => [a.id, a]))
   const categoryMap = new Map(categories.map((c) => [c.id, c]))
+  const goalMap = new Map(goals.map((goal) => [goal.id, goal]))
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-4">
       {transactions.map((t) => {
         const cfg = TYPE_CONFIG[t.type]
         const Icon = cfg.Icon
-        const categoryName = t.categoryId ? categoryMap.get(t.categoryId)?.name : null
-        const accountName = t.accountId ? accountMap.get(t.accountId)?.name : null
+        const categoryName = t.categoryId
+          ? (categoryMap.get(t.categoryId)?.name ?? null)
+          : null
+        const subLabel = getTransactionSubLabel(t, accountMap)
+        const amountLabel = `${cfg.sign}${formatPhpCurrency(t.amount)}`
 
         return (
-          <div
+          <TransactionRow
             key={t.id}
-            className="flex items-center gap-3 rounded-2xl p-4 hover:bg-muted/50"
-          >
-            <div
-              className={cn(
-                'flex size-10 shrink-0 items-center justify-center rounded-xl',
-                cfg.bg,
-              )}
-            >
-              <Icon className={cn('size-5', cfg.color)} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-foreground">
-                {categoryName ?? t.note ?? t.type}
-              </p>
-              <p className="text-xs text-muted-foreground/70">
-                {accountName}
-                {accountName && t.transactionDate ? ' · ' : ''}
-                {formatDisplayDate(t.transactionDate)}
-              </p>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <p className={cn('text-sm font-bold', cfg.amountColor)}>
-                {cfg.sign}{formatPhpCurrency(t.amount)}
-              </p>
-              {onDelete && (
-                <button
-                  onClick={() => onDelete(t.id)}
-                  className="rounded-lg p-1 text-muted-foreground/40 transition hover:text-destructive"
-                  aria-label="Delete transaction"
-                >
-                  <Trash2 className="size-4" />
-                </button>
-              )}
-            </div>
-          </div>
+            className="bg-card p-4 shadow"
+            label={getTransactionLabel(t, categoryName, goalMap)}
+            subLabel={subLabel}
+            amountLabel={amountLabel}
+            rightSecondaryLabel={formatCompactDisplayDate(t.transactionDate)}
+            amountColor={cfg.amountColor}
+            Icon={Icon}
+            iconColor={cfg.color}
+            iconBg={cfg.bg}
+            onPress={onEdit ? () => onEdit(t) : undefined}
+          />
         )
       })}
     </div>

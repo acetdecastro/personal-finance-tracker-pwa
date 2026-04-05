@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { calculateCurrentBalance, calculateForecastSummary } from './forecast.service'
+import {
+  calculateCurrentBalance,
+  calculateForecastSummary,
+} from './forecast.service'
 import type { Account, RecurringRule, Transaction } from '#/types/domain'
 
 const account: Account = {
@@ -22,6 +25,7 @@ const transactions: Transaction[] = [
     accountId: 'account-1',
     fromAccountId: null,
     toAccountId: null,
+    goalTransferDirection: null,
     note: null,
     transactionDate: '2026-04-01T00:00:00.000Z',
     recurringRuleId: null,
@@ -36,6 +40,7 @@ const transactions: Transaction[] = [
     accountId: 'account-1',
     fromAccountId: null,
     toAccountId: null,
+    goalTransferDirection: null,
     note: null,
     transactionDate: '2026-04-02T00:00:00.000Z',
     recurringRuleId: null,
@@ -100,5 +105,44 @@ describe('forecast.service', () => {
     expect(summary.projectedBalance14d).toBe(2000)
     expect(summary.projectedBalance30d).toBe(3000)
     expect(summary.lowestProjectedBalance30d).toBe(1000)
+  })
+
+  it('subtracts goal savings in and adds goal transfers out', () => {
+    const goalTransactions: Transaction[] = [
+      {
+        id: 'tx-goal-in',
+        type: 'transfer',
+        amount: 300,
+        categoryId: 'category-transfer-transfer',
+        accountId: null,
+        fromAccountId: 'account-1',
+        toAccountId: null,
+        goalId: 'goal-1',
+        goalTransferDirection: 'in',
+        note: 'Goal Savings · Emergency Fund',
+        transactionDate: '2026-04-03T00:00:00.000Z',
+        recurringRuleId: null,
+        createdAt: '2026-04-03T00:00:00.000Z',
+        updatedAt: '2026-04-03T00:00:00.000Z',
+      },
+      {
+        id: 'tx-goal-out',
+        type: 'transfer',
+        amount: 100,
+        categoryId: 'category-transfer-transfer',
+        accountId: null,
+        fromAccountId: null,
+        toAccountId: 'account-1',
+        goalId: 'goal-1',
+        goalTransferDirection: 'out',
+        note: 'Goal Transfer Out · Emergency Fund',
+        transactionDate: '2026-04-04T00:00:00.000Z',
+        recurringRuleId: null,
+        createdAt: '2026-04-04T00:00:00.000Z',
+        updatedAt: '2026-04-04T00:00:00.000Z',
+      },
+    ]
+
+    expect(calculateCurrentBalance([account], goalTransactions)).toBe(800)
   })
 })

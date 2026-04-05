@@ -1,6 +1,9 @@
 import { isStoredDateString } from '#/lib/dates'
 import { z } from 'zod'
 
+export const ENTITY_NAME_MAX_LENGTH = 30
+export const MONEY_MAX_AMOUNT = 99_999_999
+
 export const entityIdSchema = z.string().trim().min(1).max(120)
 
 export const storedDateSchema = z.string().refine(isStoredDateString, {
@@ -12,18 +15,27 @@ export const timestampFieldsSchema = z.object({
   updatedAt: storedDateSchema,
 })
 
-export const trimmedNameSchema = z.string().trim().min(1).max(120)
-
-export const optionalNoteSchema = z
+export const trimmedNameSchema = z
   .string()
   .trim()
-  .max(500)
-  .nullable()
+  .min(1, 'Name is required')
+  .max(
+    ENTITY_NAME_MAX_LENGTH,
+    `Name must be ${ENTITY_NAME_MAX_LENGTH} characters or fewer`,
+  )
 
-export const moneySchema = z.number().finite()
+export const optionalNoteSchema = z.string().trim().max(500).nullable()
 
-export const nonNegativeMoneySchema = z.number().finite().min(0)
+export const moneySchema = z
+  .number()
+  .finite()
+  .max(
+    MONEY_MAX_AMOUNT,
+    `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`,
+  )
 
-export const positiveMoneySchema = z.number().finite().positive()
+export const nonNegativeMoneySchema = moneySchema.min(0)
+
+export const positiveMoneySchema = moneySchema.positive()
 
 export const dayOfMonthSchema = z.number().int().min(1).max(31)

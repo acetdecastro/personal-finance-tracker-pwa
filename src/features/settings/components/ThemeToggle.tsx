@@ -1,6 +1,7 @@
 import { Sun, Moon, Monitor } from 'lucide-react'
 import { cn } from '#/lib/utils/cn'
 import { useUIStore } from '#/stores/ui-store'
+import { Button } from '#/components/common/Button'
 
 type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -16,7 +17,7 @@ export function ThemeToggle() {
   return (
     <div className="grid grid-cols-3 gap-2">
       {THEME_OPTIONS.map(({ value, label, Icon }) => (
-        <button
+        <Button
           key={value}
           onClick={() => setThemeMode(value)}
           className={cn(
@@ -28,7 +29,7 @@ export function ThemeToggle() {
         >
           <Icon className="size-4" />
           {label}
-        </button>
+        </Button>
       ))}
     </div>
   )

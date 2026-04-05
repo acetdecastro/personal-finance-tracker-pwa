@@ -53,8 +53,12 @@ describe('transactionService', () => {
     const options = await transactionService.getFormOptions()
 
     expect(options.accountOptions).toHaveLength(1)
-    expect(options.expenseCategoryOptions.some((option) => option.label === 'Food')).toBe(true)
-    expect(options.incomeCategoryOptions.some((option) => option.label === 'Salary')).toBe(true)
+    expect(
+      options.expenseCategoryOptions.some((option) => option.label === 'Food'),
+    ).toBe(true)
+    expect(
+      options.incomeCategoryOptions.some((option) => option.label === 'Salary'),
+    ).toBe(true)
     expect(options.incomeRecurringTransactionOptions[0]?.label).toBe('Salary')
   })
 

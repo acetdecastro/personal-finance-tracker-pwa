@@ -14,8 +14,12 @@ export function useOnboardingBootstrap() {
 export function useCompleteOnboarding() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: CompleteOnboardingInput) => onboardingService.complete(input),
+    mutationFn: (input: CompleteOnboardingInput) =>
+      onboardingService.complete(input),
     onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ONBOARDING_BOOTSTRAP_QUERY_KEY,
+      })
       queryClient.invalidateQueries({ queryKey: ['user-settings'] })
       queryClient.invalidateQueries({ queryKey: ['settings-screen'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })

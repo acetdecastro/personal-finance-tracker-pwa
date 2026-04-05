@@ -24,7 +24,9 @@ export function calculateBudgetSnapshots({
   referenceDate,
 }: CalculateBudgetSnapshotsInput): BudgetSnapshotDto[] {
   const monthReference = toDate(referenceDate)
-  const categoryMap = new Map(categories.map((category) => [category.id, category]))
+  const categoryMap = new Map(
+    categories.map((category) => [category.id, category]),
+  )
 
   return budgets.map((budget) => {
     const spentAmount = transactions

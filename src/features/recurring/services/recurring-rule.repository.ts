@@ -1,6 +1,10 @@
 import type { FinanceTrackerDatabase } from '#/db/dexie'
 import { db } from '#/db/dexie'
-import { createEntityId, createTimestamps, touchUpdatedAt } from '#/lib/utils/entity'
+import {
+  createEntityId,
+  createTimestamps,
+  touchUpdatedAt,
+} from '#/lib/utils/entity'
 import type { RecurringRule } from '#/types/domain'
 import {
   createRecurringRuleInputSchema,
@@ -25,7 +29,9 @@ export function createRecurringRuleRepository(
 
     async getById(id: string): Promise<RecurringRule | undefined> {
       const recurringRule = await database.recurringRules.get(id)
-      return recurringRule ? recurringRuleSchema.parse(recurringRule) : undefined
+      return recurringRule
+        ? recurringRuleSchema.parse(recurringRule)
+        : undefined
     },
 
     async create(input: CreateRecurringRuleInput): Promise<RecurringRule> {

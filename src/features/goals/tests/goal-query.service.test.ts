@@ -12,7 +12,7 @@ afterEach(async () => {
 })
 
 describe('goalQueryService', () => {
-  it('returns the first goal as the primary goal snapshot', async () => {
+  it('returns goal snapshots for all saved goals', async () => {
     const database = createTestDatabase()
     databases.push(database)
 
@@ -26,9 +26,21 @@ describe('goalQueryService', () => {
       targetDate: null,
     })
 
-    const snapshot = await goalQueryService.getPrimaryGoalSnapshot()
+    await goalRepository.create({
+      name: 'Travel Fund',
+      targetAmount: 5000,
+      currentAmount: 1000,
+      targetDate: null,
+    })
 
-    expect(snapshot?.name).toBe('Emergency Fund')
-    expect(snapshot?.percentComplete).toBe(25)
+    const snapshots = await goalQueryService.listGoalSnapshots()
+
+    expect(snapshots).toHaveLength(2)
+    expect(
+      snapshots.some(
+        (snapshot) =>
+          snapshot.name === 'Emergency Fund' && snapshot.percentComplete === 25,
+      ),
+    ).toBe(true)
   })
 })

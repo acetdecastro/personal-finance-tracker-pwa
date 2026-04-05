@@ -20,7 +20,7 @@ This app must adhere to:
 - **Zustand**
 - **vite-plugin-pwa**
 - **No React Hook Form**
-- Global date display/input convention: **`MMM DD 'YY, AA:CC AM/PM`** (Apr 01 '26, 10:00 AM). Use complete ISOString when storing ("2011-10-05T14:48:00.000Z")
+- Global date display/input convention: **`MM/DD/YYYY`** (04/01/2026). Use complete ISOString when storing ("2011-10-05T14:48:00.000Z")
 
 ## Product intent
 
@@ -186,108 +186,108 @@ Implement these entities.
 
 ```ts
 type Account = {
-  id: string;
-  name: string;
-  type: "cash" | "bank" | "ewallet" | "other";
-  initialBalance: number;
-  isArchived: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+  id: string
+  name: string
+  type: 'cash' | 'bank' | 'ewallet' | 'other'
+  initialBalance: number
+  isArchived: boolean
+  createdAt: string
+  updatedAt: string
+}
 ```
 
 ### Category
 
 ```ts
 type Category = {
-  id: string;
-  name: string;
-  type: "income" | "expense";
-  isSystem: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+  id: string
+  name: string
+  type: 'income' | 'expense'
+  isSystem: boolean
+  createdAt: string
+  updatedAt: string
+}
 ```
 
 ### Transaction
 
 ```ts
 type Transaction = {
-  id: string;
-  type: "income" | "expense" | "transfer";
-  amount: number;
-  categoryId: string | null;
-  accountId: string | null;
-  fromAccountId: string | null;
-  toAccountId: string | null;
-  note: string | null;
-  transactionDate: string;
-  recurringRuleId: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+  id: string
+  type: 'income' | 'expense' | 'transfer'
+  amount: number
+  categoryId: string | null
+  accountId: string | null
+  fromAccountId: string | null
+  toAccountId: string | null
+  note: string | null
+  transactionDate: string
+  recurringRuleId: string | null
+  createdAt: string
+  updatedAt: string
+}
 ```
 
 ### RecurringRule
 
 ```ts
 type RecurringRule = {
-  id: string;
-  name: string;
-  type: "income" | "expense";
-  amount: number;
-  categoryId: string;
-  accountId: string;
-  cadence: "weekly" | "semi-monthly" | "monthly";
-  semiMonthlyDays: number[] | null;
-  monthlyDay: number | null;
-  weeklyInterval: number | null;
-  nextOccurrenceDate: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+  id: string
+  name: string
+  type: 'income' | 'expense'
+  amount: number
+  categoryId: string
+  accountId: string
+  cadence: 'weekly' | 'semi-monthly' | 'monthly'
+  semiMonthlyDays: number[] | null
+  monthlyDay: number | null
+  weeklyInterval: number | null
+  nextOccurrenceDate: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
 ```
 
 ### Budget
 
 ```ts
 type Budget = {
-  id: string;
-  categoryId: string;
-  amount: number;
-  periodType: "monthly";
-  createdAt: string;
-  updatedAt: string;
-};
+  id: string
+  categoryId: string
+  amount: number
+  periodType: 'monthly'
+  createdAt: string
+  updatedAt: string
+}
 ```
 
 ### Goal
 
 ```ts
 type Goal = {
-  id: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number | null;
-  targetDate: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+  id: string
+  name: string
+  targetAmount: number
+  currentAmount: number | null
+  targetDate: string | null
+  createdAt: string
+  updatedAt: string
+}
 ```
 
 ### UserSettings
 
 ```ts
 type UserSettings = {
-  id: "primary";
-  currency: "PHP";
-  minimumBuffer: number;
-  theme: "light" | "dark" | "system";
-  hasCompletedOnboarding: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+  id: 'primary'
+  currency: 'PHP'
+  minimumBuffer: number
+  theme: 'light' | 'dark' | 'system'
+  hasCompletedOnboarding: boolean
+  createdAt: string
+  updatedAt: string
+}
 ```
 
 ---
@@ -308,16 +308,16 @@ Suggested schema:
 
 ```ts
 db.version(1).stores({
-  accounts: "id, name, type, isArchived, createdAt, updatedAt",
-  categories: "id, name, type, isSystem, createdAt, updatedAt",
+  accounts: 'id, name, type, isArchived, createdAt, updatedAt',
+  categories: 'id, name, type, isSystem, createdAt, updatedAt',
   transactions:
-    "id, type, categoryId, accountId, transactionDate, recurringRuleId, createdAt, updatedAt",
+    'id, type, categoryId, accountId, transactionDate, recurringRuleId, createdAt, updatedAt',
   recurringRules:
-    "id, type, categoryId, accountId, cadence, nextOccurrenceDate, isActive, createdAt, updatedAt",
-  budgets: "id, categoryId, periodType, createdAt, updatedAt",
-  goals: "id, createdAt, updatedAt",
-  userSettings: "id, createdAt, updatedAt",
-});
+    'id, type, categoryId, accountId, cadence, nextOccurrenceDate, isActive, createdAt, updatedAt',
+  budgets: 'id, categoryId, periodType, createdAt, updatedAt',
+  goals: 'id, createdAt, updatedAt',
+  userSettings: 'id, createdAt, updatedAt',
+})
 ```
 
 ---
@@ -333,12 +333,12 @@ Use ISO-like date strings where appropriate for persistence and logic.
 ### UI-facing date format
 
 Every user-facing date must be rendered as:
-`MMM DD 'YY, AA:CC AM/PM`
+`MM/DD/YYYY`
 
 Examples:
 
-- `Nov 02 '26, 10:05 AM`
-- `Apr 16 '26, 11:35 PM`
+- `11/02/2026`
+- `04/16/2026`
 
 ### Input/output helpers
 
@@ -481,7 +481,7 @@ Forecast outputs:
 
 ```ts
 safeToSpend =
-  currentBalance - totalUpcomingFixedExpensesBeforeNextSalary - minimumBuffer;
+  currentBalance - totalUpcomingFixedExpensesBeforeNextSalary - minimumBuffer
 ```
 
 ---
@@ -492,46 +492,46 @@ Expose a stable DTO for the frontend:
 
 ```ts
 type DashboardData = {
-  currentBalance: number;
-  safeToSpend: number;
-  nextSalaryDate: string | null;
-  projectedBalance7d: number;
-  projectedBalance14d: number;
-  projectedBalance30d: number;
-  lowestProjectedBalance30d: number;
+  currentBalance: number
+  safeToSpend: number
+  nextSalaryDate: string | null
+  projectedBalance7d: number
+  projectedBalance14d: number
+  projectedBalance30d: number
+  lowestProjectedBalance30d: number
   upcomingBills: Array<{
-    id: string;
-    name: string;
-    amount: number;
-    date: string;
-  }>;
+    id: string
+    name: string
+    amount: number
+    date: string
+  }>
   budgets: Array<{
-    categoryId: string;
-    categoryName: string;
-    budgetAmount: number;
-    spentAmount: number;
-    remainingAmount: number;
-    percentUsed: number;
-    isOverBudget: boolean;
-  }>;
-  goal: {
-    id: string;
-    name: string;
-    targetAmount: number;
-    currentAmount: number;
-    remainingAmount: number;
-    percentComplete: number;
-  } | null;
+    categoryId: string
+    categoryName: string
+    budgetAmount: number
+    spentAmount: number
+    remainingAmount: number
+    percentUsed: number
+    isOverBudget: boolean
+  }>
+  goals: Array<{
+    id: string
+    name: string
+    targetAmount: number
+    currentAmount: number
+    remainingAmount: number
+    percentComplete: number
+  }>
   recentTransactions: Array<{
-    id: string;
-    type: "income" | "expense" | "transfer";
-    amount: number;
-    categoryName: string | null;
-    accountName: string | null;
-    note: string | null;
-    transactionDate: string;
-  }>;
-};
+    id: string
+    type: 'income' | 'expense' | 'transfer'
+    amount: number
+    categoryName: string | null
+    accountName: string | null
+    note: string | null
+    transactionDate: string
+  }>
+}
 ```
 
 Claude Code should build against this.
@@ -557,10 +557,10 @@ Metadata:
 
 ```ts
 type ExportMetadata = {
-  appVersion: string;
-  exportedAt: string;
-  schemaVersion: number;
-};
+  appVersion: string
+  exportedAt: string
+  schemaVersion: number
+}
 ```
 
 ### Import
@@ -731,7 +731,7 @@ You are allowed to create small supporting **skills, conventions, helper utiliti
    - validation rules
    - DTO mapping
    - testing patterns
-   - date handling when displaying an ISOString: (MMM DD 'YY, AA:CC AM/PM, ie: Apr 01 '26, 2:23 PM)
+   - date handling when displaying an ISOString: (MM/DD/YYYY, ie: 04/01/2026)
    - when storing date and time, store the complete ISOString ex: "2011-10-05T14:48:00.000Z"
    - query/mutation structure
    - UI composition consistency

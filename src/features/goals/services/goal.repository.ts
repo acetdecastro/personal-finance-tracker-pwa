@@ -1,6 +1,10 @@
 import type { FinanceTrackerDatabase } from '#/db/dexie'
 import { db } from '#/db/dexie'
-import { createEntityId, createTimestamps, touchUpdatedAt } from '#/lib/utils/entity'
+import {
+  createEntityId,
+  createTimestamps,
+  touchUpdatedAt,
+} from '#/lib/utils/entity'
 import type { Goal } from '#/types/domain'
 import {
   createGoalInputSchema,
@@ -50,6 +54,10 @@ export function createGoalRepository(database: FinanceTrackerDatabase = db) {
       await database.goals.put(nextGoal)
 
       return nextGoal
+    },
+
+    async remove(id: string): Promise<void> {
+      await database.goals.delete(id)
     },
 
     async put(goal: Goal): Promise<Goal> {

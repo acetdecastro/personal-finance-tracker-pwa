@@ -18,5 +18,6 @@ export const useFiltersStore = create<FiltersStore>((set) => ({
   setTransactionType: (transactionType) => set({ transactionType }),
   setAccountId: (accountId) => set({ accountId }),
   setCategoryId: (categoryId) => set({ categoryId }),
-  reset: () => set({ transactionType: null, accountId: null, categoryId: null }),
+  reset: () =>
+    set({ transactionType: null, accountId: null, categoryId: null }),
 }))

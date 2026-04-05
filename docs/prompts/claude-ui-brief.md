@@ -22,7 +22,7 @@ This app must adhere to:
 - **Zustand for UI state only**
 - **vite-plugin-pwa**
 - **No React Hook Form**
-- Global date display/input convention: **`MMM DD 'YY, AA:CC AM/PM`** (Apr 01 '26, 10:00 AM). Use complete ISOString when storing ("2011-10-05T14:48:00.000Z")
+- Global date display/input convention: **`MM/DD/YYYY`** (04/01/2026). Use complete ISOString when storing ("2011-10-05T14:48:00.000Z")
 
 ## Product intent
 
@@ -196,12 +196,12 @@ This is mandatory.
 ### Display format
 
 Every user-facing date must be rendered as:
-`MMM DD 'YY, AA:CC AM/PM`
+`MM/DD/YYYY`
 
 Examples:
 
-- `Nov 02 '26, 10:05 AM`
-- `Apr 16 '26, 11:35 PM`
+- `11/02/2026`
+- `04/16/2026`
 
 ### Form/input rule
 
@@ -210,9 +210,9 @@ If native date inputs are used behind the scenes, convert cleanly at boundaries.
 
 Do not mix:
 
-- `MM/DD/YYYY`
 - `YYYY-MM-DD`
 - `April 4, 2026`
+- `Apr 16 '26`
 
 Use one format consistently in cards, tables, lists, filters, and forms.
 
@@ -662,7 +662,7 @@ You are allowed to create small supporting **skills, conventions, helper utiliti
    - validation rules
    - DTO mapping
    - testing patterns
-   - date handling when displaying an ISOString: (MMM DD 'YY, AA:CC AM/PM, ie: Apr 02 '26, 2:23 PM)
+   - date handling when displaying an ISOString: (MM/DD/YYYY, ie: 04/02/2026)
    - query/mutation structure
    - UI composition consistency
 

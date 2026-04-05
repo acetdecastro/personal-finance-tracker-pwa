@@ -10,6 +10,8 @@ const defaultNumberFormatter = new Intl.NumberFormat('en-PH', {
   maximumFractionDigits: 2,
 })
 
+type CurrencyTextSizeVariant = 'hero' | 'summary' | 'list'
+
 function isFiniteNumber(value: number | null | undefined): value is number {
   return typeof value === 'number' && Number.isFinite(value)
 }
@@ -34,4 +36,20 @@ export function formatNumber(
   }
 
   return defaultNumberFormatter.format(value)
+}
+
+export function getCurrencyTextSizeClass(
+  formattedValue: string,
+  variant: CurrencyTextSizeVariant = 'list',
+): string {
+  const length = formattedValue.length
+
+  if (variant === 'hero') {
+    if (length >= 18) return 'text-xl'
+    if (length >= 14) return 'text-2xl'
+
+    return 'text-3xl'
+  }
+
+  return 'text-xs'
 }

@@ -12,6 +12,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean
 }
 
+const FOCUS_RING_CLS =
+  'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+
 const VARIANT_CLS: Record<NonNullable<ButtonProps['variant']>, string> = {
   primary:
     'rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50',
@@ -36,6 +39,7 @@ export function Button({
     <button
       type={type}
       className={cn(
+        FOCUS_RING_CLS,
         VARIANT_CLS[variant],
         fullWidth && variant !== 'fab' && 'flex-1',
         className,

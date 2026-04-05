@@ -1,6 +1,10 @@
 import type { FinanceTrackerDatabase } from '#/db/dexie'
 import { db } from '#/db/dexie'
-import { createEntityId, createTimestamps, touchUpdatedAt } from '#/lib/utils/entity'
+import {
+  createEntityId,
+  createTimestamps,
+  touchUpdatedAt,
+} from '#/lib/utils/entity'
 import type { Budget } from '#/types/domain'
 import {
   budgetListSchema,
@@ -53,6 +57,10 @@ export function createBudgetRepository(database: FinanceTrackerDatabase = db) {
       await database.budgets.put(nextBudget)
 
       return nextBudget
+    },
+
+    async remove(id: string): Promise<void> {
+      await database.budgets.delete(id)
     },
 
     async put(budget: Budget): Promise<Budget> {

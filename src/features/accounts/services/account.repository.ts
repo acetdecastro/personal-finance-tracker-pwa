@@ -1,6 +1,10 @@
 import type { FinanceTrackerDatabase } from '#/db/dexie'
 import { db } from '#/db/dexie'
-import { createEntityId, createTimestamps, touchUpdatedAt } from '#/lib/utils/entity'
+import {
+  createEntityId,
+  createTimestamps,
+  touchUpdatedAt,
+} from '#/lib/utils/entity'
 import type { Account } from '#/types/domain'
 import {
   accountListSchema,
@@ -55,6 +59,10 @@ export function createAccountRepository(database: FinanceTrackerDatabase = db) {
       await database.accounts.put(nextAccount)
 
       return nextAccount
+    },
+
+    async remove(id: string): Promise<void> {
+      await database.accounts.delete(id)
     },
 
     async put(account: Account): Promise<Account> {

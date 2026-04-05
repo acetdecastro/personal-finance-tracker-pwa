@@ -65,12 +65,13 @@ export const onboardingSalaryInputSchema = withRecurringCadenceValidation(
   }),
 )
 
-export const onboardingRecurringExpenseInputSchema = withRecurringCadenceValidation(
-  z.object({
-    ...onboardingRecurringDraftShape,
-    categoryId: entityIdSchema,
-  }),
-)
+export const onboardingRecurringExpenseInputSchema =
+  withRecurringCadenceValidation(
+    z.object({
+      ...onboardingRecurringDraftShape,
+      categoryId: entityIdSchema,
+    }),
+  )
 
 export const completeOnboardingInputSchema = z.object({
   primaryAccount: createAccountInputSchema,

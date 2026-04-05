@@ -17,9 +17,7 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
     name: 'Miscellaneous',
     type: 'expense',
   },
-] as const satisfies ReadonlyArray<
-  Pick<Category, 'id' | 'name' | 'type'>
->
+] as const satisfies ReadonlyArray<Pick<Category, 'id' | 'name' | 'type'>>
 
 export const DEFAULT_INCOME_CATEGORIES = [
   { id: 'category-income-salary', name: 'Salary', type: 'income' },
@@ -31,9 +29,14 @@ export const DEFAULT_INCOME_CATEGORIES = [
   },
 ] as const satisfies ReadonlyArray<Pick<Category, 'id' | 'name' | 'type'>>
 
+export const DEFAULT_TRANSFER_CATEGORIES = [
+  { id: 'category-transfer-transfer', name: 'Transfer', type: 'transfer' },
+] as const satisfies ReadonlyArray<Pick<Category, 'id' | 'name' | 'type'>>
+
 export const DEFAULT_CATEGORY_SEED = [
   ...DEFAULT_EXPENSE_CATEGORIES,
   ...DEFAULT_INCOME_CATEGORIES,
+  ...DEFAULT_TRANSFER_CATEGORIES,
 ]
 
 export const DEFAULT_USER_SETTINGS: Omit<

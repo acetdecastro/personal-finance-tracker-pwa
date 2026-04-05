@@ -5,7 +5,7 @@ import { createBudgetRepository } from '#/features/budgets/services/budget.repos
 import { calculateBudgetSnapshots } from '#/features/budgets/services/budget.service'
 import { createCategoryRepository } from '#/features/categories/services/category.repository'
 import { createGoalRepository } from '#/features/goals/services/goal.repository'
-import { calculateGoalSnapshot } from '#/features/goals/services/goal.service'
+import { calculateGoalSnapshots } from '#/features/goals/services/goal.service'
 import { createRecurringRuleRepository } from '#/features/recurring/services/recurring-rule.repository'
 import { createTransactionRepository } from '#/features/transactions/services/transaction.repository'
 import { calculateForecastSummary } from '#/services/forecast/forecast.service'
@@ -55,10 +55,13 @@ export function createDashboardQueryService(
         now: options.now,
       })
 
-      const accountMap = new Map(accounts.map((account) => [account.id, account.name]))
+      const accountMap = new Map(
+        accounts.map((account) => [account.id, account.name]),
+      )
       const categoryMap = new Map(
         categories.map((category) => [category.id, category.name]),
       )
+      const goalMap = new Map(goals.map((goal) => [goal.id, goal.name]))
 
       const recentTransactions: DashboardRecentTransactionDto[] = transactions
         .slice(0, 5)
@@ -71,8 +74,14 @@ export function createDashboardQueryService(
             : null,
           accountName: transaction.accountId
             ? (accountMap.get(transaction.accountId) ?? null)
-            : null,
-          note: transaction.note,
+            : transaction.toAccountId
+              ? (accountMap.get(transaction.toAccountId) ?? null)
+              : transaction.fromAccountId
+                ? (accountMap.get(transaction.fromAccountId) ?? null)
+                : null,
+          note: transaction.goalId
+            ? `${transaction.goalTransferDirection === 'out' ? 'Goal Transfer Out' : 'Goal Savings'} · ${goalMap.get(transaction.goalId) ?? 'Deleted Goal'}`
+            : transaction.note,
           transactionDate: transaction.transactionDate,
         }))
 
@@ -84,19 +93,21 @@ export function createDashboardQueryService(
         projectedBalance14d: forecast.projectedBalance14d,
         projectedBalance30d: forecast.projectedBalance30d,
         lowestProjectedBalance30d: forecast.lowestProjectedBalance30d,
-        upcomingBills: forecast.expenseOccurrences.slice(0, 5).map((occurrence) => ({
-          id: occurrence.id,
-          name: occurrence.name,
-          amount: occurrence.amount,
-          date: occurrence.date,
-        })),
+        upcomingBills: forecast.expenseOccurrences
+          .slice(0, 5)
+          .map((occurrence) => ({
+            id: occurrence.id,
+            name: occurrence.name,
+            amount: occurrence.amount,
+            date: occurrence.date,
+          })),
         budgets: calculateBudgetSnapshots({
           budgets,
           categories,
           transactions,
           referenceDate: options.now,
         }),
-        goal: calculateGoalSnapshot(goals[0]),
+        goals: calculateGoalSnapshots(goals, transactions),
         recentTransactions,
       }
     },

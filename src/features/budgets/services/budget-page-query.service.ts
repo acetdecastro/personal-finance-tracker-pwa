@@ -5,7 +5,7 @@ import { calculateBudgetSnapshots } from '#/features/budgets/services/budget.ser
 import { createCategoryQueryService } from '#/features/categories/services/category-query.service'
 import { createCategoryRepository } from '#/features/categories/services/category.repository'
 import { createGoalRepository } from '#/features/goals/services/goal.repository'
-import { calculateGoalSnapshot } from '#/features/goals/services/goal.service'
+import { calculateGoalSnapshots } from '#/features/goals/services/goal.service'
 import { createTransactionRepository } from '#/features/transactions/services/transaction.repository'
 import { seedCoreData } from '#/services/seed/seed.service'
 import type { BudgetPageDataDto } from '#/types/dto'
@@ -46,7 +46,7 @@ export function createBudgetPageQueryService(
           referenceDate: options.now,
         }),
         expenseCategoryOptions,
-        primaryGoal: calculateGoalSnapshot(goals[0]),
+        goals: calculateGoalSnapshots(goals, transactions),
       }
     },
   }

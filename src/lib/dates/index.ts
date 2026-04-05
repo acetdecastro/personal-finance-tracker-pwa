@@ -1,4 +1,5 @@
 export {
+  formatCompactDisplayDate,
   formatDisplayDate,
   formatDisplayDateTime,
   fromStoredDate,

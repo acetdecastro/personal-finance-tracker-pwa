@@ -68,7 +68,8 @@ function validateRecurringCadence<T extends z.ZodTypeAny>(schema: T) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['weeklyInterval'],
-          message: 'Monthly recurring rules must not set weekly or semi-monthly fields',
+          message:
+            'Monthly recurring rules must not set weekly or semi-monthly fields',
         })
       }
     }
@@ -86,15 +87,17 @@ function validateRecurringCadence<T extends z.ZodTypeAny>(schema: T) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['weeklyInterval'],
-          message: 'Semi-monthly recurring rules must not set weekly or monthly fields',
+          message:
+            'Semi-monthly recurring rules must not set weekly or monthly fields',
         })
       }
     }
   })
 }
 
-export const createRecurringRuleInputSchema =
-  validateRecurringCadence(recurringRuleBaseSchema)
+export const createRecurringRuleInputSchema = validateRecurringCadence(
+  recurringRuleBaseSchema,
+)
 
 export const updateRecurringRuleInputSchema = recurringRuleBaseSchema.partial()
 

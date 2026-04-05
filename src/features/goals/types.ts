@@ -1,1 +1,1 @@
-export type { GoalSnapshotDto } from '#/types/dto'
+export type { GoalSnapshotDto, GoalUsageDto } from '#/types/dto'

@@ -3,20 +3,35 @@ import { Button } from '#/components/common/Button'
 import { CurrencyInput } from '#/components/common/CurrencyInput'
 import { FormField } from '#/components/common/FormField'
 import { SelectInput } from '#/components/common/SelectInput'
+import { MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 import type { CategoryOptionDto } from '#/types/dto'
+import type { Budget } from '#/types/domain'
 import type { CreateBudgetInput } from '../schemas/budget.schemas'
 
 interface BudgetFormProps {
   categories: CategoryOptionDto[]
   onSubmit: (values: CreateBudgetInput) => Promise<void>
+  onDelete?: () => Promise<void>
   onCancel?: () => void
+  submitLabel?: string
+  initialValues?: Partial<Budget>
 }
 
-export function BudgetForm({ categories, onSubmit, onCancel }: BudgetFormProps) {
+export function BudgetForm({
+  categories,
+  onSubmit,
+  onDelete,
+  onCancel,
+  submitLabel = 'Save',
+  initialValues,
+}: BudgetFormProps) {
   const form = useForm({
     defaultValues: {
-      categoryId: '',
-      amount: '' as unknown as number,
+      categoryId: initialValues?.categoryId ?? '',
+      amount:
+        initialValues?.amount !== undefined
+          ? String(initialValues.amount)
+          : ('' as unknown as number),
     },
     onSubmit: async ({ value }) => {
       await onSubmit({
@@ -37,11 +52,20 @@ export function BudgetForm({ categories, onSubmit, onCancel }: BudgetFormProps) 
     >
       <form.Field
         name="categoryId"
-        validators={{ onChange: ({ value }) => !value ? 'Select a category' : undefined }}
+        validators={{
+          onChange: ({ value }) => (!value ? 'Select a category' : undefined),
+        }}
       >
         {(field) => (
-          <FormField label="Category" error={field.state.meta.errors[0]?.toString()} required>
+          <FormField
+            label="Category"
+            htmlFor="budget-category"
+            error={field.state.meta.errors[0]?.toString()}
+            required
+          >
             <SelectInput
+              id="budget-category"
+              name="budget-category"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
             >
@@ -62,15 +86,27 @@ export function BudgetForm({ categories, onSubmit, onCancel }: BudgetFormProps) 
           onChange: ({ value }) => {
             const n = Number(value)
             if (!value || isNaN(n) || n <= 0) return 'Enter a valid amount'
+            if (n > MONEY_MAX_AMOUNT) {
+              return `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`
+            }
             return undefined
           },
         }}
       >
         {(field) => (
-          <FormField label="Monthly Limit" error={field.state.meta.errors[0]?.toString()} required>
+          <FormField
+            label="Monthly Limit"
+            htmlFor="budget-amount"
+            error={field.state.meta.errors[0]?.toString()}
+            required
+          >
             <CurrencyInput
+              id="budget-amount"
+              name="budget-amount"
               value={field.state.value as unknown as string}
-              onChange={(e) => field.handleChange(e.target.value as unknown as number)}
+              onChange={(e) =>
+                field.handleChange(e.target.value as unknown as number)
+              }
               onBlur={field.handleBlur}
             />
           </FormField>
@@ -83,14 +119,26 @@ export function BudgetForm({ categories, onSubmit, onCancel }: BudgetFormProps) 
             Cancel
           </Button>
         )}
-        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+        {onDelete && (
+          <Button
+            onClick={() => void onDelete()}
+            variant="secondary"
+            className="bg-destructive/10 text-destructive hover:bg-destructive/15"
+            fullWidth
+          >
+            Delete
+          </Button>
+        )}
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+        >
           {([canSubmit, isSubmitting]) => (
             <Button
               type="submit"
               disabled={!canSubmit || isSubmitting}
               fullWidth
             >
-              {isSubmitting ? 'Saving…' : 'Set Budget'}
+              {isSubmitting ? 'Saving…' : submitLabel}
             </Button>
           )}
         </form.Subscribe>

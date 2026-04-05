@@ -1,13 +1,16 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createCategoryRepository } from '#/features/categories/services/category.repository'
 import { createUserSettingsRepository } from '#/features/settings/services/user-settings.repository'
+import { DEFAULT_TRANSFER_CATEGORIES } from '#/services/seed/seed-data'
 import { destroyTestDatabase, createTestDatabase } from '#/test/test-db'
 import { seedCoreData } from './seed.service'
 
 const databases: ReturnType<typeof createTestDatabase>[] = []
 
 afterEach(async () => {
-  await Promise.all(databases.splice(0).map((database) => destroyTestDatabase(database)))
+  await Promise.all(
+    databases.splice(0).map((database) => destroyTestDatabase(database)),
+  )
 })
 
 describe('seedCoreData', () => {
@@ -20,12 +23,21 @@ describe('seedCoreData', () => {
     const result = await seedCoreData(database)
     const categories = await categoryRepository.list()
     const settings = await userSettingsRepository.get()
+    const transferCategory = categories.find(
+      (category) => category.id === DEFAULT_TRANSFER_CATEGORIES[0].id,
+    )
 
     expect(result).toEqual({
-      createdCategories: 11,
+      createdCategories: 12,
       createdUserSettings: 1,
     })
-    expect(categories).toHaveLength(11)
+    expect(categories).toHaveLength(12)
+    expect(transferCategory).toMatchObject({
+      id: DEFAULT_TRANSFER_CATEGORIES[0].id,
+      name: 'Transfer',
+      type: 'transfer',
+      isSystem: true,
+    })
     expect(settings?.currency).toBe('PHP')
   })
 

@@ -23,7 +23,11 @@ function toDate(value: Date | string): Date {
   return value instanceof Date ? value : parseISO(value)
 }
 
-function setClampedDay(baseDate: Date, targetDay: number, sourceTime: Date): Date {
+function setClampedDay(
+  baseDate: Date,
+  targetDay: number,
+  sourceTime: Date,
+): Date {
   const clampedDay = Math.min(targetDay, getDaysInMonth(baseDate))
   const result = new Date(baseDate)
   result.setDate(clampedDay)
@@ -36,17 +40,26 @@ function setClampedDay(baseDate: Date, targetDay: number, sourceTime: Date): Dat
   return result
 }
 
-function nextOccurrenceDateForRule(rule: RecurringRule, currentDate: Date): Date {
+function nextOccurrenceDateForRule(
+  rule: RecurringRule,
+  currentDate: Date,
+): Date {
   if (rule.cadence === 'weekly') {
     return addWeeks(currentDate, rule.weeklyInterval ?? 1)
   }
 
   if (rule.cadence === 'monthly') {
     const nextMonth = addMonths(startOfMonth(currentDate), 1)
-    return setClampedDay(nextMonth, rule.monthlyDay ?? currentDate.getDate(), currentDate)
+    return setClampedDay(
+      nextMonth,
+      rule.monthlyDay ?? currentDate.getDate(),
+      currentDate,
+    )
   }
 
-  const configuredDays = [...(rule.semiMonthlyDays ?? [])].sort((left, right) => left - right)
+  const configuredDays = [...(rule.semiMonthlyDays ?? [])].sort(
+    (left, right) => left - right,
+  )
 
   if (configuredDays.length === 0) {
     throw new Error(`Semi-monthly recurring rule is missing days: ${rule.id}`)
@@ -125,5 +138,7 @@ export function expandRecurringOccurrences({
 
   return rules
     .flatMap((rule) => expandRecurringRule(rule, start, end, transactions))
-    .sort((left, right) => compareAsc(parseISO(left.date), parseISO(right.date)))
+    .sort((left, right) =>
+      compareAsc(parseISO(left.date), parseISO(right.date)),
+    )
 }

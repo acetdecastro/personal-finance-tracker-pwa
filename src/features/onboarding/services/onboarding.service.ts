@@ -6,13 +6,17 @@ import { createRecurringRuleRepository } from '#/features/recurring/services/rec
 import { createUserSettingsRepository } from '#/features/settings/services/user-settings.repository'
 import { mapSettingsToDto } from '#/features/settings/services/settings.service'
 import { seedCoreData } from '#/services/seed/seed.service'
-import type { CompleteOnboardingResultDto, OnboardingBootstrapDto } from '#/types/dto'
+import type {
+  CompleteOnboardingResultDto,
+  OnboardingBootstrapDto,
+} from '#/types/dto'
 import { completeOnboardingInputSchema } from '../schemas/onboarding.schemas'
 import type { CompleteOnboardingInput } from '../schemas/onboarding.schemas'
 
-export function createOnboardingService(
-  database: FinanceTrackerDatabase = db,
-) {
+export const ONBOARDING_ALREADY_COMPLETED_ERROR =
+  'Onboarding has already been completed.'
+
+export function createOnboardingService(database: FinanceTrackerDatabase = db) {
   const accountRepository = createAccountRepository(database)
   const recurringRuleRepository = createRecurringRuleRepository(database)
   const userSettingsRepository = createUserSettingsRepository(database)
@@ -57,6 +61,12 @@ export function createOnboardingService(
         database.recurringRules,
         database.userSettings,
         async () => {
+          const existingSettings = await userSettingsRepository.get()
+
+          if (existingSettings?.hasCompletedOnboarding) {
+            throw new Error(ONBOARDING_ALREADY_COMPLETED_ERROR)
+          }
+
           const primaryAccount = await accountRepository.create(
             values.primaryAccount,
           )
@@ -80,7 +90,6 @@ export function createOnboardingService(
             ),
           )
 
-          const existingSettings = await userSettingsRepository.get()
           const userSettings = existingSettings
             ? await userSettingsRepository.update({
                 hasCompletedOnboarding: true,

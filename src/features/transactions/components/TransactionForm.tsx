@@ -7,35 +7,87 @@ import { FormField } from '#/components/common/FormField'
 import { Input } from '#/components/common/Input'
 import { SelectInput } from '#/components/common/SelectInput'
 import { toStoredDate } from '#/lib/dates'
+import { MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 import { cn } from '#/lib/utils/cn'
-import type { TransactionType } from '#/types/domain'
+import type { Transaction, TransactionType } from '#/types/domain'
 import type { TransactionFormOptionsDto } from '../types'
 import type { CreateTransactionInput } from '../schemas/transaction.schemas'
 
 interface TransactionFormProps {
   formOptions: TransactionFormOptionsDto
   onSubmit: (values: CreateTransactionInput) => Promise<void>
+  onDelete?: () => Promise<void>
   onCancel?: () => void
+  submitLabel?: string
+  initialValues?: Partial<Transaction>
 }
 
 export function TransactionForm({
   formOptions,
   onSubmit,
+  onDelete,
   onCancel,
+  submitLabel = 'Save',
+  initialValues,
 }: TransactionFormProps) {
-  const todayForInput = format(new Date(), 'yyyy-MM-dd')
+  const todayForInput = format(
+    initialValues?.transactionDate
+      ? new Date(initialValues.transactionDate)
+      : new Date(),
+    'yyyy-MM-dd',
+  )
 
   const form = useForm({
     defaultValues: {
-      type: 'expense' as TransactionType,
-      amount: '' as unknown as number,
-      recurringTransactionId: '',
-      categoryId: '',
-      accountId: formOptions.accountOptions[0]?.value ?? '',
-      note: '',
+      type: initialValues?.type ?? ('expense' as TransactionType),
+      amount:
+        initialValues?.amount !== undefined
+          ? String(initialValues.amount)
+          : ('' as unknown as number),
+      recurringTransactionId: initialValues?.recurringRuleId ?? '',
+      categoryId: initialValues?.categoryId ?? '',
+      accountId:
+        initialValues?.accountId || formOptions.accountOptions[0]?.value || '',
+      fromAccountId: initialValues?.fromAccountId ?? '',
+      toAccountId: initialValues?.toAccountId ?? '',
+      goalId: initialValues?.goalId ?? '',
+      goalTransferDirection:
+        initialValues?.goalTransferDirection ??
+        (initialValues?.goalId
+          ? initialValues.toAccountId
+            ? 'out'
+            : 'in'
+          : ''),
+      note: initialValues?.note ?? '',
       date: todayForInput,
     },
     onSubmit: async ({ value }) => {
+      if (value.type === 'transfer') {
+        const input: CreateTransactionInput = {
+          type: 'transfer',
+          amount: Number(value.amount),
+          categoryId: formOptions.transferCategoryOption?.value ?? null,
+          accountId: null,
+          fromAccountId: value.fromAccountId || null,
+          toAccountId:
+            value.goalId && value.goalTransferDirection !== 'out'
+              ? null
+              : value.toAccountId || null,
+          goalId: value.goalId || null,
+          goalTransferDirection: value.goalId
+            ? ((value.goalTransferDirection || 'in') as 'in' | 'out')
+            : null,
+          note: value.note.trim() || null,
+          transactionDate: toStoredDate(
+            new Date(value.date + 'T00:00:00.000Z'),
+          ),
+          recurringRuleId: null,
+        }
+
+        await onSubmit(input)
+        return
+      }
+
       const categoryOptions =
         value.type === 'expense'
           ? formOptions.expenseCategoryOptions
@@ -49,7 +101,7 @@ export function TransactionForm({
           (option) => option.value === value.recurringTransactionId,
         ) ?? null
       const input: CreateTransactionInput = {
-        type: value.type as 'income' | 'expense',
+        type: value.type,
         amount: Number(value.amount),
         categoryId:
           value.categoryId ||
@@ -59,10 +111,10 @@ export function TransactionForm({
           value.accountId || selectedRecurringTransaction?.accountId || null,
         fromAccountId: null,
         toAccountId: null,
+        goalId: null,
+        goalTransferDirection: null,
         note: value.note.trim() || null,
-        transactionDate: toStoredDate(
-          new Date(value.date + 'T00:00:00.000Z'),
-        ),
+        transactionDate: toStoredDate(new Date(value.date + 'T00:00:00.000Z')),
         recurringRuleId: selectedRecurringTransaction?.value ?? null,
       }
       await onSubmit(input)
@@ -77,29 +129,33 @@ export function TransactionForm({
       }}
       className="space-y-4"
     >
-      {/* Type toggle */}
-      <form.Field name="type">
-        {(field) => (
-          <div className="grid grid-cols-2 gap-2">
-            {(['expense', 'income'] as const).map((t) => (
-              <Button
-                key={t}
-                onClick={() => field.handleChange(t)}
-                className={cn(
-                  'rounded-xl py-2.5 text-sm font-semibold capitalize transition active:scale-[0.98]',
-                  field.state.value === t
-                    ? t === 'expense'
-                      ? 'bg-destructive text-primary-foreground'
-                      : 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground',
-                )}
-              >
-                {t}
-              </Button>
-            ))}
-          </div>
-        )}
-      </form.Field>
+      {/* Type toggle — only shown when adding */}
+      {!initialValues && (
+        <form.Field name="type">
+          {(field) => (
+            <div className="grid grid-cols-3 gap-2">
+              {(['expense', 'income', 'transfer'] as const).map((t) => (
+                <Button
+                  key={t}
+                  onClick={() => field.handleChange(t)}
+                  className={cn(
+                    'rounded-xl py-2.5 text-sm font-semibold capitalize transition active:scale-[0.98]',
+                    field.state.value === t
+                      ? t === 'expense'
+                        ? 'bg-destructive text-primary-foreground'
+                        : t === 'transfer'
+                          ? 'bg-accent text-accent-foreground'
+                          : 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground',
+                  )}
+                >
+                  {t}
+                </Button>
+              ))}
+            </div>
+          )}
+        </form.Field>
+      )}
 
       {/* Amount */}
       <form.Field
@@ -108,6 +164,9 @@ export function TransactionForm({
           onChange: ({ value }) => {
             const n = Number(value)
             if (!value || isNaN(n) || n <= 0) return 'Enter a valid amount'
+            if (n > MONEY_MAX_AMOUNT) {
+              return `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`
+            }
             return undefined
           },
         }}
@@ -115,10 +174,13 @@ export function TransactionForm({
         {(field) => (
           <FormField
             label="Amount"
+            htmlFor="txn-amount"
             required
             error={field.state.meta.errors[0]?.toString()}
           >
             <CurrencyInput
+              id="txn-amount"
+              name="txn-amount"
               autoFocus
               className="py-3 text-lg font-normal"
               value={field.state.value as unknown as string}
@@ -135,6 +197,10 @@ export function TransactionForm({
         {(field) => (
           <form.Subscribe selector={(s) => s.values.type}>
             {(type) => {
+              if (type === 'transfer') {
+                return null
+              }
+
               const options =
                 type === 'expense'
                   ? formOptions.expenseRecurringTransactionOptions
@@ -147,9 +213,12 @@ export function TransactionForm({
               return (
                 <FormField
                   label="Link Recurring Transaction"
+                  htmlFor="txn-recurring-id"
                   hint="Optional. Prefills the expected occurrence, but the amount you save can differ."
                 >
                   <SelectInput
+                    id="txn-recurring-id"
+                    name="txn-recurring-id"
                     value={field.state.value}
                     onChange={(e) => {
                       const nextValue = e.target.value
@@ -163,7 +232,10 @@ export function TransactionForm({
                         return
                       }
 
-                      form.setFieldValue('categoryId', selectedOption.categoryId)
+                      form.setFieldValue(
+                        'categoryId',
+                        selectedOption.categoryId,
+                      )
                       form.setFieldValue('accountId', selectedOption.accountId)
                       form.setFieldValue(
                         'date',
@@ -193,13 +265,35 @@ export function TransactionForm({
       <form.Field
         name="categoryId"
         validators={{
-          onChange: ({ value }) =>
-            !value ? 'Select a category' : undefined,
+          onChange: ({ value, fieldApi }) =>
+            fieldApi.form.getFieldValue('type') !== 'transfer' && !value
+              ? 'Select a category'
+              : undefined,
         }}
       >
         {(field) => (
           <form.Subscribe selector={(s) => s.values.type}>
             {(type) => {
+              if (type === 'transfer') {
+                return (
+                  <FormField
+                    label="Category"
+                    htmlFor="txn-transfer-category"
+                    hint="Transfers use the Transfer category automatically."
+                  >
+                    <Input
+                      id="txn-transfer-category"
+                      name="txn-transfer-category"
+                      type="text"
+                      value={
+                        formOptions.transferCategoryOption?.label ?? 'Transfer'
+                      }
+                      readOnly
+                    />
+                  </FormField>
+                )
+              }
+
               const options =
                 type === 'expense'
                   ? formOptions.expenseCategoryOptions
@@ -207,10 +301,13 @@ export function TransactionForm({
               return (
                 <FormField
                   label="Category"
+                  htmlFor="txn-category"
                   required
                   error={field.state.meta.errors[0]?.toString()}
                 >
                   <SelectInput
+                    id="txn-category"
+                    name="txn-category"
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
@@ -230,40 +327,210 @@ export function TransactionForm({
       </form.Field>
 
       {/* Account */}
-      <form.Field
-        name="accountId"
-        validators={{
-          onChange: ({ value }) =>
-            !value ? 'Select an account' : undefined,
-        }}
+      <form.Subscribe
+        selector={(s) => ({
+          type: s.values.type,
+          goalId: s.values.goalId,
+          goalTransferDirection: s.values.goalTransferDirection,
+        })}
       >
-        {(field) => (
-          <FormField
-            label="Account"
-            required
-            error={field.state.meta.errors[0]?.toString()}
-          >
-            <SelectInput
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
+        {({ type, goalId, goalTransferDirection }) =>
+          type === 'transfer' ? (
+            <>
+              {goalId && goalTransferDirection === 'out' ? (
+                <FormField
+                  label="Source"
+                  htmlFor="txn-transfer-source"
+                  hint="This transfer is moving funds out of a savings goal."
+                >
+                  <Input
+                    id="txn-transfer-source"
+                    name="txn-transfer-source"
+                    type="text"
+                    value="Savings Goal"
+                    readOnly
+                  />
+                </FormField>
+              ) : (
+                <form.Field
+                  name="fromAccountId"
+                  validators={{
+                    onChange: ({ value, fieldApi }) =>
+                      fieldApi.form.getFieldValue('goalId') &&
+                      fieldApi.form.getFieldValue('goalTransferDirection') ===
+                        'out'
+                        ? undefined
+                        : !value
+                          ? 'Select a source account'
+                          : undefined,
+                  }}
+                >
+                  {(field) => (
+                    <FormField
+                      label="From Account"
+                      htmlFor="txn-from-account"
+                      required
+                      error={field.state.meta.errors[0]?.toString()}
+                    >
+                      <SelectInput
+                        id="txn-from-account"
+                        name="txn-from-account"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        onBlur={field.handleBlur}
+                      >
+                        <option value="">Select source account</option>
+                        {formOptions.accountOptions.map((a) => (
+                          <option key={a.value} value={a.value}>
+                            {a.label}
+                          </option>
+                        ))}
+                      </SelectInput>
+                    </FormField>
+                  )}
+                </form.Field>
+              )}
+
+              {goalId ? (
+                goalTransferDirection === 'out' ? (
+                  <form.Field
+                    name="toAccountId"
+                    validators={{
+                      onChange: ({ value }) =>
+                        !value ? 'Select a destination account' : undefined,
+                    }}
+                  >
+                    {(field) => (
+                      <FormField
+                        label="To Account"
+                        htmlFor="txn-to-account"
+                        required
+                        error={field.state.meta.errors[0]?.toString()}
+                      >
+                        <SelectInput
+                          id="txn-to-account"
+                          name="txn-to-account"
+                          value={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          onBlur={field.handleBlur}
+                        >
+                          <option value="">Select destination account</option>
+                          {formOptions.accountOptions.map((a) => (
+                            <option key={a.value} value={a.value}>
+                              {a.label}
+                            </option>
+                          ))}
+                        </SelectInput>
+                      </FormField>
+                    )}
+                  </form.Field>
+                ) : (
+                  <FormField
+                    label="Destination"
+                    htmlFor="txn-transfer-destination"
+                    hint="This transfer is linked to a savings goal."
+                  >
+                    <Input
+                      id="txn-transfer-destination"
+                      name="txn-transfer-destination"
+                      type="text"
+                      value="Savings Goal"
+                      readOnly
+                    />
+                  </FormField>
+                )
+              ) : (
+                <form.Field
+                  name="toAccountId"
+                  validators={{
+                    onChange: ({ value, fieldApi }) => {
+                      if (!value) {
+                        return 'Select a destination account'
+                      }
+
+                      if (
+                        value === fieldApi.form.getFieldValue('fromAccountId')
+                      ) {
+                        return 'Destination account must be different'
+                      }
+
+                      return undefined
+                    },
+                  }}
+                >
+                  {(field) => (
+                    <FormField
+                      label="To Account"
+                      htmlFor="txn-to-account"
+                      required
+                      error={field.state.meta.errors[0]?.toString()}
+                    >
+                      <SelectInput
+                        id="txn-to-account"
+                        name="txn-to-account"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        onBlur={field.handleBlur}
+                      >
+                        <option value="">Select destination account</option>
+                        {formOptions.accountOptions.map((a) => (
+                          <option key={a.value} value={a.value}>
+                            {a.label}
+                          </option>
+                        ))}
+                      </SelectInput>
+                    </FormField>
+                  )}
+                </form.Field>
+              )}
+            </>
+          ) : (
+            <form.Field
+              name="accountId"
+              validators={{
+                onChange: ({ value }) =>
+                  !value ? 'Select an account' : undefined,
+              }}
             >
-              <option value="">Select account</option>
-              {formOptions.accountOptions.map((a) => (
-                <option key={a.value} value={a.value}>
-                  {a.label}
-                </option>
-              ))}
-            </SelectInput>
-          </FormField>
-        )}
-      </form.Field>
+              {(field) => (
+                <FormField
+                  label="Account"
+                  htmlFor="txn-account"
+                  required
+                  error={field.state.meta.errors[0]?.toString()}
+                >
+                  <SelectInput
+                    id="txn-account"
+                    name="txn-account"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                  >
+                    <option value="">Select account</option>
+                    {formOptions.accountOptions.map((a) => (
+                      <option key={a.value} value={a.value}>
+                        {a.label}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </FormField>
+              )}
+            </form.Field>
+          )
+        }
+      </form.Subscribe>
 
       {/* Date */}
       <form.Field name="date">
         {(field) => (
-          <FormField label="Date" hint="Use the actual posted date for this transaction.">
+          <FormField
+            label="Date"
+            htmlFor="txn-date"
+            hint="Use the actual posted date for this transaction."
+          >
             <DateInput
+              id="txn-date"
+              name="txn-date"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
@@ -275,8 +542,10 @@ export function TransactionForm({
       {/* Note (optional) */}
       <form.Field name="note">
         {(field) => (
-          <FormField label="Note" hint="Optional">
+          <FormField label="Note" htmlFor="txn-note" hint="Optional">
             <Input
+              id="txn-note"
+              name="txn-note"
               type="text"
               placeholder="Add a note…"
               maxLength={500}
@@ -294,14 +563,26 @@ export function TransactionForm({
             Cancel
           </Button>
         )}
-        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+        {onDelete && (
+          <Button
+            onClick={() => void onDelete()}
+            variant="secondary"
+            className="bg-destructive/10 text-destructive hover:bg-destructive/15"
+            fullWidth
+          >
+            Delete
+          </Button>
+        )}
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+        >
           {([canSubmit, isSubmitting]) => (
             <Button
               type="submit"
               disabled={!canSubmit || !!isSubmitting}
               fullWidth
             >
-              {isSubmitting ? 'Saving…' : 'Save Transaction'}
+              {isSubmitting ? 'Saving…' : submitLabel}
             </Button>
           )}
         </form.Subscribe>

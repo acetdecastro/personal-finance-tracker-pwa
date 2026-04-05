@@ -4,8 +4,7 @@ import {
   DISPLAY_DATE_TIME_FORMAT,
 } from '#/lib/constants/date-format'
 
-const STORED_DATE_PATTERN =
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})Z$/
+const STORED_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})Z$/
 
 function toDate(value: Date | string | number): Date {
   if (value instanceof Date) {
@@ -16,8 +15,7 @@ function toDate(value: Date | string | number): Date {
     return value
   }
 
-  const parsed =
-    typeof value === 'string' ? parseISO(value) : new Date(value)
+  const parsed = typeof value === 'string' ? parseISO(value) : new Date(value)
 
   if (!isValid(parsed)) {
     throw new Error('Invalid date value')
@@ -51,6 +49,12 @@ export function isStoredDateString(value: string): boolean {
 }
 
 export function formatDisplayDate(value: Date | string | number): string {
+  return format(toDate(value), DISPLAY_DATE_FORMAT)
+}
+
+export function formatCompactDisplayDate(
+  value: Date | string | number,
+): string {
   return format(toDate(value), DISPLAY_DATE_FORMAT)
 }
 

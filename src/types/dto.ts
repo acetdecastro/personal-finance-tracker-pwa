@@ -43,6 +43,14 @@ export interface AccountOptionDto extends SelectOption {
   isArchived: boolean
 }
 
+export interface AccountUsageDto {
+  accountId: string
+  transactionCount: number
+  recurringRuleCount: number
+  totalReferences: number
+  canDelete: boolean
+}
+
 export interface CategoryOptionDto extends SelectOption {
   type: Category['type']
   isSystem: boolean
@@ -106,6 +114,7 @@ export interface TransactionFormOptionsDto {
   accountOptions: AccountOptionDto[]
   incomeCategoryOptions: CategoryOptionDto[]
   expenseCategoryOptions: CategoryOptionDto[]
+  transferCategoryOption: CategoryOptionDto | null
   incomeRecurringTransactionOptions: RecurringTransactionOptionDto[]
   expenseRecurringTransactionOptions: RecurringTransactionOptionDto[]
 }
@@ -161,6 +170,15 @@ export interface GoalSnapshotDto {
   targetDate: string | null
 }
 
+export interface GoalUsageDto {
+  goalId: string
+  currentAmount: number
+  linkedTransferCount: number
+  canDelete: boolean
+  deleteBlockedReason: string | null
+  deleteNotice: string | null
+}
+
 export interface DashboardRecentTransactionDto {
   id: string
   type: Transaction['type']
@@ -188,12 +206,12 @@ export interface DashboardData {
   lowestProjectedBalance30d: number
   upcomingBills: UpcomingBillDto[]
   budgets: BudgetSnapshotDto[]
-  goal: GoalSnapshotDto | null
+  goals: GoalSnapshotDto[]
   recentTransactions: DashboardRecentTransactionDto[]
 }
 
 export interface BudgetPageDataDto {
   budgetSnapshots: BudgetSnapshotDto[]
   expenseCategoryOptions: CategoryOptionDto[]
-  primaryGoal: GoalSnapshotDto | null
+  goals: GoalSnapshotDto[]
 }
