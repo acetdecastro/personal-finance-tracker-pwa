@@ -86,12 +86,12 @@ function DashboardRoute() {
 
       <div className="space-y-3">
         <SectionHeader
-          title="Upcoming Bills"
+          title="Upcoming expenses"
           action={<SeeAllLink to="/settings" />}
         />
         {!dashboardData || dashboardData.upcomingBills.length === 0 ? (
           <EmptyState
-            title="No upcoming bills"
+            title="No upcoming expenses"
             description="Recurring expenses will appear here once you add them in Settings."
           />
         ) : (
@@ -99,19 +99,26 @@ function DashboardRoute() {
         )}
       </div>
 
-      {!!dashboardData?.goals.length && (
+      <div className="space-y-3">
         <div className="space-y-3">
           <SectionHeader
             title="Savings Goals"
             action={<SeeAllLink to="/budget" />}
           />
-          <div className="space-y-3">
-            {dashboardData.goals.slice(0, 3).map((goal) => (
-              <GoalCard key={goal.id} goal={goal} />
-            ))}
-          </div>
+          {!dashboardData || dashboardData.goals.length === 0 ? (
+            <EmptyState
+              title="No goals yet"
+              description="Goals will appear here once you add them in Budget."
+            />
+          ) : (
+            <div className="space-y-3">
+              {dashboardData.goals.slice(0, 3).map((goal) => (
+                <GoalCard key={goal.id} goal={goal} />
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       <div className="space-y-3">
         <SectionHeader

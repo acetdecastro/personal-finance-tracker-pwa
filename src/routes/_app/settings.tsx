@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { CheckCircle, Download, Minus, Plus, Share } from 'lucide-react'
 import { Button } from '#/components/common/Button'
 import { BottomSheet } from '#/components/common/BottomSheet'
+import { ConfirmDialog } from '#/components/common/ConfirmDialog'
 import { ThemeToggle } from '#/features/settings/components/ThemeToggle'
 import { RecurringRuleForm } from '#/features/recurring/components/RecurringRuleForm'
 import { RecurringRuleList } from '#/features/recurring/components/RecurringRuleList'
@@ -29,6 +30,7 @@ import type { RecurringRule } from '#/types/domain'
 import type { CreateRecurringRuleInput } from '#/features/recurring/schemas/recurring-rule.schemas'
 import { PRIMARY_LINK_BUTTON_CLS } from '#/lib/constants/ui-classes'
 import { useInstallPrompt } from '#/features/settings/hooks/use-install-prompt'
+import { resetAllAppData } from '#/services/data-reset/data-reset.service'
 
 export const Route = createFileRoute('/_app/settings')({
   component: SettingsRoute,
@@ -47,6 +49,8 @@ function SettingsRoute() {
   const [recurringFilter, setRecurringFilter] = useState<RecurringFilter>('all')
   const [isExporting, setIsExporting] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeletingAllData, setIsDeletingAllData] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const queryClient = useQueryClient()
@@ -125,6 +129,21 @@ function SettingsRoute() {
       setSheetState(null)
     } finally {
       setIsImporting(false)
+    }
+  }
+
+  async function handleDeleteAllData() {
+    setIsDeletingAllData(true)
+    try {
+      await resetAllAppData()
+      queryClient.clear()
+      setIsDeleteDialogOpen(false)
+      toast.success('All data has been deleted')
+      void router.navigate({ to: '/', replace: true })
+    } catch {
+      toast.error('Failed to delete all data. Please try again.')
+    } finally {
+      setIsDeletingAllData(false)
     }
   }
 
@@ -326,6 +345,14 @@ function SettingsRoute() {
                 {isImporting ? 'Importing…' : 'Import JSON'}
               </Button>
             </div>
+            <Button
+              variant="secondary"
+              className="bg-destructive/10 text-destructive hover:bg-destructive/15 w-full"
+              onClick={() => setIsDeleteDialogOpen(true)}
+              disabled={isDeletingAllData}
+            >
+              Delete All Data
+            </Button>
             <input
               ref={fileInputRef}
               type="file"
@@ -399,6 +426,18 @@ function SettingsRoute() {
             </div>
           </div>
         </BottomSheet>
+      )}
+
+      {isDeleteDialogOpen && (
+        <ConfirmDialog
+          title="Delete all data?"
+          description="This will permanently remove all data except the default categories and app settings. You will be returned to onboarding after deletion."
+          confirmLabel="Delete All Data"
+          onCancel={() => setIsDeleteDialogOpen(false)}
+          onConfirm={handleDeleteAllData}
+          isLoading={isDeletingAllData}
+          tone="destructive"
+        />
       )}
     </>
   )

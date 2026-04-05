@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '#/lib/utils/cn'
+import { useBodyScrollLock } from '#/lib/hooks/use-body-scroll-lock'
 import { Button } from './Button'
 
 interface BottomSheetProps {
@@ -22,13 +22,7 @@ export function BottomSheet({
   children,
   contentClassName,
 }: BottomSheetProps) {
-  useEffect(() => {
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = prev
-    }
-  }, [])
+  useBodyScrollLock('hidden')
 
   return (
     <div className={BACKDROP_CLS} onClick={onClose}>

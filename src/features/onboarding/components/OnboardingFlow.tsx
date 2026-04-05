@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { format, getDate } from 'date-fns'
-import { CheckCircle, ChevronRight, Download, Loader2, Plus, Share, Trash2 } from 'lucide-react'
+import {
+  CheckCircle,
+  ChevronRight,
+  Download,
+  Loader2,
+  Plus,
+  Share,
+  Trash2,
+} from 'lucide-react'
 import { InfoBanner } from '#/components/common/InfoBanner'
 import { AccountForm } from '#/features/accounts/components/AccountForm'
 import { Button } from '#/components/common/Button'
