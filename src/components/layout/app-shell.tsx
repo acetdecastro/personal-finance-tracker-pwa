@@ -39,7 +39,7 @@ export function AppShell() {
         aria-label="Primary"
         className="border-border/60 bg-card/90 pb-safe fixed inset-x-0 bottom-0 z-40 rounded-tl-3xl rounded-tr-3xl border-t backdrop-blur-xl"
       >
-        <div className="mx-auto flex max-w-lg items-center justify-between p-4 mb-">
+        <div className="mx-auto flex max-w-lg items-center justify-between pt-3 pb-4 px-6 mb-2">
           {mainNavItems.map((item) => (
             <NavItem key={item.to} to={item.to} label={item.label}>
               <item.icon className="size-4.5" />

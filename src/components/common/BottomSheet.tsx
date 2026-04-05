@@ -47,7 +47,7 @@ export function BottomSheet({
         {/* Scrollable body — scrollbar stays below the rounded header */}
         <div
           className={cn(
-            'sheet-scroll mr-1 min-h-0 flex-1 overflow-y-auto pt-2 pr-3 pb-8 pl-4.5',
+            'sheet-scroll mr-1 min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-2 pr-3 pb-8 pl-4.5',
             contentClassName,
           )}
         >
