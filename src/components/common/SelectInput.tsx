@@ -5,7 +5,7 @@ import { cn } from '#/lib/utils/cn'
 type SelectInputProps = ComponentPropsWithoutRef<'select'>
 
 const BASE_SELECT_CLS =
-  'w-full appearance-none rounded-xl bg-input py-3 pl-4 pr-12 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60'
+  'w-full appearance-none rounded-xl bg-input py-3 pl-4 pr-12 text-base text-foreground outline-none ring-1 ring-border transition focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60 md:text-sm'
 
 export function SelectInput({
   className = '',

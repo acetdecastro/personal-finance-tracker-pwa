@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { format, getDate } from 'date-fns'
-import { CheckCircle, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react'
+import { CheckCircle, ChevronRight, Download, Loader2, Plus, Share, Trash2 } from 'lucide-react'
 import { InfoBanner } from '#/components/common/InfoBanner'
 import { AccountForm } from '#/features/accounts/components/AccountForm'
 import { Button } from '#/components/common/Button'
@@ -17,6 +17,7 @@ import {
   useOnboardingBootstrap,
   useCompleteOnboarding,
 } from '../hooks/use-onboarding'
+import { useInstallPrompt } from '#/features/settings/hooks/use-install-prompt'
 import type { CreateAccountInput } from '#/features/accounts/schemas/account.schemas'
 import type { CompleteOnboardingInput } from '../schemas/onboarding.schemas'
 import type { CategoryOptionDto } from '#/types/dto'
@@ -170,7 +171,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         <p className="text-muted-foreground text-sm">
           {submitError ?? 'An unexpected error occurred.'}
         </p>
-        <Button onClick={handleFinish} fullWidth>
+        <Button onClick={handleFinish} className="w-full">
           Try Again
         </Button>
       </div>
@@ -231,23 +232,87 @@ function WelcomeStep({ onStart }: { onStart: () => void }) {
 }
 
 function DoneStep({ onComplete }: { onComplete: () => void }) {
+  const { installState, triggerInstall } = useInstallPrompt()
+
+  async function handleInstall() {
+    await triggerInstall()
+    onComplete()
+  }
+
   return (
     <div className="flex flex-col items-center gap-6 py-8 text-center">
       <div className="bg-primary-subtle flex size-16 items-center justify-center rounded-full">
         <CheckCircle className="text-primary size-8" />
       </div>
+
       <div className="space-y-2">
         <h2 className="text-foreground text-2xl font-extrabold tracking-tight">
           You&apos;re all set!
         </h2>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Your dashboard is ready. Start logging transactions to track your cash
-          position.
+          {installState === 'standalone'
+            ? "You're already running FinKo as an installed app. Nice."
+            : installState === 'ios'
+              ? 'Add FinKo to your Home Screen for the best experience — works offline too.'
+              : installState === 'promptable'
+                ? 'Install FinKo on your device for quick access, offline use, and a full-screen experience.'
+                : 'Your dashboard is ready. Start logging transactions to track your cash position.'}
         </p>
       </div>
-      <Button onClick={onComplete} className="w-full">
-        Go to Dashboard
-      </Button>
+
+      {installState === 'promptable' && (
+        <div className="w-full space-y-3">
+          <Button
+            onClick={handleInstall}
+            className="flex w-full items-center justify-center gap-2"
+          >
+            <Download className="size-4" />
+            Install App
+          </Button>
+          <button
+            onClick={onComplete}
+            className="text-muted-foreground hover:text-foreground w-full text-sm transition"
+          >
+            Skip, go to Dashboard
+          </button>
+        </div>
+      )}
+
+      {installState === 'ios' && (
+        <div className="w-full space-y-4 text-left">
+          <ol className="space-y-2">
+            {[
+              { icon: Share, text: "Tap the Share button in Safari's toolbar" },
+              { icon: null, text: 'Scroll down and tap "Add to Home Screen"' },
+              { icon: null, text: 'Tap "Add" to confirm' },
+            ].map((step, i) => (
+              <li
+                key={i}
+                className="text-secondary-foreground flex items-start gap-3 text-sm"
+              >
+                <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+                  {i + 1}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  {step.text}
+                  {step.icon && (
+                    <step.icon className="inline size-3.5 shrink-0" />
+                  )}
+                </span>
+              </li>
+            ))}
+          </ol>
+          <Button onClick={onComplete} className="w-full">
+            Go to Dashboard
+          </Button>
+        </div>
+      )}
+
+      {(installState === 'standalone' || installState === 'unavailable') && (
+        <Button onClick={onComplete} className="w-full">
+          Go to Dashboard
+        </Button>
+      )}
     </div>
   )
 }
