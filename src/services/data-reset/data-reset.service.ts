@@ -13,6 +13,7 @@ export async function resetAllAppData(database: FinanceTrackerDatabase = db) {
       database.accounts,
       database.categories,
       database.userSettings,
+      database.users,
     ],
     async () => {
       await Promise.all([
@@ -23,6 +24,7 @@ export async function resetAllAppData(database: FinanceTrackerDatabase = db) {
         database.accounts.clear(),
         database.categories.clear(),
         database.userSettings.clear(),
+        database.users.clear(),
       ])
     },
   )

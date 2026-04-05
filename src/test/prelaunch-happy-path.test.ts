@@ -31,6 +31,7 @@ describe('prelaunch happy path', () => {
     const goalManagementService = createGoalManagementService(database)
 
     const onboarding = await onboardingService.complete({
+      userName: 'Test User',
       primaryAccount: {
         name: 'Main Wallet',
         type: 'ewallet',

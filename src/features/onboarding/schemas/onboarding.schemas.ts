@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { createAccountInputSchema } from '#/features/accounts/schemas/account.schemas'
 import { supportedRecurringCadenceSchema } from '#/features/recurring/schemas/recurring-rule.schemas'
+import { userNameSchema } from '#/features/user/schemas/user.schemas'
 import {
   dayOfMonthSchema,
   entityIdSchema,
@@ -74,6 +75,7 @@ export const onboardingRecurringExpenseInputSchema =
   )
 
 export const completeOnboardingInputSchema = z.object({
+  userName: userNameSchema,
   primaryAccount: createAccountInputSchema,
   salary: onboardingSalaryInputSchema,
   recurringExpenses: z.array(onboardingRecurringExpenseInputSchema).default([]),

@@ -9,7 +9,7 @@ interface TransactionListProps {
   accounts: Account[]
   categories: Category[]
   goals?: Goal[]
-  onEdit?: (transaction: Transaction) => void
+  onSelect?: (transaction: Transaction) => void
 }
 
 export const TYPE_CONFIG = {
@@ -113,7 +113,7 @@ export function TransactionList({
   accounts,
   categories,
   goals = [],
-  onEdit,
+  onSelect,
 }: TransactionListProps) {
   const accountMap = new Map(accounts.map((a) => [a.id, a]))
   const categoryMap = new Map(categories.map((c) => [c.id, c]))
@@ -142,7 +142,7 @@ export function TransactionList({
             Icon={Icon}
             iconColor={cfg.color}
             iconBg={cfg.bg}
-            onPress={onEdit ? () => onEdit(t) : undefined}
+            onPress={onSelect ? () => onSelect(t) : undefined}
           />
         )
       })}

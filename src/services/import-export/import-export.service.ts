@@ -17,6 +17,7 @@ export async function exportData(): Promise<void> {
     budgets,
     goals,
     userSettings,
+    users,
   ] = await Promise.all([
     db.accounts.orderBy('createdAt').toArray(),
     db.categories.orderBy('createdAt').toArray(),
@@ -25,6 +26,7 @@ export async function exportData(): Promise<void> {
     db.budgets.orderBy('createdAt').toArray(),
     db.goals.orderBy('createdAt').toArray(),
     db.userSettings.toArray(),
+    db.users.toArray(),
   ])
 
   const payload = exportPayloadSchema.parse({
@@ -40,6 +42,7 @@ export async function exportData(): Promise<void> {
     budgets,
     goals,
     userSettings,
+    users,
   })
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
@@ -63,13 +66,16 @@ export async function parseImportFile(file: File): Promise<ExportPayload> {
 export async function importData(payload: ExportPayload): Promise<void> {
   await db.transaction(
     'rw',
-    db.accounts,
-    db.categories,
-    db.transactions,
-    db.recurringRules,
-    db.budgets,
-    db.goals,
-    db.userSettings,
+    [
+      db.accounts,
+      db.categories,
+      db.transactions,
+      db.recurringRules,
+      db.budgets,
+      db.goals,
+      db.userSettings,
+      db.users,
+    ],
     async () => {
       await Promise.all([
         db.accounts.clear(),
@@ -79,6 +85,7 @@ export async function importData(payload: ExportPayload): Promise<void> {
         db.budgets.clear(),
         db.goals.clear(),
         db.userSettings.clear(),
+        db.users.clear(),
       ])
 
       await Promise.all([
@@ -89,6 +96,7 @@ export async function importData(payload: ExportPayload): Promise<void> {
         db.budgets.bulkPut(payload.budgets),
         db.goals.bulkPut(payload.goals),
         db.userSettings.bulkPut(payload.userSettings),
+        db.users.bulkPut(payload.users),
       ])
     },
   )

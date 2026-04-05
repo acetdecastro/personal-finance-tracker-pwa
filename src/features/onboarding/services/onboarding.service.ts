@@ -6,6 +6,8 @@ import { createRecurringRuleRepository } from '#/features/recurring/services/rec
 import { createUserSettingsRepository } from '#/features/settings/services/user-settings.repository'
 import { mapSettingsToDto } from '#/features/settings/services/settings.service'
 import { seedCoreData } from '#/services/seed/seed.service'
+import { userSchema } from '#/features/user/schemas/user.schemas'
+import { createTimestamps } from '#/lib/utils/entity'
 import type {
   CompleteOnboardingResultDto,
   OnboardingBootstrapDto,
@@ -60,6 +62,7 @@ export function createOnboardingService(database: FinanceTrackerDatabase = db) {
         database.accounts,
         database.recurringRules,
         database.userSettings,
+        database.users,
         async () => {
           const existingSettings = await userSettingsRepository.get()
 
@@ -97,6 +100,14 @@ export function createOnboardingService(database: FinanceTrackerDatabase = db) {
             : await userSettingsRepository.create({
                 hasCompletedOnboarding: true,
               })
+
+          await database.users.put(
+            userSchema.parse({
+              id: 'primary',
+              name: values.userName,
+              ...createTimestamps(),
+            }),
+          )
 
           return {
             primaryAccount,

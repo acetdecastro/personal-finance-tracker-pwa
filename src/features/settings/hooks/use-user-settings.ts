@@ -7,7 +7,7 @@ export const USER_SETTINGS_QUERY_KEY = ['user-settings'] as const
 export function useUserSettings() {
   return useQuery({
     queryKey: USER_SETTINGS_QUERY_KEY,
-    queryFn: () => userSettingsRepository.get(),
+    queryFn: () => userSettingsRepository.get().then((s) => s ?? null),
   })
 }
 

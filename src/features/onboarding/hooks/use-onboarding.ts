@@ -16,12 +16,18 @@ export function useCompleteOnboarding() {
   return useMutation({
     mutationFn: (input: CompleteOnboardingInput) =>
       onboardingService.complete(input),
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Refetch before navigating so _app/route.tsx guard sees fresh data.
+      // invalidateQueries only marks stale — the guard reads synchronously
+      // and would see undefined, redirecting back to /onboarding.
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['user'] }),
+        queryClient.refetchQueries({ queryKey: ['settings-screen'] }),
+      ])
       queryClient.invalidateQueries({
         queryKey: ONBOARDING_BOOTSTRAP_QUERY_KEY,
       })
       queryClient.invalidateQueries({ queryKey: ['user-settings'] })
-      queryClient.invalidateQueries({ queryKey: ['settings-screen'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
       queryClient.invalidateQueries({ queryKey: ['recurring-rules'] })
     },

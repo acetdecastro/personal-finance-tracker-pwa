@@ -7,6 +7,7 @@ import { FormField } from '#/components/common/FormField'
 import { Input } from '#/components/common/Input'
 import { SelectInput } from '#/components/common/SelectInput'
 import { toStoredDate } from '#/lib/dates'
+import { useSmartFormAutofocus } from '#/lib/hooks/use-smart-form-autofocus'
 import { MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 import { cn } from '#/lib/utils/cn'
 import type { Transaction, TransactionType } from '#/types/domain'
@@ -30,6 +31,7 @@ export function TransactionForm({
   submitLabel = 'Save',
   initialValues,
 }: TransactionFormProps) {
+  const formRef = useSmartFormAutofocus()
   const todayForInput = format(
     initialValues?.transactionDate
       ? new Date(initialValues.transactionDate)
@@ -123,6 +125,7 @@ export function TransactionForm({
 
   return (
     <form
+      ref={formRef}
       onSubmit={(e) => {
         e.preventDefault()
         form.handleSubmit()
@@ -181,7 +184,6 @@ export function TransactionForm({
             <CurrencyInput
               id="txn-amount"
               name="txn-amount"
-              autoFocus
               className="py-3 text-lg font-normal"
               value={field.state.value as unknown as string}
               onChange={(e) =>

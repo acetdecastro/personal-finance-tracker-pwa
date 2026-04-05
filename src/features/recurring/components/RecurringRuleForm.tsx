@@ -7,6 +7,7 @@ import { FormField } from '#/components/common/FormField'
 import { Input } from '#/components/common/Input'
 import { SelectInput } from '#/components/common/SelectInput'
 import { toStoredDate } from '#/lib/dates'
+import { useSmartFormAutofocus } from '#/lib/hooks/use-smart-form-autofocus'
 import { ENTITY_NAME_MAX_LENGTH, MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 import { cn } from '#/lib/utils/cn'
 import type { Account, Category, RecurringRule } from '#/types/domain'
@@ -48,6 +49,7 @@ export function RecurringRuleForm({
   onCancel,
   submitLabel = 'Save',
 }: RecurringRuleFormProps) {
+  const formRef = useSmartFormAutofocus()
   const initialCadence = initialValues?.cadence ?? 'semi-monthly'
   const todayForInput = format(
     initialValues?.nextOccurrenceDate
@@ -104,6 +106,7 @@ export function RecurringRuleForm({
 
   return (
     <form
+      ref={formRef}
       onSubmit={(e) => {
         e.preventDefault()
         form.handleSubmit()
@@ -166,7 +169,7 @@ export function RecurringRuleForm({
           <FormField
             label="Expected Amount"
             htmlFor="rule-amount"
-            hint="Used for forecasting. Your actual posted amount can differ."
+            hint="Used for forecasting. Your actual posted transaction amount can differ."
             error={field.state.meta.errors[0]?.toString()}
             required
           >

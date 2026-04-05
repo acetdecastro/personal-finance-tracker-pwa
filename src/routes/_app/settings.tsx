@@ -73,17 +73,17 @@ function SettingsRoute() {
           id: sheetState.rule.id,
           changes: values,
         })
-        toast.success('Recurring rule updated')
+        toast.success('Recurring transaction updated')
       } else {
         await createRecurringRule.mutateAsync(values)
-        toast.success('Recurring rule added')
+        toast.success('Recurring transaction added')
       }
       setSheetState(null)
     } catch {
       toast.error(
         sheetState?.mode === 'edit'
-          ? 'Failed to update recurring rule'
-          : 'Failed to add recurring rule',
+          ? 'Failed to update recurring transaction'
+          : 'Failed to add recurring transaction',
       )
     }
   }
@@ -272,6 +272,10 @@ function SettingsRoute() {
               </div>
             }
           />
+          <p className="text-muted-foreground/70 text-xs">
+            Used for forecasting. Your actual posted transaction amount can
+            differ.
+          </p>
           <div className="no-scrollbar flex gap-2 overflow-x-auto px-0.5 py-1">
             {(
               [

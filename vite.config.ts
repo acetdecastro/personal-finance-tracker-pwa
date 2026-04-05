@@ -19,6 +19,7 @@ const config = defineConfig(({ mode, isSsrBuild }) => ({
     nitro(),
     viteReact(),
     VitePWA({
+      outDir: '.output/public',
       registerType: 'autoUpdate',
       includeAssets: [
         'favicon.ico',
@@ -74,6 +75,10 @@ const config = defineConfig(({ mode, isSsrBuild }) => ({
         ],
       },
       workbox: {
+        // SSR app — Nitro handles routing, not a static index.html.
+        // Without this, Workbox calls createHandlerBoundToURL('index.html')
+        // which throws because index.html is never in the precache manifest.
+        navigateFallback: null,
         globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,

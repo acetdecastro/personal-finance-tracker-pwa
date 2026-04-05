@@ -3,7 +3,9 @@ import { Button } from '#/components/common/Button'
 import { CurrencyInput } from '#/components/common/CurrencyInput'
 import { FormField } from '#/components/common/FormField'
 import { Input } from '#/components/common/Input'
+import { useSmartFormAutofocus } from '#/lib/hooks/use-smart-form-autofocus'
 import { ENTITY_NAME_MAX_LENGTH, MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
+import { formatPhpCurrency } from '#/lib/format/number.utils'
 import { cn } from '#/lib/utils/cn'
 import type { CreateAccountInput } from '../schemas/account.schemas'
 
@@ -16,6 +18,7 @@ interface AccountFormProps {
   submitLabel?: string
   initialValues?: Partial<CreateAccountInput>
   showSafetyBuffer?: boolean
+  currentBalance?: number
 }
 
 const ACCOUNT_TYPES = [
@@ -34,7 +37,9 @@ export function AccountForm({
   submitLabel = 'Save',
   initialValues,
   showSafetyBuffer = true,
+  currentBalance,
 }: AccountFormProps) {
+  const formRef = useSmartFormAutofocus()
   const form = useForm({
     defaultValues: {
       name: initialValues?.name ?? '',
@@ -52,14 +57,36 @@ export function AccountForm({
     },
   })
 
+  const isEditing = currentBalance !== undefined
+
   return (
     <form
+      ref={formRef}
       onSubmit={(e) => {
         e.preventDefault()
         form.handleSubmit()
       }}
       className="space-y-4"
     >
+      {isEditing && (
+        <div className="bg-card rounded-2xl px-4 py-3 shadow">
+          <p className="text-muted-foreground/70 text-[10px] font-bold tracking-widest uppercase">
+            Current Balance
+          </p>
+          <p className="text-foreground mt-1 text-xl font-bold tabular-nums">
+            {formatPhpCurrency(currentBalance)}
+          </p>
+          <div className="border-border/50 mt-2 flex items-center justify-between border-t pt-2">
+            <p className="text-muted-foreground/70 text-[10px] font-bold tracking-widest uppercase">
+              Starting Balance
+            </p>
+            <p className="text-muted-foreground text-xs font-semibold tabular-nums">
+              {formatPhpCurrency(initialValues?.initialBalance ?? 0)}
+            </p>
+          </div>
+        </div>
+      )}
+
       <form.Field
         name="name"
         validators={{
@@ -122,36 +149,38 @@ export function AccountForm({
         )}
       </form.Field>
 
-      <form.Field
-        name="initialBalance"
-        validators={{
-          onChange: ({ value }) => {
-            const n = Number(value || 0)
-            if (n < 0) return 'Balance cannot be negative'
-            if (n > MONEY_MAX_AMOUNT) {
-              return `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`
-            }
-            return undefined
-          },
-        }}
-      >
-        {(field) => (
-          <FormField
-            label="Starting Balance"
-            htmlFor="account-initial-balance"
-            error={field.state.meta.errors[0]?.toString()}
-            hint="Current amount in this account"
-          >
-            <CurrencyInput
-              id="account-initial-balance"
-              name="account-initial-balance"
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-            />
-          </FormField>
-        )}
-      </form.Field>
+      {!isEditing && (
+        <form.Field
+          name="initialBalance"
+          validators={{
+            onChange: ({ value }) => {
+              const n = Number(value || 0)
+              if (n < 0) return 'Balance cannot be negative'
+              if (n > MONEY_MAX_AMOUNT) {
+                return `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`
+              }
+              return undefined
+            },
+          }}
+        >
+          {(field) => (
+            <FormField
+              label="Starting Balance"
+              htmlFor="account-initial-balance"
+              error={field.state.meta.errors[0]?.toString()}
+              hint="The opening balance when this account was added"
+            >
+              <CurrencyInput
+                id="account-initial-balance"
+                name="account-initial-balance"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+              />
+            </FormField>
+          )}
+        </form.Field>
+      )}
 
       {showSafetyBuffer && (
         <form.Field

@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { Loader2, Plus } from 'lucide-react'
 import { Button } from '#/components/common/Button'
 import { BottomSheet } from '#/components/common/BottomSheet'
+import { TransferDetails } from '#/features/transactions/components/TransferDetails'
 import { TransactionList } from '#/features/transactions/components/TransactionList'
 import { TransactionForm } from '#/features/transactions/components/TransactionForm'
 import { TransactionFilterBar } from '#/features/transactions/components/TransactionFilterBar'
@@ -36,6 +37,9 @@ function TransactionsRoute() {
   const [showForm, setShowForm] = useState(false)
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null)
+  const [viewingTransfer, setViewingTransfer] = useState<Transaction | null>(
+    null,
+  )
   const { transactionType } = useFiltersStore()
 
   const { data: transactions = [] } = useTransactions({
@@ -87,11 +91,19 @@ function TransactionsRoute() {
 
   function handleAddTransaction() {
     setEditingTransaction(null)
+    setViewingTransfer(null)
     setShowForm(true)
   }
 
-  function handleEditTransaction(transaction: Transaction) {
-    if (transaction.type === 'transfer') return
+  function handleSelectTransaction(transaction: Transaction) {
+    if (transaction.type === 'transfer') {
+      setShowForm(false)
+      setEditingTransaction(null)
+      setViewingTransfer(transaction)
+      return
+    }
+
+    setViewingTransfer(null)
     setEditingTransaction(transaction)
     setShowForm(true)
   }
@@ -99,6 +111,10 @@ function TransactionsRoute() {
   function handleCloseSheet() {
     setEditingTransaction(null)
     setShowForm(false)
+  }
+
+  function handleCloseTransferDetails() {
+    setViewingTransfer(null)
   }
 
   return (
@@ -121,7 +137,7 @@ function TransactionsRoute() {
             accounts={accounts}
             categories={categories}
             goals={goals}
-            onEdit={handleEditTransaction}
+            onSelect={handleSelectTransaction}
           />
         )}
       </div>
@@ -163,6 +179,20 @@ function TransactionsRoute() {
               initialValues={editingTransaction ?? undefined}
             />
           )}
+        </BottomSheet>
+      )}
+
+      {viewingTransfer && (
+        <BottomSheet
+          title="Transfer Details"
+          onClose={handleCloseTransferDetails}
+        >
+          <TransferDetails
+            transaction={viewingTransfer}
+            accounts={accounts}
+            categories={categories}
+            goals={goals}
+          />
         </BottomSheet>
       )}
     </>

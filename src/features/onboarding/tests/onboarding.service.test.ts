@@ -35,6 +35,7 @@ describe('onboardingService', () => {
     const onboardingService = createOnboardingService(database)
 
     const result = await onboardingService.complete({
+      userName: 'Alex',
       primaryAccount: {
         name: 'Main Wallet',
         type: 'ewallet',
@@ -99,6 +100,7 @@ describe('onboardingService', () => {
 
     await expect(
       onboardingService.complete({
+        userName: 'Alex',
         primaryAccount: {
           name: 'Main Wallet',
           type: 'ewallet',

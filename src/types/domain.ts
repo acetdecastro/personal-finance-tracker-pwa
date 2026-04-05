@@ -88,3 +88,8 @@ export interface UserSettings extends TimestampedEntity {
   theme: ThemePreference
   hasCompletedOnboarding: boolean
 }
+
+export interface User extends TimestampedEntity {
+  id: 'primary'
+  name: string
+}

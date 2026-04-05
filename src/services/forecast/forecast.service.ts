@@ -28,6 +28,25 @@ function calculateTotalSafetyBuffers(accounts: Account[]) {
     .reduce((sum, account) => sum + account.safetyBuffer, 0)
 }
 
+export function computeAccountBalance(
+  account: Account,
+  transactions: Transaction[],
+): number {
+  return transactions.reduce((balance, tx) => {
+    if (tx.type === 'income' && tx.accountId === account.id) {
+      return balance + tx.amount
+    }
+    if (tx.type === 'expense' && tx.accountId === account.id) {
+      return balance - tx.amount
+    }
+    if (tx.type === 'transfer') {
+      if (tx.fromAccountId === account.id) return balance - tx.amount
+      if (tx.toAccountId === account.id) return balance + tx.amount
+    }
+    return balance
+  }, account.initialBalance)
+}
+
 export function calculateCurrentBalance(
   accounts: Account[],
   transactions: Transaction[],

@@ -247,6 +247,9 @@ function BudgetRoute() {
               </Button>
             }
           />
+          <p className="text-muted-foreground/70 text-xs">
+            Spending and progress shown here are for this month.
+          </p>
           {isLoading ? (
             <div className="bg-card text-muted-foreground rounded-2xl p-4 text-sm">
               Loading budget snapshots…
@@ -254,7 +257,7 @@ function BudgetRoute() {
           ) : budgetSnapshots.length === 0 ? (
             <EmptyState
               title="No budgets yet"
-              description="Set a monthly limit for a spending category."
+              description="Add a monthly limit for a spending category."
               action={
                 <Button onClick={openBudgetCreate} className="px-4 py-2">
                   Add a budget
@@ -291,7 +294,7 @@ function BudgetRoute() {
           ) : (
             <EmptyState
               title="No savings goals"
-              description="Set goals to target."
+              description="Add goals to target."
               action={
                 <Button onClick={openGoalCreate} className="px-4 py-2">
                   Add a goal
@@ -304,7 +307,7 @@ function BudgetRoute() {
 
       {showBudgetForm && (
         <BottomSheet
-          title={editingBudget ? 'Edit Budget' : 'Set Budget'}
+          title={editingBudget ? 'Edit Budget' : 'Add Budget'}
           onClose={closeBudgetSheet}
         >
           <BudgetForm

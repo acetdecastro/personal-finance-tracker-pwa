@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { format, getDate } from 'date-fns'
 import {
   CheckCircle,
   ChevronRight,
   Download,
+  FolderOpen,
   Loader2,
   Plus,
   Share,
@@ -20,18 +21,28 @@ import { Input } from '#/components/common/Input'
 import { SelectInput } from '#/components/common/SelectInput'
 import { toStoredDate } from '#/lib/dates'
 import { ENTITY_NAME_MAX_LENGTH, MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
+import {
+  USER_NAME_MAX_LENGTH,
+  userNameSchema,
+} from '#/features/user/schemas/user.schemas'
 import { cn } from '#/lib/utils/cn'
 import {
   useOnboardingBootstrap,
   useCompleteOnboarding,
 } from '../hooks/use-onboarding'
 import { useInstallPrompt } from '#/features/settings/hooks/use-install-prompt'
+import {
+  parseImportFile,
+  importData,
+} from '#/services/import-export/import-export.service'
 import type { CreateAccountInput } from '#/features/accounts/schemas/account.schemas'
 import type { CompleteOnboardingInput } from '../schemas/onboarding.schemas'
 import type { CategoryOptionDto } from '#/types/dto'
+import type { ExportPayload } from '#/services/import-export/import-export.schemas'
 
 type Step =
-  | 'welcome'
+  | 'intro'
+  | 'import'
   | 'account'
   | 'salary'
   | 'expenses'
@@ -60,7 +71,8 @@ interface OnboardingFlowProps {
 }
 
 export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
-  const [step, setStep] = useState<Step>('welcome')
+  const [step, setStep] = useState<Step>('intro')
+  const [userName, setUserName] = useState('')
   const [primaryAccount, setPrimaryAccount] =
     useState<CreateAccountInput | null>(null)
   const [salary, setSalary] = useState<SalaryDraft | null>(null)
@@ -77,6 +89,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     setSubmitError(null)
     try {
       await completeOnboarding.mutateAsync({
+        userName,
         primaryAccount,
         salary,
         recurringExpenses,
@@ -90,8 +103,21 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     }
   }
 
-  if (step === 'welcome') {
-    return <WelcomeStep onStart={() => setStep('account')} />
+  if (step === 'intro') {
+    return (
+      <IntroNameStep
+        onSubmit={(name) => {
+          setUserName(name)
+          setStep('import')
+        }}
+      />
+    )
+  }
+
+  if (step === 'import') {
+    return (
+      <ImportStep onImported={onComplete} onSkip={() => setStep('account')} />
+    )
   }
 
   if (step === 'account') {
@@ -192,49 +218,94 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
 
 // ─── Sub-steps ────────────────────────────────────────────────────────────────
 
-function WelcomeStep({ onStart }: { onStart: () => void }) {
+function IntroNameStep({ onSubmit }: { onSubmit: (name: string) => void }) {
+  const [name, setName] = useState('')
+  const error =
+    name.trim().length > 0
+      ? userNameSchema.safeParse(name).error?.issues[0]?.message
+      : undefined
+
+  const FEATURES = [
+    {
+      title: 'Track every peso',
+      desc: 'Log income, expenses, and transfers across multiple accounts.',
+    },
+    {
+      title: 'Budget & save smarter',
+      desc: 'Set monthly budgets by category and track progress toward savings goals.',
+    },
+    {
+      title: 'Works offline, always',
+      desc: 'No account needed. Your data lives on your device — private by design.',
+    },
+  ]
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const result = userNameSchema.safeParse(name)
+    if (result.success) onSubmit(result.data)
+  }
+
   return (
     <div className="space-y-8">
       <div className="space-y-2">
         <p className="text-primary text-[11px] font-bold tracking-widest uppercase">
-          Welcome
+          Welcome to FinKo
         </p>
         <h1 className="text-foreground text-2xl font-extrabold tracking-tight">
-          Let&apos;s get you set up
+          Your personal finance, simplified
         </h1>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Takes about 2 minutes. You can always change these later in Accounts
-          and Settings.
+          A local-first finance tracker built for clarity — no subscriptions, no
+          cloud.
         </p>
       </div>
 
       <div className="space-y-3">
-        {[
-          'Add your main account',
-          'Set up your salary',
-          'Add recurring expenses (optional)',
-        ].map((item, i) => (
-          <div
-            key={i}
-            className="text-secondary-foreground flex items-center gap-3 text-sm"
-          >
-            <div className="bg-primary text-primary-foreground flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold">
-              {i + 1}
+        {FEATURES.map((f, i) => (
+          <div key={i} className="flex gap-3">
+            <div className="bg-primary-subtle mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full">
+              <CheckCircle className="text-primary size-3.5" />
             </div>
-            {item}
+            <div>
+              <p className="text-foreground text-sm font-semibold">{f.title}</p>
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                {f.desc}
+              </p>
+            </div>
           </div>
         ))}
       </div>
 
-      <InfoBanner message="Your data is stored locally on this device and browser. Clearing browser data or uninstalling the app may remove it. Export backups regularly." />
+      <InfoBanner message="Your data is stored only on this device and browser. Export backups regularly so you never lose it." />
 
-      <Button
-        onClick={onStart}
-        className="flex w-full items-center justify-center gap-2"
-      >
-        Get Started
-        <ChevronRight className="size-4" />
-      </Button>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <FormField
+          label="What should we call you?"
+          htmlFor="user-name"
+          error={error}
+          counter={`${name.length}/${USER_NAME_MAX_LENGTH}`}
+        >
+          <Input
+            id="user-name"
+            name="user-name"
+            placeholder="e.g. Alex"
+            maxLength={USER_NAME_MAX_LENGTH}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+          />
+        </FormField>
+
+        <Button
+          type="submit"
+          disabled={!name.trim() || !!error}
+          className="flex w-full items-center justify-center gap-2"
+        >
+          Get Started
+          <ChevronRight className="size-4" />
+        </Button>
+      </form>
     </div>
   )
 }
@@ -267,6 +338,11 @@ function DoneStep({ onComplete }: { onComplete: () => void }) {
                 : 'Your dashboard is ready. Start logging transactions to track your cash position.'}
         </p>
       </div>
+
+      <InfoBanner
+        className="text-left"
+        message="Your data lives only in this browser or device. If you ever switch devices or want to install the app, you can export a backup from Settings and import it on your new device — no data is lost."
+      />
 
       {installState === 'promptable' && (
         <div className="w-full space-y-3">
@@ -321,6 +397,143 @@ function DoneStep({ onComplete }: { onComplete: () => void }) {
           Go to Dashboard
         </Button>
       )}
+    </div>
+  )
+}
+
+function ImportStep({
+  onImported,
+  onSkip,
+}: {
+  onImported: () => void
+  onSkip: () => void
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [payload, setPayload] = useState<ExportPayload | null>(null)
+  const [isImporting, setIsImporting] = useState(false)
+  const [parseError, setParseError] = useState<string | null>(null)
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setParseError(null)
+    try {
+      const parsed = await parseImportFile(file)
+      setPayload(parsed)
+    } catch {
+      setParseError(
+        'Invalid file. Make sure you select a FinKo backup (.json).',
+      )
+    }
+    e.target.value = ''
+  }
+
+  async function handleConfirmImport() {
+    if (!payload) return
+    setIsImporting(true)
+    try {
+      await importData(payload)
+      onImported()
+    } catch {
+      setParseError('Import failed. Your data was not changed.')
+      setPayload(null)
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
+  if (payload) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <p className="text-primary text-[11px] font-bold tracking-widest uppercase">
+            Restore data
+          </p>
+          <h2 className="text-foreground text-xl font-bold tracking-tight">
+            Ready to import
+          </h2>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            This will replace everything in the app with the data from your
+            backup. Make sure this is the right file before continuing.
+          </p>
+        </div>
+
+        <div className="bg-input rounded-xl px-4 py-3">
+          <p className="text-foreground text-sm font-medium">
+            {payload.accounts.length} accounts · {payload.transactions.length}{' '}
+            transactions · {payload.budgets.length} budgets
+          </p>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            Exported on{' '}
+            {new Date(payload.metadata.exportedAt).toLocaleDateString()}
+          </p>
+        </div>
+
+        <div className="flex gap-3">
+          <Button
+            onClick={() => setPayload(null)}
+            variant="secondary"
+            fullWidth
+            disabled={isImporting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmImport}
+            fullWidth
+            disabled={isImporting}
+          >
+            {isImporting ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="size-4 animate-spin" />
+                Importing…
+              </span>
+            ) : (
+              'Restore Data'
+            )}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <p className="text-primary text-[11px] font-bold tracking-widest uppercase">
+          Returning user?
+        </p>
+        <h2 className="text-foreground text-xl font-bold tracking-tight">
+          Do you have existing data?
+        </h2>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          If you've used FinKo before and exported a backup, you can restore it
+          now and skip setup entirely.
+        </p>
+      </div>
+
+      {parseError && <p className="text-destructive text-sm">{parseError}</p>}
+
+      <div className="space-y-3">
+        <Button
+          onClick={() => fileInputRef.current?.click()}
+          className="flex w-full items-center justify-center gap-2"
+        >
+          <FolderOpen className="size-4" />
+          Import backup file
+        </Button>
+        <Button onClick={onSkip} variant="secondary" className="w-full">
+          No, start fresh
+        </Button>
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,application/json"
+        className="sr-only"
+        onChange={handleFileChange}
+      />
     </div>
   )
 }

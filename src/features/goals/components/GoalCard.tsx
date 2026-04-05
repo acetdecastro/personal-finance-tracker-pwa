@@ -2,6 +2,7 @@ import { Button } from '#/components/common/Button'
 import type { GoalSnapshotDto } from '#/types/dto'
 import { formatPhpCurrency } from '#/lib/format/number.utils'
 import { formatDisplayDate } from '#/lib/dates'
+import { cn } from '#/lib/utils/cn'
 
 interface GoalCardProps {
   goal: GoalSnapshotDto
@@ -43,7 +44,7 @@ export function GoalCard({
           )}
         </div>
         <div className="text-right">
-          <p className="text-accent text-xs font-bold">
+          <p className="text-foreground text-xs font-bold">
             {goal.percentComplete}%
           </p>
         </div>
@@ -60,12 +61,12 @@ export function GoalCard({
           <span>{formatPhpCurrency(goal.remainingAmount)} remaining</span>
         </div>
       </div>
-      <div className="flex justify-end">
+      <div className="flex justify-end space-x-2">
         {onAddSavings && (
           <Button
             type="button"
             variant="inline-primary"
-            className="-mr-2 text-[10px]"
+            className={cn('text-[10px]', goal.currentAmount === 0 && '-mr-2')}
             onClick={(event) => {
               event.stopPropagation()
               onAddSavings(goal.id)

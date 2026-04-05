@@ -3,6 +3,7 @@ import { Button } from '#/components/common/Button'
 import { CurrencyInput } from '#/components/common/CurrencyInput'
 import { FormField } from '#/components/common/FormField'
 import { SelectInput } from '#/components/common/SelectInput'
+import { useSmartFormAutofocus } from '#/lib/hooks/use-smart-form-autofocus'
 import { MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 import type { CategoryOptionDto } from '#/types/dto'
 import type { Budget } from '#/types/domain'
@@ -25,6 +26,7 @@ export function BudgetForm({
   submitLabel = 'Save',
   initialValues,
 }: BudgetFormProps) {
+  const formRef = useSmartFormAutofocus()
   const form = useForm({
     defaultValues: {
       categoryId: initialValues?.categoryId ?? '',
@@ -44,6 +46,7 @@ export function BudgetForm({
 
   return (
     <form
+      ref={formRef}
       onSubmit={(e) => {
         e.preventDefault()
         form.handleSubmit()

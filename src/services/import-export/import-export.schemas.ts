@@ -6,6 +6,7 @@ import { goalListSchema } from '#/features/goals/schemas/goal.schemas'
 import { recurringRuleListSchema } from '#/features/recurring/schemas/recurring-rule.schemas'
 import { userSettingsListSchema } from '#/features/settings/schemas/user-settings.schemas'
 import { transactionListSchema } from '#/features/transactions/schemas/transaction.schemas'
+import { userListSchema } from '#/features/user/schemas/user.schemas'
 import { storedDateSchema } from '#/lib/utils/schema'
 
 export const exportMetadataSchema = z.object({
@@ -23,6 +24,12 @@ export const exportPayloadSchema = z.object({
   budgets: budgetListSchema,
   goals: goalListSchema,
   userSettings: userSettingsListSchema,
+  users: userListSchema,
 })
 
-export const importPayloadSchema = exportPayloadSchema
+export const importPayloadSchema = exportPayloadSchema.extend({
+  users: userListSchema.optional().default([]),
+})
+
+export type ExportPayload = z.infer<typeof exportPayloadSchema>
+export type ImportPayload = z.infer<typeof importPayloadSchema>

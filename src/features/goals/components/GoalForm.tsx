@@ -7,6 +7,7 @@ import { FormField } from '#/components/common/FormField'
 import { Input } from '#/components/common/Input'
 import { InfoBanner } from '#/components/common/InfoBanner'
 import { toStoredDate } from '#/lib/dates'
+import { useSmartFormAutofocus } from '#/lib/hooks/use-smart-form-autofocus'
 import { ENTITY_NAME_MAX_LENGTH, MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 import type { Goal } from '#/types/domain'
 import type { CreateGoalInput } from '../schemas/goal.schemas'
@@ -30,6 +31,7 @@ export function GoalForm({
   deleteBlockedReason,
   deleteNotice,
 }: GoalFormProps) {
+  const formRef = useSmartFormAutofocus()
   const form = useForm({
     defaultValues: {
       name: initialValues?.name ?? '',
@@ -60,6 +62,7 @@ export function GoalForm({
 
   return (
     <form
+      ref={formRef}
       onSubmit={(e) => {
         e.preventDefault()
         form.handleSubmit()

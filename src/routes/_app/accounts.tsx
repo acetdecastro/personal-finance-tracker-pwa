@@ -6,6 +6,7 @@ import { Button } from '#/components/common/Button'
 import { BottomSheet } from '#/components/common/BottomSheet'
 import { AccountForm } from '#/features/accounts/components/AccountForm'
 import { AccountList } from '#/features/accounts/components/AccountList'
+import { AddBalanceForm } from '#/features/accounts/components/AddBalanceForm'
 import {
   useAccountUsage,
   useAccounts,
@@ -15,9 +16,15 @@ import {
   useRestoreAccount,
   useUpdateAccount,
 } from '#/features/accounts/hooks/use-accounts'
+import {
+  useTransactions,
+  useCreateTransaction,
+} from '#/features/transactions/hooks/use-transactions'
+import { toStoredDate } from '#/lib/dates'
 import { SectionHeader } from '#/components/common/SectionHeader'
 import { EmptyState } from '#/components/common/EmptyState'
 import { cn } from '#/lib/utils/cn'
+import { computeAccountBalance } from '#/services/forecast/forecast.service'
 import type { Account } from '#/types/domain'
 import type {
   CreateAccountInput,
@@ -33,13 +40,25 @@ type SheetState = { mode: 'create' } | { mode: 'edit'; account: Account } | null
 function AccountsRoute() {
   const [filter, setFilter] = useState<'active' | 'archived'>('active')
   const [sheetState, setSheetState] = useState<SheetState>(null)
+  const [addBalanceAccount, setAddBalanceAccount] = useState<Account | null>(
+    null,
+  )
   const { data: accounts = [] } = useAccounts()
   const { data: accountUsage = [] } = useAccountUsage()
+  const { data: transactions = [] } = useTransactions()
+  const balances = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const account of accounts) {
+      map[account.id] = computeAccountBalance(account, transactions)
+    }
+    return map
+  }, [accounts, transactions])
   const createAccount = useCreateAccount()
   const updateAccount = useUpdateAccount()
   const archiveAccount = useArchiveAccount()
   const restoreAccount = useRestoreAccount()
   const deleteAccount = useDeleteAccount()
+  const createTransaction = useCreateTransaction()
 
   async function handleCreate(values: CreateAccountInput) {
     try {
@@ -103,6 +122,30 @@ function AccountsRoute() {
       setSheetState(null)
     } catch {
       toast.error('Failed to delete account')
+    }
+  }
+
+  async function handleAddBalance(values: { amount: number; date: string }) {
+    if (!addBalanceAccount) return
+    try {
+      await createTransaction.mutateAsync({
+        type: 'income',
+        accountId: addBalanceAccount.id,
+        categoryId: 'category-income-other-income',
+        amount: values.amount,
+        transactionDate: toStoredDate(new Date(values.date + 'T00:00:00.000Z')),
+        note: 'Balance top-up',
+        fromAccountId: null,
+        toAccountId: null,
+        recurringRuleId: null,
+        goalId: null,
+        goalTransferDirection: null,
+      })
+      toast.success('Balance added')
+      setAddBalanceAccount(null)
+    } catch (e) {
+      console.log(e)
+      toast.error('Failed to add balance')
     }
   }
 
@@ -186,7 +229,9 @@ function AccountsRoute() {
           ) : (
             <AccountList
               accounts={filteredAccounts}
+              balances={balances}
               onSelect={(account) => setSheetState({ mode: 'edit', account })}
+              onAddBalance={setAddBalanceAccount}
             />
           )}
         </div>
@@ -207,6 +252,12 @@ function AccountsRoute() {
                     safetyBuffer: sheetState.account.safetyBuffer,
                     isArchived: sheetState.account.isArchived,
                   }
+                : undefined
+            }
+            currentBalance={
+              sheetState.mode === 'edit'
+                ? (balances[sheetState.account.id] ??
+                  sheetState.account.initialBalance)
                 : undefined
             }
             onSubmit={
@@ -235,6 +286,18 @@ function AccountsRoute() {
                 ? handleDelete
                 : undefined
             }
+          />
+        </BottomSheet>
+      )}
+
+      {addBalanceAccount && (
+        <BottomSheet
+          title={`Add Balance — ${addBalanceAccount.name}`}
+          onClose={() => setAddBalanceAccount(null)}
+        >
+          <AddBalanceForm
+            onSubmit={handleAddBalance}
+            onCancel={() => setAddBalanceAccount(null)}
           />
         </BottomSheet>
       )}

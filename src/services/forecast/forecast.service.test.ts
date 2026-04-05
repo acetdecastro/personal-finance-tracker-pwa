@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   calculateCurrentBalance,
   calculateForecastSummary,
+  computeAccountBalance,
 } from './forecast.service'
 import type { Account, RecurringRule, Transaction } from '#/types/domain'
 
@@ -31,6 +32,7 @@ const transactions: Transaction[] = [
     recurringRuleId: null,
     createdAt: '2026-04-01T00:00:00.000Z',
     updatedAt: '2026-04-01T00:00:00.000Z',
+    goalId: null,
   },
   {
     id: 'tx-expense',
@@ -46,6 +48,7 @@ const transactions: Transaction[] = [
     recurringRuleId: null,
     createdAt: '2026-04-02T00:00:00.000Z',
     updatedAt: '2026-04-02T00:00:00.000Z',
+    goalId: null,
   },
 ]
 
@@ -105,6 +108,83 @@ describe('forecast.service', () => {
     expect(summary.projectedBalance14d).toBe(2000)
     expect(summary.projectedBalance30d).toBe(3000)
     expect(summary.lowestProjectedBalance30d).toBe(1000)
+  })
+
+  it('computes per-account balance by applying income, expense, and transfer transactions', () => {
+    const accountA: Account = {
+      id: 'account-a',
+      name: 'Bank',
+      type: 'bank',
+      initialBalance: 5000,
+      safetyBuffer: 0,
+      isArchived: false,
+      createdAt: '2026-04-01T00:00:00.000Z',
+      updatedAt: '2026-04-01T00:00:00.000Z',
+    }
+    const accountB: Account = {
+      id: 'account-b',
+      name: 'E-Wallet',
+      type: 'ewallet',
+      initialBalance: 1000,
+      safetyBuffer: 0,
+      isArchived: false,
+      createdAt: '2026-04-01T00:00:00.000Z',
+      updatedAt: '2026-04-01T00:00:00.000Z',
+    }
+    const perAccountTransactions: Transaction[] = [
+      {
+        id: 'tx-transfer',
+        type: 'transfer',
+        amount: 500,
+        categoryId: 'category-transfer-transfer',
+        accountId: null,
+        fromAccountId: 'account-a',
+        toAccountId: 'account-b',
+        goalId: null,
+        goalTransferDirection: null,
+        note: null,
+        transactionDate: '2026-04-02T00:00:00.000Z',
+        recurringRuleId: null,
+        createdAt: '2026-04-02T00:00:00.000Z',
+        updatedAt: '2026-04-02T00:00:00.000Z',
+      },
+    ]
+
+    expect(computeAccountBalance(accountA, perAccountTransactions)).toBe(4500)
+    expect(computeAccountBalance(accountB, perAccountTransactions)).toBe(1500)
+  })
+
+  it('adds an income top-up transaction to the account balance', () => {
+    const cashWallet: Account = {
+      id: 'account-a',
+      name: 'Cash Wallet',
+      type: 'cash',
+      initialBalance: 1000,
+      safetyBuffer: 0,
+      isArchived: false,
+      createdAt: '2026-04-01T00:00:00.000Z',
+      updatedAt: '2026-04-01T00:00:00.000Z',
+    }
+    const topUpTransactions: Transaction[] = [
+      {
+        id: 'tx-topup',
+        type: 'income',
+        amount: 500,
+        categoryId: 'category-income-other-income',
+        accountId: 'account-a',
+        fromAccountId: null,
+        toAccountId: null,
+        goalId: null,
+        goalTransferDirection: null,
+        note: 'Balance top-up',
+        transactionDate: '2026-04-06T00:00:00.000Z',
+        recurringRuleId: null,
+        createdAt: '2026-04-06T00:00:00.000Z',
+        updatedAt: '2026-04-06T00:00:00.000Z',
+      },
+    ]
+
+    expect(computeAccountBalance(cashWallet, topUpTransactions)).toBe(1500)
   })
 
   it('subtracts goal savings in and adds goal transfers out', () => {
