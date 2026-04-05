@@ -3,6 +3,7 @@ import { devtools } from '@tanstack/devtools-vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { VitePWA } from 'vite-plugin-pwa'
 import { visualizer } from 'rollup-plugin-visualizer'
+import { nitro } from 'nitro/vite'
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 
@@ -15,6 +16,7 @@ const config = defineConfig(({ mode, isSsrBuild }) => ({
     tsconfigPaths({ projects: ['./tsconfig.json'] }),
     tailwindcss(),
     tanstackStart(),
+    nitro(),
     viteReact(),
     VitePWA({
       registerType: 'autoUpdate',
