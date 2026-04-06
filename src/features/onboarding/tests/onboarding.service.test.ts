@@ -75,6 +75,7 @@ describe('onboardingService', () => {
     )
     expect(result.primaryAccount.safetyBuffer).toBe(1000)
     expect(result.userSettings.hasCompletedOnboarding).toBe(true)
+    expect(result.user.name).toBe('Alex')
   })
 
   it('rejects repeat onboarding completion after onboarding has already been completed', async () => {

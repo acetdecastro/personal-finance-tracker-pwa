@@ -6,6 +6,7 @@ import type {
   RecurringRule,
   ThemePreference,
   Transaction,
+  User,
   UserSettings,
 } from './domain'
 
@@ -86,6 +87,7 @@ export interface CompleteOnboardingResultDto {
   salaryRule: RecurringRule
   recurringExpenseRules: RecurringRule[]
   userSettings: UserSettings
+  user: User
 }
 
 export interface OnboardingBootstrapDto {

@@ -101,19 +101,20 @@ export function createOnboardingService(database: FinanceTrackerDatabase = db) {
                 hasCompletedOnboarding: true,
               })
 
-          await database.users.put(
-            userSchema.parse({
-              id: 'primary',
-              name: values.userName,
-              ...createTimestamps(),
-            }),
-          )
+          const user = userSchema.parse({
+            id: 'primary',
+            name: values.userName,
+            ...createTimestamps(),
+          })
+
+          await database.users.put(user)
 
           return {
             primaryAccount,
             salaryRule,
             recurringExpenseRules,
             userSettings,
+            user,
           }
         },
       )
