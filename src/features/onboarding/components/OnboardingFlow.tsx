@@ -27,6 +27,21 @@ import {
   USER_NAME_MAX_LENGTH,
   userNameSchema,
 } from '#/features/user/schemas/user.schemas'
+import { SETTINGS_SCREEN_QUERY_KEY } from '#/features/settings/hooks/use-settings'
+import { USER_SETTINGS_QUERY_KEY } from '#/features/settings/hooks/use-user-settings'
+import { mapSettingsToDto } from '#/features/settings/services/settings.service'
+import { USER_QUERY_KEY } from '#/features/user/hooks/use-user'
+import { ACCOUNTS_QUERY_KEY } from '#/features/accounts/hooks/use-accounts'
+import { BUDGET_PAGE_QUERY_KEY } from '#/features/budgets/hooks/use-budgets'
+import { CATEGORIES_QUERY_KEY } from '#/features/categories/hooks/use-categories'
+import { DASHBOARD_QUERY_KEY } from '#/features/dashboard/hooks/use-dashboard-data'
+import {
+  GOALS_QUERY_KEY,
+  GOAL_SNAPSHOTS_QUERY_KEY,
+  GOAL_USAGE_QUERY_KEY,
+} from '#/features/goals/hooks/use-goals'
+import { RECURRING_RULES_QUERY_KEY } from '#/features/recurring/hooks/use-recurring-rules'
+import { TRANSACTIONS_QUERY_KEY } from '#/features/transactions/hooks/use-transactions'
 import { cn } from '#/lib/utils/cn'
 import {
   useOnboardingBootstrap,
@@ -332,10 +347,28 @@ function IntroNameStep({ onSubmit }: { onSubmit: (name: string) => void }) {
 
 function DoneStep({ onComplete }: { onComplete: () => void }) {
   const { installState, triggerInstall } = useInstallPrompt()
+  const [isNavigating, setIsNavigating] = useState(false)
+
+  async function handleComplete() {
+    setIsNavigating(true)
+    await new Promise((r) => setTimeout(r, 1000))
+    onComplete()
+  }
 
   async function handleInstall() {
     await triggerInstall()
-    onComplete()
+    await handleComplete()
+  }
+
+  if (isNavigating) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-16 text-center">
+        <Loader2 className="text-primary size-8 animate-spin" />
+        <p className="text-muted-foreground text-sm">
+          Taking you to your dashboard…
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -374,7 +407,7 @@ function DoneStep({ onComplete }: { onComplete: () => void }) {
             Install App
           </Button>
           <button
-            onClick={onComplete}
+            onClick={handleComplete}
             className="text-muted-foreground hover:text-foreground w-full text-sm transition"
           >
             Skip, go to Dashboard
@@ -406,14 +439,14 @@ function DoneStep({ onComplete }: { onComplete: () => void }) {
               </li>
             ))}
           </ol>
-          <Button onClick={onComplete} className="w-full">
+          <Button onClick={handleComplete} className="w-full">
             Go to Dashboard
           </Button>
         </div>
       )}
 
       {(installState === 'standalone' || installState === 'unavailable') && (
-        <Button onClick={onComplete} className="w-full">
+        <Button onClick={handleComplete} className="w-full">
           Go to Dashboard
         </Button>
       )}
@@ -520,13 +553,10 @@ function InstallStep({
       </ol>
       <InfoBanner message="Skipping means your data lives in Safari. You can install later from Settings, but you'll need to re-import your data." />
       <div className="space-y-3">
-        <Button onClick={onNext} className="w-full">
-          Done, continue setup
-        </Button>
         <button
           type="button"
           onClick={onNext}
-          className="text-muted-foreground hover:text-foreground w-full text-sm transition"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-xl px-4 py-3 text-sm font-semibold transition"
         >
           Skip, continue in Safari
         </button>
@@ -546,6 +576,7 @@ function ImportStep({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [payload, setPayload] = useState<ExportPayload | null>(null)
   const [isImporting, setIsImporting] = useState(false)
+  const [importSuccess, setImportSuccess] = useState(false)
   const [parseError, setParseError] = useState<string | null>(null)
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -568,13 +599,26 @@ function ImportStep({
     setIsImporting(true)
     try {
       await importData(payload)
-      // Warm the guard queries before navigating. The ['user'] cache still
-      // holds null from the onboarding mount — without this refetch,
-      // _app/route.tsx sees the stale null and redirects back to /onboarding.
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: ['user'] }),
-        queryClient.refetchQueries({ queryKey: ['settings-screen'] }),
-      ])
+      const importedUser = payload.users[0] ?? null
+      const importedSettings = payload.userSettings[0] ?? null
+
+      queryClient.setQueryData(USER_QUERY_KEY, importedUser)
+      queryClient.setQueryData(
+        SETTINGS_SCREEN_QUERY_KEY,
+        mapSettingsToDto(importedSettings),
+      )
+      queryClient.setQueryData(USER_SETTINGS_QUERY_KEY, importedSettings)
+      queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: BUDGET_PAGE_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: GOALS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: GOAL_SNAPSHOTS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: GOAL_USAGE_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: RECURRING_RULES_QUERY_KEY })
+      setImportSuccess(true)
+      await new Promise((r) => setTimeout(r, 1000))
       onImported()
     } catch {
       setParseError('Import failed. Your data was not changed.')
@@ -582,6 +626,25 @@ function ImportStep({
     } finally {
       setIsImporting(false)
     }
+  }
+
+  if (importSuccess) {
+    return (
+      <div className="flex flex-col items-center gap-6 py-16 text-center">
+        <div className="bg-primary-subtle flex size-16 items-center justify-center rounded-full">
+          <CheckCircle className="text-primary size-8" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-foreground text-xl font-bold tracking-tight">
+            Data restored!
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Taking you to your dashboard…
+          </p>
+        </div>
+        <Loader2 className="text-muted-foreground size-5 animate-spin" />
+      </div>
+    )
   }
 
   if (payload) {
