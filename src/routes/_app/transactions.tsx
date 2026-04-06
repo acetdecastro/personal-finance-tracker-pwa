@@ -22,6 +22,7 @@ import { useGoals } from '#/features/goals/hooks/use-goals'
 import { useFiltersStore } from '#/stores/filters-store'
 import type { CreateTransactionInput } from '#/features/transactions/schemas/transaction.schemas'
 import type { Transaction } from '#/types/domain'
+import { SectionHeader } from '#/components/common/SectionHeader'
 
 const TRANSACTION_TYPE_LABELS = {
   income: 'income',
@@ -119,7 +120,17 @@ function TransactionsRoute() {
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-3">
+        <SectionHeader
+          title="Transactions"
+          action={
+            <Button onClick={handleAddTransaction} variant="inline-primary">
+              <Plus className="size-3.5" />
+              Add
+            </Button>
+          }
+        />
+
         <TransactionFilterBar />
 
         {transactions.length === 0 ? (

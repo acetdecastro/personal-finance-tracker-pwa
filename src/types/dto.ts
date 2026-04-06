@@ -57,42 +57,23 @@ export interface CategoryOptionDto extends SelectOption {
   isSystem: boolean
 }
 
-export interface OnboardingRecurringRuleDraftDto {
-  name: string
-  amount: number
-  cadence: RecurringRule['cadence']
-  semiMonthlyDays: number[] | null
-  monthlyDay: number | null
-  weeklyInterval: number | null
-  nextOccurrenceDate: string
-}
-
 export interface CompleteOnboardingInputDto {
-  primaryAccount: {
+  userName: string
+  initialAccount: {
     name: string
     type: Account['type']
     initialBalance: number
     safetyBuffer: number
   }
-  salary: OnboardingRecurringRuleDraftDto
-  recurringExpenses?: Array<
-    OnboardingRecurringRuleDraftDto & {
-      categoryId: string
-    }
-  >
 }
 
 export interface CompleteOnboardingResultDto {
-  primaryAccount: Account
-  salaryRule: RecurringRule
-  recurringExpenseRules: RecurringRule[]
+  initialAccount: Account
   userSettings: UserSettings
   user: User
 }
 
 export interface OnboardingBootstrapDto {
-  expenseCategoryOptions: CategoryOptionDto[]
-  salaryCategoryId: string | null
   settings: SettingsScreenDto
 }
 

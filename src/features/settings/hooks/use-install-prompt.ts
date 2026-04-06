@@ -9,6 +9,7 @@ export type InstallState =
   | 'standalone'
   | 'ios'
   | 'mac-safari'
+  | 'desktop-chrome'
   | 'promptable'
   | 'unavailable'
 
@@ -19,6 +20,13 @@ export function useInstallPrompt() {
 
   useEffect(() => {
     const userAgent = navigator.userAgent
+    const platform =
+      (
+        navigator as Navigator & {
+          userAgentData?: { platform?: string }
+        }
+      ).userAgentData?.platform || navigator.platform
+    const vendor = navigator.vendor
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       (navigator as Navigator & { standalone?: boolean }).standalone === true
@@ -29,7 +37,8 @@ export function useInstallPrompt() {
     }
 
     const isIOS =
-      /iphone|ipad|ipod/i.test(userAgent) &&
+      (/iphone|ipad|ipod/i.test(userAgent) ||
+        /iphone|ipad|ipod/i.test(platform)) &&
       !(window as Window & { MSStream?: unknown }).MSStream
 
     if (isIOS) {
@@ -37,9 +46,20 @@ export function useInstallPrompt() {
       return
     }
 
+    const isDesktopChrome =
+      (/Mac|Win|Linux/i.test(platform) ||
+        /Macintosh|Windows|Linux/i.test(userAgent)) &&
+      /Chrome|Chromium|Edg|OPR/i.test(userAgent) &&
+      !/Mobile|Android|CriOS/i.test(userAgent)
+
+    if (isDesktopChrome) {
+      setInstallState('desktop-chrome')
+    }
+
     const isMacSafari =
-      /Macintosh/i.test(userAgent) &&
+      (/Mac/i.test(platform) || /Macintosh/i.test(userAgent)) &&
       /Safari/i.test(userAgent) &&
+      /Apple/i.test(vendor) &&
       !/Chrome|Chromium|CriOS|Edg|OPR|Firefox/i.test(userAgent)
 
     if (isMacSafari) {

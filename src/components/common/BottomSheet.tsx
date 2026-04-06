@@ -14,7 +14,7 @@ interface BottomSheetProps {
 const BACKDROP_CLS =
   'fixed inset-0 z-50 flex flex-col justify-end bg-black/40 cursor-pointer'
 const PANEL_CLS =
-  'flex max-h-[90dvh] flex-col rounded-tl-3xl rounded-tr-3xl bg-popover cursor-auto'
+  'flex max-h-[90dvh] flex-col rounded-tl-3xl rounded-tr-3xl bg-popover cursor-auto dark:border-primary/40 border-border/60 border-t'
 const CLOSE_BUTTON_CLS =
   'rounded-lg p-1 text-muted-foreground hover:text-foreground'
 

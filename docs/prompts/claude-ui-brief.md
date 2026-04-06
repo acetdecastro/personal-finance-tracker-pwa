@@ -231,7 +231,7 @@ Goal: get the user to usable value quickly.
 Required steps or sections:
 
 - welcome
-- add primary account
+- add first account
 - add salary rule
 - optionally add recurring fixed expenses
 - set minimum buffer optionally

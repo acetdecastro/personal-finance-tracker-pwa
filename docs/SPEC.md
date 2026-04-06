@@ -627,12 +627,9 @@ Allow user to begin quickly without excessive friction.
 
 ## Required inputs
 
-- primary salary amount
-- salary cadence
-- next salary date
 - at least one account
-- safety buffer for the primary account
-- optional recurring fixed expenses
+- safety buffer for the first account created during onboarding
+- user name
 
 ## UX rules
 
@@ -644,15 +641,15 @@ Allow user to begin quickly without excessive friction.
 ## MVP sections
 
 1. Welcome
-2. Add primary account
-3. Add salary rule
-4. Add recurring expenses
+2. Install prompt when relevant
+3. Restore existing backup or start fresh
+4. Add first account
 5. Finish and go to dashboard
 
 ## Acceptance criteria
 
 - onboarding creates required base records
-- user can finish with just one account + one salary rule
+- user can finish with just one account
 - categories are seeded automatically
 
 ---

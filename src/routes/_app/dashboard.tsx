@@ -10,15 +10,22 @@ import { BudgetList } from '#/features/budgets/components/BudgetList'
 import { BudgetForm } from '#/features/budgets/components/BudgetForm'
 import { GoalCard } from '#/features/goals/components/GoalCard'
 import { GoalForm } from '#/features/goals/components/GoalForm'
+import { RecurringRuleForm } from '#/features/recurring/components/RecurringRuleForm'
 import { TransactionRow } from '#/features/transactions/components/TransactionRow'
 import { TransactionForm } from '#/features/transactions/components/TransactionForm'
 import { useDashboardData } from '#/features/dashboard/hooks/use-dashboard-data'
 import { useUser } from '#/features/user/hooks/use-user'
+import { useAccounts } from '#/features/accounts/hooks/use-accounts'
+import { useCategories } from '#/features/categories/hooks/use-categories'
 import {
   useBudgetPageData,
   useCreateBudget,
 } from '#/features/budgets/hooks/use-budgets'
 import { useCreateGoal } from '#/features/goals/hooks/use-goals'
+import {
+  useRecurringRules,
+  useCreateRecurringRule,
+} from '#/features/recurring/hooks/use-recurring-rules'
 import {
   useTransactionFormOptions,
   useCreateTransaction,
@@ -35,6 +42,7 @@ import type {
 } from '#/types/dto'
 import type { CreateBudgetInput } from '#/features/budgets/schemas/budget.schemas'
 import type { CreateGoalInput } from '#/features/goals/schemas/goal.schemas'
+import type { CreateRecurringRuleInput } from '#/features/recurring/schemas/recurring-rule.schemas'
 import type { CreateTransactionInput } from '#/features/transactions/schemas/transaction.schemas'
 import { TYPE_CONFIG } from '#/features/transactions/components/TransactionList'
 
@@ -51,6 +59,14 @@ const DASHBOARD_TIPS = [
   'You can import your JSON backup from the onboarding screen or settings.',
 ] as const
 
+interface DashboardPrompt {
+  key: string
+  title: string
+  description: string
+  actionLabel: string
+  onAction: () => void
+}
+
 function getGreeting() {
   const hour = new Date().getHours()
   if (hour < 12) return 'Good morning'
@@ -62,14 +78,18 @@ function DashboardRoute() {
   const navigate = useNavigate()
   const { data: dashboardData, isLoading } = useDashboardData()
   const { data: user } = useUser()
+  const { data: accounts = [] } = useAccounts()
+  const { data: categories = [] } = useCategories()
+  const { data: recurringRules } = useRecurringRules()
   const { data: budgetPageData } = useBudgetPageData()
   const { data: transactionFormOptions } = useTransactionFormOptions()
   const createBudget = useCreateBudget()
   const createGoal = useCreateGoal()
+  const createRecurringRule = useCreateRecurringRule()
   const createTransaction = useCreateTransaction()
   const [tipIndex, setTipIndex] = useState(0)
   const [openSheet, setOpenSheet] = useState<
-    null | 'budget' | 'goal' | 'transaction'
+    null | 'budget' | 'goal' | 'transaction' | 'salary' | 'recurring-expense'
   >(null)
   const totalBalanceLabel = formatPhpCurrency(
     dashboardData?.currentBalance ?? 0,
@@ -93,6 +113,16 @@ function DashboardRoute() {
     setOpenSheet(null)
   }
 
+  async function handleRecurringRuleSubmit(values: CreateRecurringRuleInput) {
+    await createRecurringRule.mutateAsync(values)
+    toast.success(
+      values.type === 'income'
+        ? 'Recurring income added'
+        : 'Recurring expense added',
+    )
+    setOpenSheet(null)
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -108,6 +138,76 @@ function DashboardRoute() {
   const budgetsEmpty = !dashboardData || dashboardData.budgets.length === 0
   const transactionsEmpty =
     !dashboardData || dashboardData.recentTransactions.length === 0
+  const hasRecurringIncome =
+    recurringRules?.some((rule) => rule.type === 'income' && rule.isActive) ??
+    false
+  const hasRecurringExpenses =
+    recurringRules?.some((rule) => rule.type === 'expense' && rule.isActive) ??
+    false
+  const showAddAnotherAccount = accounts.length <= 1
+
+  const nextSteps: DashboardPrompt[] = [
+    !transactionsEmpty
+      ? null
+      : {
+          key: 'transaction',
+          title: 'Add your first transaction',
+          description:
+            'Start logging real money movement so your balance and trends become useful.',
+          actionLabel: 'Add Transaction',
+          onAction: () => setOpenSheet('transaction'),
+        },
+    hasRecurringIncome
+      ? null
+      : {
+          key: 'salary',
+          title: 'Set up your salary',
+          description:
+            'Add recurring income so payday and forecast cards become useful.',
+          actionLabel: 'Add Salary',
+          onAction: () => setOpenSheet('salary'),
+        },
+    hasRecurringExpenses
+      ? null
+      : {
+          key: 'recurring-expense',
+          title: 'Add recurring bills',
+          description:
+            'Track expected expenses before they hit your account this month.',
+          actionLabel: 'Add Bill',
+          onAction: () => setOpenSheet('recurring-expense'),
+        },
+    !budgetsEmpty
+      ? null
+      : {
+          key: 'budget',
+          title: 'Create a monthly budget',
+          description:
+            'Set spending limits for your biggest categories and spot overruns early.',
+          actionLabel: 'Add Budget',
+          onAction: () => setOpenSheet('budget'),
+        },
+    !goalsEmpty
+      ? null
+      : {
+          key: 'goal',
+          title: 'Start a savings goal',
+          description:
+            'Give your savings a purpose so transfers and progress are easier to track.',
+          actionLabel: 'Add Goal',
+          onAction: () => setOpenSheet('goal'),
+        },
+    !showAddAnotherAccount
+      ? null
+      : {
+          key: 'account',
+          title: 'Add another account',
+          description:
+            'Separate cash, bank, and e-wallet balances for a clearer picture.',
+          actionLabel: 'Open Accounts',
+          onAction: () => void navigate({ to: '/accounts' }),
+        },
+  ].filter((prompt): prompt is DashboardPrompt => prompt !== null)
 
   return (
     <div className="space-y-6">
@@ -164,6 +264,17 @@ function DashboardRoute() {
           description="Projected balance in one month."
         />
       </div>
+
+      {nextSteps.length > 0 && (
+        <div className="space-y-3">
+          <SectionHeader title="Next Steps" />
+          <div className="space-y-3">
+            {nextSteps.slice(0, 3).map((prompt) => (
+              <NextStepCard key={prompt.key} prompt={prompt} />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         <SectionHeader
@@ -304,6 +415,62 @@ function DashboardRoute() {
           />
         </BottomSheet>
       )}
+
+      {openSheet === 'salary' && (
+        <BottomSheet onClose={() => setOpenSheet(null)} title="Add Salary">
+          <RecurringRuleForm
+            accounts={accounts}
+            categories={categories}
+            type="income"
+            defaultName="Salary"
+            defaultCategoryId="category-income-salary"
+            onSubmit={handleRecurringRuleSubmit}
+            onCancel={() => setOpenSheet(null)}
+            submitLabel="Save"
+          />
+        </BottomSheet>
+      )}
+
+      {openSheet === 'recurring-expense' && (
+        <BottomSheet
+          onClose={() => setOpenSheet(null)}
+          title="Add Recurring Expense"
+        >
+          <RecurringRuleForm
+            accounts={accounts}
+            categories={categories}
+            type="expense"
+            onSubmit={handleRecurringRuleSubmit}
+            onCancel={() => setOpenSheet(null)}
+            submitLabel="Save"
+          />
+        </BottomSheet>
+      )}
+    </div>
+  )
+}
+
+function NextStepCard({ prompt }: { prompt: DashboardPrompt }) {
+  return (
+    <div className="bg-card rounded-2xl p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="text-foreground text-sm font-semibold">
+            {prompt.title}
+          </p>
+          <p className="text-muted-foreground text-xs leading-relaxed">
+            {prompt.description}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="inline-primary"
+          className="shrink-0"
+          onClick={prompt.onAction}
+        >
+          {prompt.actionLabel}
+        </Button>
+      </div>
     </div>
   )
 }

@@ -30,6 +30,7 @@ import type { RecurringRule } from '#/types/domain'
 import type { CreateRecurringRuleInput } from '#/features/recurring/schemas/recurring-rule.schemas'
 import { PRIMARY_LINK_BUTTON_CLS } from '#/lib/constants/ui-classes'
 import { useInstallPrompt } from '#/features/settings/hooks/use-install-prompt'
+import type { InstallState } from '#/features/settings/hooks/use-install-prompt'
 import { resetAllAppData } from '#/services/data-reset/data-reset.service'
 
 export const Route = createFileRoute('/_app/settings')({
@@ -164,98 +165,10 @@ function SettingsRoute() {
           <div className="space-y-3">
             <SectionHeader title="Install App" />
             <div className="bg-card space-y-3 rounded-2xl p-4 shadow">
-              {installState === 'standalone' && (
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="text-primary size-5 shrink-0" />
-                  <div>
-                    <p className="text-foreground text-sm font-medium">
-                      Already installed
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      You're running Finance Tracker as an installed app.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {installState === 'promptable' && (
-                <>
-                  <p className="text-muted-foreground text-sm">
-                    Install Finance Tracker on your device for quick access,
-                    offline support, and a full-screen experience.
-                  </p>
-                  <Button
-                    onClick={() => void triggerInstall()}
-                    className="flex items-center gap-2"
-                  >
-                    <Download className="size-4" />
-                    Install App
-                  </Button>
-                </>
-              )}
-
-              {installState === 'ios' && (
-                <>
-                  <p className="text-muted-foreground text-sm">
-                    Install Finance Tracker on your iPhone or iPad for quick
-                    access and a full-screen experience.
-                  </p>
-                  <ol className="space-y-2">
-                    {[
-                      {
-                        icon: Share,
-                        text: "Tap the Share button in Safari's toolbar",
-                      },
-                      {
-                        icon: null,
-                        text: 'Scroll down and tap "Add to Home Screen"',
-                      },
-                      { icon: null, text: 'Tap "Add" to confirm' },
-                    ].map((step, i) => (
-                      <li
-                        key={i}
-                        className="text-secondary-foreground flex items-start gap-3 text-sm"
-                      >
-                        <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
-                          {i + 1}
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          {step.text}
-                          {step.icon && (
-                            <step.icon className="inline size-3.5 shrink-0" />
-                          )}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
-                </>
-              )}
-
-              {installState === 'mac-safari' && (
-                <>
-                  <p className="text-muted-foreground text-sm">
-                    Install FinKo on your Mac for quick access and an app-like
-                    Dock experience.
-                  </p>
-                  <ol className="space-y-2">
-                    {[
-                      'Open Safari’s File menu',
-                      'Choose "Add to Dock..."',
-                      'Click "Add" to install FinKo',
-                    ].map((step, i) => (
-                      <li
-                        key={i}
-                        className="text-secondary-foreground flex items-start gap-3 text-sm"
-                      >
-                        <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
-                          {i + 1}
-                        </span>
-                        <span>{step}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </>
-              )}
+              <InstallAppInstructions
+                installState={installState}
+                triggerInstall={triggerInstall}
+              />
             </div>
           </div>
         )}
@@ -470,6 +383,139 @@ function SettingsRoute() {
           tone="destructive"
         />
       )}
+    </>
+  )
+}
+
+function InstallAppInstructions({
+  installState,
+  triggerInstall,
+}: {
+  installState: InstallState
+  triggerInstall: () => Promise<void>
+}) {
+  if (installState === 'standalone') {
+    return (
+      <div className="flex items-center gap-3">
+        <CheckCircle className="text-primary size-5 shrink-0" />
+        <div>
+          <p className="text-foreground text-sm font-medium">
+            Already installed
+          </p>
+          <p className="text-muted-foreground text-xs">
+            You&apos;re running FinKo as an installed app.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (installState === 'promptable') {
+    return (
+      <>
+        <p className="text-muted-foreground text-sm">
+          Install FinKo on your device for quick access, offline support, and a
+          cleaner app-like experience.
+        </p>
+        <Button
+          onClick={() => void triggerInstall()}
+          className="flex items-center gap-2"
+        >
+          <Download className="size-4" />
+          Install App
+        </Button>
+      </>
+    )
+  }
+
+  if (installState === 'desktop-chrome') {
+    return (
+      <>
+        <p className="text-muted-foreground text-sm">
+          Install FinKo from Chrome&apos;s address bar for quick access and an
+          app-like desktop experience.
+        </p>
+        <ol className="space-y-2">
+          {[
+            'Click the Install button in Chrome’s address bar',
+            'Click "Install" in Chrome’s install dialog',
+            'Open FinKo from the installed app',
+          ].map((step, i) => (
+            <li
+              key={i}
+              className="text-secondary-foreground flex items-start gap-3 text-sm"
+            >
+              <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+                {i + 1}
+              </span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+      </>
+    )
+  }
+
+  if (installState === 'mac-safari') {
+    return (
+      <>
+        <p className="text-muted-foreground text-sm">
+          Install FinKo on your Mac for quick access and an app-like Dock
+          experience.
+        </p>
+        <ol className="space-y-2">
+          {[
+            'Click the Share button in Safari’s toolbar',
+            'Choose "Add to Dock"',
+            'Click "Add"',
+          ].map((step, i) => (
+            <li
+              key={i}
+              className="text-secondary-foreground flex items-start gap-3 text-sm"
+            >
+              <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+                {i + 1}
+              </span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <p className="text-muted-foreground text-sm">
+        Install FinKo on your iPhone or iPad for quick access and a full-screen
+        experience.
+      </p>
+      <ol className="space-y-2">
+        {[
+          {
+            icon: Share,
+            text: "Tap the Share button in Safari's toolbar",
+          },
+          {
+            icon: null,
+            text: 'Scroll down and tap "Add to Home Screen"',
+          },
+          { icon: null, text: 'Tap "Add" to confirm' },
+        ].map((step, i) => (
+          <li
+            key={i}
+            className="text-secondary-foreground flex items-start gap-3 text-sm"
+          >
+            <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+              {i + 1}
+            </span>
+            <span className="flex items-center gap-1.5">
+              {step.text}
+              {step.icon && <step.icon className="inline size-3.5 shrink-0" />}
+            </span>
+          </li>
+        ))}
+      </ol>
     </>
   )
 }

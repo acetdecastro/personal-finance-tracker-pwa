@@ -195,7 +195,7 @@ User can configure:
 - next salary date
 - recurring fixed expenses
 - preferred accounts
-- safety buffer for the primary account
+- safety buffer for the first account created during onboarding
 - monthly savings goal
 - currency (PHP default)
 
@@ -797,7 +797,7 @@ So here is the correct MVP cut:
 ### Must include
 
 - PWA installable shell
-- onboarding for salary + accounts
+- onboarding for name + first account
 - add/edit/delete transactions
 - recurring salary
 - recurring fixed expenses

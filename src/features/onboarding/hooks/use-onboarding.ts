@@ -32,7 +32,6 @@ export function useCompleteOnboarding() {
         queryKey: ONBOARDING_BOOTSTRAP_QUERY_KEY,
       })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      queryClient.invalidateQueries({ queryKey: ['recurring-rules'] })
     },
   })
 }

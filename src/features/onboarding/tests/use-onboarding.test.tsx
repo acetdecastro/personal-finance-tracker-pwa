@@ -26,16 +26,30 @@ function createWrapper(queryClient: QueryClient) {
   }
 }
 
+function createTestQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        gcTime: Infinity,
+      },
+      mutations: {
+        gcTime: Infinity,
+      },
+    },
+  })
+}
+
 afterEach(() => {
   vi.clearAllMocks()
 })
 
 describe('useCompleteOnboarding', () => {
   it('hydrates the guard queries immediately after onboarding completes', async () => {
-    const queryClient = new QueryClient()
+    const queryClient = createTestQueryClient()
     const wrapper = createWrapper(queryClient)
     const resultPayload: CompleteOnboardingResultDto = {
-      primaryAccount: {
+      initialAccount: {
         id: 'account-1',
         name: 'Main Wallet',
         type: 'ewallet',
@@ -45,23 +59,6 @@ describe('useCompleteOnboarding', () => {
         createdAt: '2026-04-06T00:00:00.000Z',
         updatedAt: '2026-04-06T00:00:00.000Z',
       },
-      salaryRule: {
-        id: 'rule-1',
-        name: 'Salary',
-        type: 'income',
-        amount: 15000,
-        categoryId: 'category-income-salary',
-        accountId: 'account-1',
-        cadence: 'semi-monthly',
-        semiMonthlyDays: [15, 30],
-        monthlyDay: null,
-        weeklyInterval: null,
-        nextOccurrenceDate: '2026-04-15T00:00:00.000Z',
-        isActive: true,
-        createdAt: '2026-04-06T00:00:00.000Z',
-        updatedAt: '2026-04-06T00:00:00.000Z',
-      },
-      recurringExpenseRules: [],
       userSettings: {
         id: 'primary',
         currency: 'PHP',
@@ -85,23 +82,13 @@ describe('useCompleteOnboarding', () => {
     await act(async () => {
       await result.current.mutateAsync({
         userName: 'Alex',
-        primaryAccount: {
+        initialAccount: {
           name: 'Main Wallet',
           type: 'ewallet',
           initialBalance: 2500,
           safetyBuffer: 1000,
           isArchived: false,
         },
-        salary: {
-          name: 'Salary',
-          amount: 15000,
-          cadence: 'semi-monthly',
-          semiMonthlyDays: [15, 30],
-          monthlyDay: null,
-          weeklyInterval: null,
-          nextOccurrenceDate: '2026-04-15T00:00:00.000Z',
-        },
-        recurringExpenses: [],
       })
     })
 
@@ -114,5 +101,7 @@ describe('useCompleteOnboarding', () => {
       theme: 'system',
       hasCompletedOnboarding: true,
     })
+
+    queryClient.clear()
   })
 })

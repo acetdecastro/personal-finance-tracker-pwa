@@ -32,23 +32,13 @@ describe('prelaunch happy path', () => {
 
     const onboarding = await onboardingService.complete({
       userName: 'Test User',
-      primaryAccount: {
+      initialAccount: {
         name: 'Main Wallet',
         type: 'ewallet',
         initialBalance: 5000,
         safetyBuffer: 1000,
         isArchived: false,
       },
-      salary: {
-        name: 'Salary',
-        amount: 15000,
-        cadence: 'semi-monthly',
-        semiMonthlyDays: [15, 30],
-        monthlyDay: null,
-        weeklyInterval: null,
-        nextOccurrenceDate: '2026-04-15T00:00:00.000Z',
-      },
-      recurringExpenses: [],
     })
 
     await budgetRepository.create({
@@ -68,7 +58,7 @@ describe('prelaunch happy path', () => {
       type: 'expense',
       amount: 500,
       categoryId: 'category-expense-food',
-      accountId: onboarding.primaryAccount.id,
+      accountId: onboarding.initialAccount.id,
       fromAccountId: null,
       toAccountId: null,
       goalId: null,
@@ -94,7 +84,7 @@ describe('prelaunch happy path', () => {
       amount: 1000,
       categoryId: DEFAULT_TRANSFER_CATEGORIES[0].id,
       accountId: null,
-      fromAccountId: onboarding.primaryAccount.id,
+      fromAccountId: onboarding.initialAccount.id,
       toAccountId: null,
       goalId: goal.id,
       goalTransferDirection: 'in',
@@ -123,7 +113,7 @@ describe('prelaunch happy path', () => {
       categoryId: DEFAULT_TRANSFER_CATEGORIES[0].id,
       accountId: null,
       fromAccountId: null,
-      toAccountId: onboarding.primaryAccount.id,
+      toAccountId: onboarding.initialAccount.id,
       goalId: goal.id,
       goalTransferDirection: 'out',
       note: `Goal Transfer Out · ${goal.name}`,
