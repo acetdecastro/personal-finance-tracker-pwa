@@ -383,12 +383,14 @@ function DoneStep({ onComplete }: { onComplete: () => void }) {
         </h2>
         <p className="text-muted-foreground text-sm leading-relaxed">
           {installState === 'standalone'
-            ? "You're already running FinKo as an installed app. Nice."
+            ? "You're already running FinKo as an installed app."
             : installState === 'ios'
-              ? 'Add FinKo to your Home Screen for the best experience — works offline too.'
-              : installState === 'promptable'
-                ? 'Install FinKo on your device for quick access, offline use, and a full-screen experience.'
-                : 'Your dashboard is ready. Start logging transactions to track your cash position.'}
+              ? 'Add FinKo to your Home Screen for a cleaner app-like experience and offline use.'
+              : installState === 'mac-safari'
+                ? 'Add FinKo to your Dock for a cleaner app-like experience and offline use on your Mac.'
+                : installState === 'promptable'
+                  ? 'Install FinKo on your device for a cleaner app-like experience and offline use.'
+                  : 'Your dashboard is ready. Start logging transactions to track your cash position.'}
         </p>
       </div>
 
@@ -439,6 +441,32 @@ function DoneStep({ onComplete }: { onComplete: () => void }) {
               </li>
             ))}
           </ol>
+          <Button onClick={handleComplete} className="w-full">
+            Go to Dashboard
+          </Button>
+        </div>
+      )}
+
+      {installState === 'mac-safari' && (
+        <div className="w-full space-y-4 text-left">
+          <ol className="space-y-2">
+            {[
+              'In Safari, open the File menu',
+              'Choose "Add to Dock..."',
+              'Click "Add" to install FinKo',
+            ].map((step, i) => (
+              <li
+                key={i}
+                className="text-secondary-foreground flex items-start gap-3 text-sm"
+              >
+                <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+                  {i + 1}
+                </span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+          <InfoBanner message='If "Add to Dock..." is missing, update to Safari 17 on macOS Sonoma or later.' />
           <Button onClick={handleComplete} className="w-full">
             Go to Dashboard
           </Button>
@@ -502,6 +530,52 @@ function InstallStep({
             className="text-muted-foreground hover:text-foreground w-full text-sm transition"
           >
             Skip, continue in browser
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (installState === 'mac-safari') {
+    return (
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <p className="text-primary text-[11px] font-bold tracking-widest uppercase">
+            One quick step
+          </p>
+          <h2 className="text-foreground text-xl font-bold tracking-tight">
+            Add FinKo to your Dock
+          </h2>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            On Safari for Mac, you can install FinKo as a Dock app before
+            continuing setup.
+          </p>
+        </div>
+        <ol className="space-y-3">
+          {[
+            'Open Safari’s File menu',
+            'Choose "Add to Dock..."',
+            'Click "Add", then reopen FinKo from your Dock if you want the installed experience',
+          ].map((step, i) => (
+            <li
+              key={i}
+              className="text-secondary-foreground flex items-start gap-3 text-sm"
+            >
+              <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+                {i + 1}
+              </span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+        <InfoBanner message='If "Add to Dock..." is unavailable, update to Safari 17 on macOS Sonoma or later.' />
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={onNext}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-xl px-4 py-3 text-sm font-semibold transition"
+          >
+            Skip, continue in Safari
           </button>
         </div>
       </div>

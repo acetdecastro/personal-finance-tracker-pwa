@@ -5,7 +5,12 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-export type InstallState = 'standalone' | 'ios' | 'promptable' | 'unavailable'
+export type InstallState =
+  | 'standalone'
+  | 'ios'
+  | 'mac-safari'
+  | 'promptable'
+  | 'unavailable'
 
 export function useInstallPrompt() {
   const [installState, setInstallState] = useState<InstallState>('unavailable')
@@ -13,6 +18,7 @@ export function useInstallPrompt() {
     useState<BeforeInstallPromptEvent | null>(null)
 
   useEffect(() => {
+    const userAgent = navigator.userAgent
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       (navigator as Navigator & { standalone?: boolean }).standalone === true
@@ -23,11 +29,21 @@ export function useInstallPrompt() {
     }
 
     const isIOS =
-      /iphone|ipad|ipod/i.test(navigator.userAgent) &&
+      /iphone|ipad|ipod/i.test(userAgent) &&
       !(window as Window & { MSStream?: unknown }).MSStream
 
     if (isIOS) {
       setInstallState('ios')
+      return
+    }
+
+    const isMacSafari =
+      /Macintosh/i.test(userAgent) &&
+      /Safari/i.test(userAgent) &&
+      !/Chrome|Chromium|CriOS|Edg|OPR|Firefox/i.test(userAgent)
+
+    if (isMacSafari) {
+      setInstallState('mac-safari')
       return
     }
 

@@ -230,6 +230,32 @@ function SettingsRoute() {
                   </ol>
                 </>
               )}
+
+              {installState === 'mac-safari' && (
+                <>
+                  <p className="text-muted-foreground text-sm">
+                    Install FinKo on your Mac for quick access and an app-like
+                    Dock experience.
+                  </p>
+                  <ol className="space-y-2">
+                    {[
+                      'Open Safari’s File menu',
+                      'Choose "Add to Dock..."',
+                      'Click "Add" to install FinKo',
+                    ].map((step, i) => (
+                      <li
+                        key={i}
+                        className="text-secondary-foreground flex items-start gap-3 text-sm"
+                      >
+                        <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+                          {i + 1}
+                        </span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </>
+              )}
             </div>
           </div>
         )}
