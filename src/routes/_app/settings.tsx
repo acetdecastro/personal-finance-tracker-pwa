@@ -136,6 +136,12 @@ function SettingsRoute() {
     setIsDeletingAllData(true)
     try {
       await resetAllAppData()
+
+      if ('caches' in window) {
+        const cacheNames = await caches.keys()
+        await Promise.all(cacheNames.map((name) => caches.delete(name)))
+      }
+
       queryClient.clear()
       setIsDeleteDialogOpen(false)
       toast.success('All data has been deleted')

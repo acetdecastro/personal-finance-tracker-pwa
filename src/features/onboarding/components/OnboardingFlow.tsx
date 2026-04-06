@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react'
+import type { ElementType } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useForm } from '@tanstack/react-form'
 import { format, getDate } from 'date-fns'
 import {
@@ -31,6 +33,7 @@ import {
   useCompleteOnboarding,
 } from '../hooks/use-onboarding'
 import { useInstallPrompt } from '#/features/settings/hooks/use-install-prompt'
+import type { InstallState } from '#/features/settings/hooks/use-install-prompt'
 import {
   parseImportFile,
   importData,
@@ -42,6 +45,7 @@ import type { ExportPayload } from '#/services/import-export/import-export.schem
 
 type Step =
   | 'intro'
+  | 'install'
   | 'import'
   | 'account'
   | 'salary'
@@ -82,6 +86,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const { data: bootstrap, isLoading: bootstrapLoading } =
     useOnboardingBootstrap()
   const completeOnboarding = useCompleteOnboarding()
+  const { installState, triggerInstall } = useInstallPrompt()
 
   async function handleFinish() {
     if (!primaryAccount || !salary) return
@@ -108,8 +113,23 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       <IntroNameStep
         onSubmit={(name) => {
           setUserName(name)
-          setStep('import')
+          // Skip the install step if already installed or not supported
+          if (installState === 'standalone' || installState === 'unavailable') {
+            setStep('import')
+          } else {
+            setStep('install')
+          }
         }}
+      />
+    )
+  }
+
+  if (step === 'install') {
+    return (
+      <InstallStep
+        installState={installState}
+        triggerInstall={triggerInstall}
+        onNext={() => setStep('import')}
       />
     )
   }
@@ -401,6 +421,120 @@ function DoneStep({ onComplete }: { onComplete: () => void }) {
   )
 }
 
+function InstallStep({
+  installState,
+  triggerInstall,
+  onNext,
+}: {
+  installState: InstallState
+  triggerInstall: () => Promise<void>
+  onNext: () => void
+}) {
+  const [isInstalling, setIsInstalling] = useState(false)
+
+  if (installState === 'promptable') {
+    return (
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <p className="text-primary text-[11px] font-bold tracking-widest uppercase">
+            One quick step
+          </p>
+          <h2 className="text-foreground text-xl font-bold tracking-tight">
+            Install FinKo on your device
+          </h2>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            Your data is stored locally — installing the app keeps it in the
+            app, not just the browser tab. You won&apos;t need to export and
+            re-import later.
+          </p>
+        </div>
+        <InfoBanner message="Skipping means your data lives in the browser. If you install later, you'll need to export a backup first and import it into the app." />
+        <div className="space-y-3">
+          <Button
+            onClick={async () => {
+              setIsInstalling(true)
+              await triggerInstall()
+              setIsInstalling(false)
+              onNext()
+            }}
+            disabled={isInstalling}
+            className="flex w-full items-center justify-center gap-2"
+          >
+            <Download className="size-4" />
+            {isInstalling ? 'Installing…' : 'Install App'}
+          </Button>
+          <button
+            type="button"
+            onClick={onNext}
+            className="text-muted-foreground hover:text-foreground w-full text-sm transition"
+          >
+            Skip, continue in browser
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ios
+  return (
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <p className="text-primary text-[11px] font-bold tracking-widest uppercase">
+          One quick step
+        </p>
+        <h2 className="text-foreground text-xl font-bold tracking-tight">
+          Add FinKo to your Home Screen
+        </h2>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Install before setting up so your data lives in the app, not just
+          Safari. Takes 10 seconds.
+        </p>
+      </div>
+      <ol className="space-y-3">
+        {(
+          [
+            {
+              icon: Share,
+              text: "Tap the Share button in Safari's toolbar",
+            },
+            { icon: null, text: 'Scroll down and tap "Add to Home Screen"' },
+            {
+              icon: null,
+              text: 'Tap "Add", then reopen FinKo from your Home Screen',
+            },
+          ] as { icon: ElementType | null; text: string }[]
+        ).map((s, i) => (
+          <li
+            key={i}
+            className="text-secondary-foreground flex items-start gap-3 text-sm"
+          >
+            <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+              {i + 1}
+            </span>
+            <span className="flex items-center gap-1.5">
+              {s.text}
+              {s.icon && <s.icon className="inline size-3.5 shrink-0" />}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <InfoBanner message="Skipping means your data lives in Safari. You can install later from Settings, but you'll need to re-import your data." />
+      <div className="space-y-3">
+        <Button onClick={onNext} className="w-full">
+          Done, continue setup
+        </Button>
+        <button
+          type="button"
+          onClick={onNext}
+          className="text-muted-foreground hover:text-foreground w-full text-sm transition"
+        >
+          Skip, continue in Safari
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function ImportStep({
   onImported,
   onSkip,
@@ -408,6 +542,7 @@ function ImportStep({
   onImported: () => void
   onSkip: () => void
 }) {
+  const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [payload, setPayload] = useState<ExportPayload | null>(null)
   const [isImporting, setIsImporting] = useState(false)
@@ -433,6 +568,13 @@ function ImportStep({
     setIsImporting(true)
     try {
       await importData(payload)
+      // Warm the guard queries before navigating. The ['user'] cache still
+      // holds null from the onboarding mount — without this refetch,
+      // _app/route.tsx sees the stale null and redirects back to /onboarding.
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['user'] }),
+        queryClient.refetchQueries({ queryKey: ['settings-screen'] }),
+      ])
       onImported()
     } catch {
       setParseError('Import failed. Your data was not changed.')
