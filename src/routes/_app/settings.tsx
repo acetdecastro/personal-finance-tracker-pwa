@@ -145,7 +145,7 @@ function SettingsRoute() {
       queryClient.clear()
       setIsDeleteDialogOpen(false)
       toast.success('All data has been deleted')
-      void router.navigate({ to: '/', replace: true })
+      window.location.replace('/')
     } catch {
       toast.error('Failed to delete all data. Please try again.')
     } finally {
