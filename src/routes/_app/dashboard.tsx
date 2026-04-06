@@ -513,10 +513,10 @@ function UpcomingBillsList({ bills }: { bills: UpcomingBillDto[] }) {
       {bills.map((bill) => (
         <div
           key={bill.id}
-          className="bg-card flex items-start justify-between rounded-2xl p-4 shadow"
+          className="bg-card flex items-center justify-between rounded-2xl p-4 shadow"
         >
           <div className="flex min-w-0 items-center gap-3">
-            <div className="min-w-0">
+            <div className="min-w-0 space-y-0.5">
               <p className="text-foreground truncate text-xs font-semibold">
                 {bill.name}
               </p>
@@ -528,11 +528,11 @@ function UpcomingBillsList({ bills }: { bills: UpcomingBillDto[] }) {
           <p
             title={formatPhpCurrency(bill.amount)}
             className={cn(
-              'text-foreground max-w-34 shrink-0 truncate text-right font-bold tabular-nums',
+              'text-warning max-w-34 shrink-0 truncate text-right font-bold tabular-nums',
               getCurrencyTextSizeClass(formatPhpCurrency(bill.amount), 'list'),
             )}
           >
-            {formatPhpCurrency(bill.amount)}
+            -{formatPhpCurrency(bill.amount)}
           </p>
         </div>
       ))}

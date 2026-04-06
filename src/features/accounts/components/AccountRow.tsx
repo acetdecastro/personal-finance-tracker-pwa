@@ -21,7 +21,7 @@ export function AccountRow({
   const content: ReactNode = (
     <>
       <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-foreground truncate text-xs font-semibold">
               {label}

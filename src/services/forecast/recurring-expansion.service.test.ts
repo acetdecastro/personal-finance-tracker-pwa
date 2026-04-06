@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { expandRecurringOccurrences } from './recurring-expansion.service'
+import {
+  expandRecurringOccurrences,
+  getNextUpcomingOccurrenceDate,
+} from './recurring-expansion.service'
 import type { RecurringRule, Transaction } from '#/types/domain'
 
 function createRule(overrides: Partial<RecurringRule> = {}): RecurringRule {
@@ -65,5 +68,33 @@ describe('expandRecurringOccurrences', () => {
     expect(occurrences.map((occurrence) => occurrence.date)).toEqual([
       '2026-04-30T00:00:00.000Z',
     ])
+  })
+
+  it('computes the next monthly occurrence after the stored date has passed', () => {
+    const nextDate = getNextUpcomingOccurrenceDate(
+      createRule({
+        cadence: 'monthly',
+        monthlyDay: 17,
+        semiMonthlyDays: null,
+        nextOccurrenceDate: '2026-04-17T00:00:00.000Z',
+      }),
+      '2026-04-18T00:00:00.000Z',
+    )
+
+    expect(nextDate).toBe('2026-05-17T00:00:00.000Z')
+  })
+
+  it('keeps the stored occurrence when it is still upcoming', () => {
+    const nextDate = getNextUpcomingOccurrenceDate(
+      createRule({
+        cadence: 'monthly',
+        monthlyDay: 17,
+        semiMonthlyDays: null,
+        nextOccurrenceDate: '2026-04-17T00:00:00.000Z',
+      }),
+      '2026-04-10T00:00:00.000Z',
+    )
+
+    expect(nextDate).toBe('2026-04-17T00:00:00.000Z')
   })
 })

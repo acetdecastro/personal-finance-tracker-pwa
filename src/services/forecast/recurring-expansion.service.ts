@@ -127,6 +127,20 @@ function expandRecurringRule(
   return occurrences
 }
 
+export function getNextUpcomingOccurrenceDate(
+  rule: RecurringRule,
+  referenceDate: Date | string,
+): string {
+  const fromDate = toDate(referenceDate)
+  let cursor = parseISO(rule.nextOccurrenceDate)
+
+  while (isBefore(cursor, fromDate)) {
+    cursor = nextOccurrenceDateForRule(rule, cursor)
+  }
+
+  return cursor.toISOString()
+}
+
 export function expandRecurringOccurrences({
   rules,
   transactions = [],

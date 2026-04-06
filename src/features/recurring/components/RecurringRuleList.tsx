@@ -3,6 +3,7 @@ import type { Category, RecurringRule } from '#/types/domain'
 import { formatPhpCurrency } from '#/lib/format/number.utils'
 import { formatCompactDisplayDate } from '#/lib/dates'
 import { TransactionRow } from '#/features/transactions/components/TransactionRow'
+import { getNextUpcomingOccurrenceDate } from '#/services/forecast/recurring-expansion.service'
 
 interface RecurringRuleListProps {
   rules: RecurringRule[]
@@ -29,6 +30,9 @@ export function RecurringRuleList({
       {rules.map((rule) => {
         const amountLabel = `${rule.type === 'income' ? '+' : '-'}${formatPhpCurrency(rule.amount)}`
         const categoryName = categoryMap.get(rule.categoryId)
+        const nextOccurrenceDate = rule.isActive
+          ? getNextUpcomingOccurrenceDate(rule, new Date())
+          : rule.nextOccurrenceDate
         const subLabelParts = [
           rule.type === 'income' ? 'Income' : 'Expense',
           ...(categoryName ? [categoryName] : []),
@@ -46,9 +50,7 @@ export function RecurringRuleList({
             label={rule.name}
             subLabel={subLabelParts.join(' · ')}
             amountLabel={amountLabel}
-            rightSecondaryLabel={formatCompactDisplayDate(
-              rule.nextOccurrenceDate,
-            )}
+            rightSecondaryLabel={formatCompactDisplayDate(nextOccurrenceDate)}
             amountColor={
               rule.type === 'income' ? 'text-primary' : 'text-warning'
             }
