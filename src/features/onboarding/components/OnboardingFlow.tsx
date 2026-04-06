@@ -451,8 +451,8 @@ function DoneStep({ onComplete }: { onComplete: () => void }) {
         <div className="w-full space-y-4 text-left">
           <ol className="space-y-2">
             {[
-              'In Safari, open the File menu',
-              'Choose "Add to Dock..."',
+              'Click the Share button in Safari’s toolbar',
+              'Choose "Add to Dock"',
               'Click "Add" to install FinKo',
             ].map((step, i) => (
               <li
@@ -466,7 +466,6 @@ function DoneStep({ onComplete }: { onComplete: () => void }) {
               </li>
             ))}
           </ol>
-          <InfoBanner message='If "Add to Dock..." is missing, update to Safari 17 on macOS Sonoma or later.' />
           <Button onClick={handleComplete} className="w-full">
             Go to Dashboard
           </Button>
@@ -553,9 +552,9 @@ function InstallStep({
         </div>
         <ol className="space-y-3">
           {[
-            'Open Safari’s File menu',
-            'Choose "Add to Dock..."',
-            'Click "Add", then reopen FinKo from your Dock if you want the installed experience',
+            'Click the Share button in Safari’s toolbar',
+            'Choose "Add to Dock"',
+            'Click "Add"',
           ].map((step, i) => (
             <li
               key={i}
@@ -568,7 +567,6 @@ function InstallStep({
             </li>
           ))}
         </ol>
-        <InfoBanner message='If "Add to Dock..." is unavailable, update to Safari 17 on macOS Sonoma or later.' />
         <div className="space-y-3">
           <button
             type="button"
