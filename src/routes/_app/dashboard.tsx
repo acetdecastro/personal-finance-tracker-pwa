@@ -651,7 +651,7 @@ function TipBox({ tip, current, total, onPrevious, onNext }: TipBoxProps) {
         <div className="min-w-0 flex-1 space-y-3">
           <div className="space-y-1">
             <p className="text-foreground text-sm font-semibold">Quick tip</p>
-            <p className="text-muted-foreground text-sm leading-relaxed">
+            <p className="text-muted-foreground text-xs leading-relaxed">
               {tip}
             </p>
           </div>

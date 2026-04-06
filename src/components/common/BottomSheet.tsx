@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '#/lib/utils/cn'
 import { useBodyScrollLock } from '#/lib/hooks/use-body-scroll-lock'
@@ -14,7 +14,7 @@ interface BottomSheetProps {
 const BACKDROP_CLS =
   'fixed inset-0 z-50 flex flex-col justify-end bg-black/40 cursor-pointer'
 const PANEL_CLS =
-  'flex max-h-[90dvh] flex-col rounded-tl-3xl rounded-tr-3xl bg-popover cursor-auto dark:border-primary/40 border-border/60 border-t'
+  'flex max-h-[90dvh] flex-col rounded-tl-3xl rounded-tr-3xl bg-popover cursor-auto dark:border-primary/40 border-border/60 border-t animate-sheet-slide-up'
 const CLOSE_BUTTON_CLS =
   'rounded-lg p-1 text-muted-foreground hover:text-foreground'
 
@@ -25,6 +25,33 @@ export function BottomSheet({
   contentClassName,
 }: BottomSheetProps) {
   useBodyScrollLock('hidden')
+
+  const panelRef = useRef<HTMLDivElement>(null)
+  const dragStartY = useRef(0)
+  const [dragY, setDragY] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    dragStartY.current = e.clientY
+    setIsDragging(true)
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!isDragging) return
+    setDragY(Math.max(0, e.clientY - dragStartY.current))
+  }
+
+  function handlePointerUp() {
+    if (!isDragging) return
+    setIsDragging(false)
+    const threshold = (panelRef.current?.offsetHeight ?? 0) * 0.6
+    if (dragY > threshold) {
+      onClose()
+    } else {
+      setDragY(0)
+    }
+  }
 
   // When this sheet unmounts, absorb the next click/touchend at the document
   // capture phase so ghost clicks don't reach background elements.
@@ -68,29 +95,48 @@ export function BottomSheet({
       }}
     >
       <div
+        ref={panelRef}
         className={PANEL_CLS}
+        style={{
+          transform: `translateY(${dragY}px)`,
+          transition: isDragging
+            ? 'none'
+            : 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)',
+        }}
         // Stop both pointer and click events so backdrop handlers never fire
         // when the user interacts with panel content.
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header — never scrolls */}
-        <div className="flex shrink-0 items-center justify-between px-5 pt-5 pb-4">
-          <h2 className="text-foreground text-base font-bold">{title}</h2>
-          <Button
-            onPointerDown={(e) => {
-              e.stopPropagation()
-              dismiss(e)
-            }}
-            onClick={(e) => {
-              e.stopPropagation()
-              onClose() // keyboard fallback (Enter / Space)
-            }}
-            className={CLOSE_BUTTON_CLS}
-            variant="inline-primary"
-          >
-            <X className="size-5" />
-          </Button>
+        {/* Drag handle area — full header is the drag target */}
+        <div
+          className="shrink-0 cursor-grab touch-none select-none active:cursor-grabbing"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+        >
+          {/* Thumb indicator */}
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="bg-muted-foreground/25 h-1 w-10 rounded-full" />
+          </div>
+          {/* Title + close row */}
+          <div className="flex items-center justify-between px-5 pt-2 pb-4">
+            <h2 className="text-foreground text-base font-bold">{title}</h2>
+            <Button
+              onPointerDown={(e) => {
+                e.stopPropagation()
+                dismiss(e)
+              }}
+              onClick={(e) => {
+                e.stopPropagation()
+                onClose() // keyboard fallback (Enter / Space)
+              }}
+              className={CLOSE_BUTTON_CLS}
+              variant="inline-primary"
+            >
+              <X className="size-5" />
+            </Button>
+          </div>
         </div>
         {/* Scrollable body */}
         <div

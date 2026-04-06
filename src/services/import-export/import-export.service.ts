@@ -52,7 +52,7 @@ export async function exportData(): Promise<void> {
   const a = document.createElement('a')
   const date = new Date().toISOString().slice(0, 10)
   a.href = url
-  a.download = `finance-backup-${date}.json`
+  a.download = `finko-backup-${date}.json`
   a.click()
   URL.revokeObjectURL(url)
 }

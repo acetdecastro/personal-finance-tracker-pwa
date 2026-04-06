@@ -10,6 +10,7 @@
 @theme {
   --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   --breakpoint-xs: 380px;
+  --animate-sheet-slide-up: sheet-slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* ─── Design token bridge ─────────────────────────────────────────────── */
@@ -185,5 +186,15 @@
   }
   .pt-safe {
     padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* ─── Sheet animation ───────────────────────────────────────────────────── */
+@keyframes sheet-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
   }
 }
