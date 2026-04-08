@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ChevronLeft, ChevronRight, Lightbulb, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '#/components/common/Button'
@@ -38,6 +38,7 @@ import {
 import { formatCompactDisplayDate, formatDisplayDate } from '#/lib/dates'
 import { cn } from '#/lib/utils/cn'
 import { getNextUpcomingOccurrenceDate } from '#/services/forecast/recurring-expansion.service'
+import { useFiltersStore } from '#/stores/filters-store'
 import { useTransactionsViewStore } from '#/stores/transactions-view-store'
 import type { DashboardRecentTransactionDto } from '#/types/dto'
 import type { CreateBudgetInput } from '#/features/budgets/schemas/budget.schemas'
@@ -76,6 +77,10 @@ function getGreeting() {
 
 function DashboardRoute() {
   const navigate = useNavigate()
+  const setTransactionType = useFiltersStore((state) => state.setTransactionType)
+  const openPostedTransactions = useTransactionsViewStore(
+    (state) => state.openPostedTransactions,
+  )
   const openRecurringExpenses = useTransactionsViewStore(
     (state) => state.openRecurringExpenses,
   )
@@ -294,7 +299,10 @@ function DashboardRoute() {
           action={
             <SectionAction
               isEmpty={billsEmpty}
-              to="/transactions"
+              onSeeAll={() => {
+                openRecurringExpenses()
+                void navigate({ to: '/transactions' })
+              }}
               onAdd={() => {
                 openRecurringExpenses()
                 void navigate({ to: '/transactions' })
@@ -321,7 +329,9 @@ function DashboardRoute() {
           action={
             <SectionAction
               isEmpty={goalsEmpty}
-              to="/budget"
+              onSeeAll={() => {
+                void navigate({ to: '/budget' })
+              }}
               onAdd={() => setOpenSheet('goal')}
             />
           }
@@ -346,7 +356,9 @@ function DashboardRoute() {
           action={
             <SectionAction
               isEmpty={budgetsEmpty}
-              to="/budget"
+              onSeeAll={() => {
+                void navigate({ to: '/budget' })
+              }}
               onAdd={() => setOpenSheet('budget')}
             />
           }
@@ -357,7 +369,12 @@ function DashboardRoute() {
             description="Add monthly limits in the Budget tab to see your spending health here."
           />
         ) : (
-          <BudgetList budgets={dashboardData.budgets.slice(0, 3)} />
+          <>
+            <p className="text-muted-foreground/70 text-xs">
+              Spending and progress shown here are for this month.
+            </p>
+            <BudgetList budgets={dashboardData.budgets.slice(0, 3)} />
+          </>
         )}
       </div>
 
@@ -367,7 +384,11 @@ function DashboardRoute() {
           action={
             <SectionAction
               isEmpty={transactionsEmpty}
-              to="/transactions"
+              onSeeAll={() => {
+                openPostedTransactions()
+                setTransactionType(null)
+                void navigate({ to: '/transactions' })
+              }}
               onAdd={() => setOpenSheet('transaction')}
             />
           }
@@ -495,11 +516,11 @@ function NextStepCard({ prompt }: { prompt: DashboardPrompt }) {
 
 function SectionAction({
   isEmpty,
-  to,
+  onSeeAll,
   onAdd,
 }: {
   isEmpty: boolean
-  to: string
+  onSeeAll?: () => void
   onAdd: () => void
 }) {
   if (isEmpty) {
@@ -508,20 +529,34 @@ function SectionAction({
         type="button"
         onClick={onAdd}
         variant="inline-primary"
-        // className="text-foreground text-sm font-semibold transition-opacity hover:opacity-70"
       >
         <Plus className="size-3.5" />
         Add
       </Button>
     )
   }
+
+  function handleSeeAll() {
+    const activeElement = document.activeElement
+
+    if (activeElement instanceof HTMLElement) {
+      activeElement.blur()
+    }
+
+    window.getSelection().removeAllRanges()
+    onSeeAll?.()
+  }
+
   return (
-    <Link
-      to={to}
-      className="text-foreground text-sm font-semibold transition-opacity hover:opacity-70"
+    <Button
+      type="button"
+      variant="inline-primary"
+      onClick={handleSeeAll}
+      onMouseDown={(event) => event.preventDefault()}
+      className="text-muted-foreground hover:bg-transparent hover:text-foreground/70"
     >
       See all
-    </Link>
+    </Button>
   )
 }
 

@@ -8,6 +8,7 @@ interface TransactionsViewStore {
   recurringFilter: RecurringFilter
   setMode: (mode: TransactionMode) => void
   setRecurringFilter: (filter: RecurringFilter) => void
+  openPostedTransactions: () => void
   openRecurringExpenses: () => void
   openRecurringIncome: () => void
 }
@@ -17,6 +18,7 @@ export const useTransactionsViewStore = create<TransactionsViewStore>((set) => (
   recurringFilter: 'all',
   setMode: (mode) => set({ mode }),
   setRecurringFilter: (recurringFilter) => set({ recurringFilter }),
+  openPostedTransactions: () => set({ mode: 'posted', recurringFilter: 'all' }),
   openRecurringExpenses: () =>
     set({ mode: 'recurring', recurringFilter: 'expense' }),
   openRecurringIncome: () =>

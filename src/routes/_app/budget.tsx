@@ -280,7 +280,7 @@ function BudgetRoute() {
             }
           />
           {goalSnapshots.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {goalSnapshots.map((goal) => (
                 <GoalCard
                   key={goal.id}

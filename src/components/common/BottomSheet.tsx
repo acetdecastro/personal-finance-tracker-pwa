@@ -12,9 +12,9 @@ interface BottomSheetProps {
 }
 
 const BACKDROP_CLS =
-  'fixed inset-0 z-50 flex flex-col justify-end bg-black/40 cursor-pointer'
+  'fixed inset-0 z-50 flex flex-col justify-end bg-black/40'
 const PANEL_CLS =
-  'flex max-h-[90dvh] flex-col rounded-tl-3xl rounded-tr-3xl bg-popover cursor-auto dark:border-primary/40 border-border/60 border-t animate-sheet-slide-up'
+  'flex max-h-[90dvh] flex-col rounded-tl-3xl rounded-tr-3xl bg-popover cursor-auto dark:border-primary/30 border-border/60 border-t animate-sheet-slide-up'
 const CLOSE_BUTTON_CLS =
   'rounded-lg p-1 text-muted-foreground hover:text-foreground'
 
@@ -50,7 +50,7 @@ export function BottomSheet({
   function handlePointerUp() {
     if (!isDragging) return
     setIsDragging(false)
-    const threshold = (panelRef.current?.offsetHeight ?? 0) * 0.4
+    const threshold = (panelRef.current?.offsetHeight ?? 0) * 0.3
     if (dragY > threshold) {
       startDismiss()
     } else {
@@ -83,18 +83,18 @@ export function BottomSheet({
 
   return (
     <div
-      className={BACKDROP_CLS}
+      className={cn(BACKDROP_CLS, isDismissing && 'bg-transparent')}
       // onPointerDown: modern browsers — preventDefault cancels the ghost click
       onPointerDown={(e) => {
         if (e.target === e.currentTarget) {
           e.preventDefault()
-          onClose()
+          startDismiss()
         }
       }}
       // onClick: iOS Safari requires an onClick handler to treat a div as a
       // touch target; without it, taps pass through to elements below.
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
+        if (e.target === e.currentTarget) startDismiss()
       }}
     >
       <div
@@ -107,7 +107,7 @@ export function BottomSheet({
           transition:
             isDragging && !isDismissing
               ? 'none'
-              : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+              : 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)',
         }}
         onTransitionEnd={(e) => {
           if (isDismissing && e.propertyName === 'transform') onClose()
@@ -125,7 +125,7 @@ export function BottomSheet({
           onPointerUp={handlePointerUp}
         >
           {/* Thumb indicator */}
-          <div className="flex justify-center pt-2 pb-1">
+          <div className="flex justify-center pt-1.5 pb-1">
             <div className="bg-muted-foreground/25 h-1 w-10 rounded-full" />
           </div>
           {/* Title + close row */}

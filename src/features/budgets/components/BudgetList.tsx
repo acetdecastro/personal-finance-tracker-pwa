@@ -9,7 +9,7 @@ interface BudgetListProps {
 
 export function BudgetList({ budgets, onSelect }: BudgetListProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {budgets.map((budget) => {
         return (
           <button

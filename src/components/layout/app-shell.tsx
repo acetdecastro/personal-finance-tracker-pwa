@@ -24,7 +24,7 @@ export function AppShell() {
       {/* <header className="fixed inset-x-0 top-0 z-40 border-b border-border/60 bg-background/80 px-5 py-3 backdrop-blur-xl">
         <div className="mx-auto flex max-w-lg items-center justify-between">
           <h1 className="text-lg font-bold tracking-tight text-primary">
-            FinTrack
+            FinKo
           </h1>
         </div>
       </header> */}
@@ -37,9 +37,9 @@ export function AppShell() {
       {/* Bottom navigation */}
       <nav
         aria-label="Primary"
-        className="border-border/60 bg-card/90 pb-safe dark:border-primary/40 fixed inset-x-0 bottom-0 z-40 rounded-tl-3xl rounded-tr-3xl border-t shadow backdrop-blur-xl"
+        className="border-border/60 pb-safe dark:border-primary/30 fixed inset-x-0 bottom-0 z-40 rounded-tl-3xl rounded-tr-3xl border-t shadow bg-background/40 backdrop-blur-sm"
       >
-        <div className="mx-auto mb-2 flex max-w-lg items-center justify-between px-6 pt-3 pb-4">
+        <div className="mx-auto flex max-w-lg items-center justify-between px-6 pt-3 pb-6">
           {mainNavItems.map((item) => (
             <NavItem key={item.to} to={item.to} label={item.label}>
               <item.icon className="size-4.5" />
@@ -67,7 +67,7 @@ function NavItem({
         className: 'text-primary',
       }}
       inactiveProps={{
-        className: 'text-muted-foreground',
+        className: 'text-muted-foreground hover:text-foreground/70',
       }}
       className={cn(
         'focus-visible:ring-ring focus-visible:ring-offset-background flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-95',
