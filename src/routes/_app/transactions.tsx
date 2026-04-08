@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { Loader2, Plus } from 'lucide-react'
+import { Loader2, Minus, Plus } from 'lucide-react'
 import { Button } from '#/components/common/Button'
 import { BottomSheet } from '#/components/common/BottomSheet'
+import { EmptyState } from '#/components/common/EmptyState'
+import { SectionHeader } from '#/components/common/SectionHeader'
+import { RecurringRuleForm } from '#/features/recurring/components/RecurringRuleForm'
+import { RecurringRuleList } from '#/features/recurring/components/RecurringRuleList'
 import { TransferDetails } from '#/features/transactions/components/TransferDetails'
 import { TransactionList } from '#/features/transactions/components/TransactionList'
 import { TransactionForm } from '#/features/transactions/components/TransactionForm'
 import { TransactionFilterBar } from '#/features/transactions/components/TransactionFilterBar'
-import { EmptyState } from '#/components/common/EmptyState'
 import {
   useTransactions,
   useTransactionFormOptions,
@@ -19,10 +22,16 @@ import {
 import { useAccounts } from '#/features/accounts/hooks/use-accounts'
 import { useCategories } from '#/features/categories/hooks/use-categories'
 import { useGoals } from '#/features/goals/hooks/use-goals'
+import {
+  useCreateRecurringRule,
+  useRecurringRules,
+  useUpdateRecurringRule,
+} from '#/features/recurring/hooks/use-recurring-rules'
+import { cn } from '#/lib/utils/cn'
 import { useFiltersStore } from '#/stores/filters-store'
+import type { CreateRecurringRuleInput } from '#/features/recurring/schemas/recurring-rule.schemas'
 import type { CreateTransactionInput } from '#/features/transactions/schemas/transaction.schemas'
-import type { Transaction } from '#/types/domain'
-import { SectionHeader } from '#/components/common/SectionHeader'
+import type { RecurringRule, Transaction } from '#/types/domain'
 
 const TRANSACTION_TYPE_LABELS = {
   income: 'income',
@@ -30,17 +39,25 @@ const TRANSACTION_TYPE_LABELS = {
   transfer: 'transfer',
 } as const
 
+type TransactionMode = 'posted' | 'recurring'
+type RecurringFilter = 'all' | 'income' | 'expense'
+
 export const Route = createFileRoute('/_app/transactions')({
   component: TransactionsRoute,
 })
 
 function TransactionsRoute() {
+  const [mode, setMode] = useState<TransactionMode>('posted')
   const [showForm, setShowForm] = useState(false)
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null)
   const [viewingTransfer, setViewingTransfer] = useState<Transaction | null>(
     null,
   )
+  const [recurringFilter, setRecurringFilter] = useState<RecurringFilter>('all')
+  const [recurringSheetState, setRecurringSheetState] = useState<
+    { mode: 'create'; type: 'income' | 'expense' } | { mode: 'edit'; rule: RecurringRule } | null
+  >(null)
   const { transactionType } = useFiltersStore()
 
   const { data: transactions = [] } = useTransactions({
@@ -49,12 +66,20 @@ function TransactionsRoute() {
   const { data: accounts = [] } = useAccounts()
   const { data: categories = [] } = useCategories()
   const { data: goals = [] } = useGoals()
+  const { data: recurringRules = [] } = useRecurringRules()
   const { data: formOptions, isLoading: formOptionsLoading } =
     useTransactionFormOptions()
 
   const createTransaction = useCreateTransaction()
   const updateTransaction = useUpdateTransaction()
   const deleteTransaction = useDeleteTransaction()
+  const createRecurringRule = useCreateRecurringRule()
+  const updateRecurringRule = useUpdateRecurringRule()
+
+  const filteredRecurringRules =
+    recurringFilter === 'all'
+      ? recurringRules
+      : recurringRules.filter((rule) => rule.type === recurringFilter)
 
   async function handleSubmit(values: CreateTransactionInput) {
     try {
@@ -79,6 +104,28 @@ function TransactionsRoute() {
     }
   }
 
+  async function handleRecurringSubmit(values: CreateRecurringRuleInput) {
+    try {
+      if (recurringSheetState?.mode === 'edit') {
+        await updateRecurringRule.mutateAsync({
+          id: recurringSheetState.rule.id,
+          changes: values,
+        })
+        toast.success('Recurring transaction updated')
+      } else {
+        await createRecurringRule.mutateAsync(values)
+        toast.success('Recurring transaction added')
+      }
+      setRecurringSheetState(null)
+    } catch {
+      toast.error(
+        recurringSheetState?.mode === 'edit'
+          ? 'Failed to update recurring transaction'
+          : 'Failed to add recurring transaction',
+      )
+    }
+  }
+
   async function handleDelete(id: string) {
     try {
       await deleteTransaction.mutateAsync(id)
@@ -94,6 +141,10 @@ function TransactionsRoute() {
     setEditingTransaction(null)
     setViewingTransfer(null)
     setShowForm(true)
+  }
+
+  function handleAddRecurring(type: 'income' | 'expense') {
+    setRecurringSheetState({ mode: 'create', type })
   }
 
   function handleSelectTransaction(transaction: Transaction) {
@@ -118,49 +169,150 @@ function TransactionsRoute() {
     setViewingTransfer(null)
   }
 
+  const recurringType =
+    recurringSheetState?.mode === 'edit'
+      ? recurringSheetState.rule.type
+      : recurringSheetState?.mode === 'create'
+        ? recurringSheetState.type
+        : 'income'
+
   return (
     <>
       <div className="space-y-3">
         <SectionHeader
           title="Transactions"
           action={
-            <Button onClick={handleAddTransaction} variant="inline-primary">
-              <Plus className="size-3.5" />
-              Add
-            </Button>
+            mode === 'posted' ? (
+              <Button onClick={handleAddTransaction} variant="inline-primary">
+                <Plus className="size-3.5" />
+                Add
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => handleAddRecurring('income')}
+                  variant="inline-primary"
+                >
+                  <Plus className="size-3.5" />
+                  Income
+                </Button>
+                <Button
+                  onClick={() => handleAddRecurring('expense')}
+                  variant="inline-secondary"
+                >
+                  <Minus className="size-3.5" />
+                  Expense
+                </Button>
+              </div>
+            )
           }
         />
 
-        <TransactionFilterBar />
+        <div className="no-scrollbar flex gap-2 overflow-x-auto p-1">
+          {(
+            [
+              { label: 'Posted', value: 'posted' },
+              { label: 'Recurring', value: 'recurring' },
+            ] as { label: string; value: TransactionMode }[]
+          ).map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => setMode(tab.value)}
+              className={cn(
+                'focus-visible:ring-ring focus-visible:ring-offset-background shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                mode === tab.value
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-secondary-foreground',
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-        {transactions.length === 0 ? (
-          <EmptyState
-            title="No transactions"
-            description={
-              transactionType
-                ? `No ${TRANSACTION_TYPE_LABELS[transactionType]} transactions yet.`
-                : 'Log your first transaction below.'
-            }
-          />
+        {mode === 'posted' ? (
+          <>
+            <TransactionFilterBar />
+
+            {transactions.length === 0 ? (
+              <EmptyState
+                title="No transactions"
+                description={
+                  transactionType
+                    ? `No ${TRANSACTION_TYPE_LABELS[transactionType]} transactions yet.`
+                    : 'Log your first transaction below.'
+                }
+              />
+            ) : (
+              <TransactionList
+                transactions={transactions}
+                accounts={accounts}
+                categories={categories}
+                goals={goals}
+                onSelect={handleSelectTransaction}
+              />
+            )}
+          </>
         ) : (
-          <TransactionList
-            transactions={transactions}
-            accounts={accounts}
-            categories={categories}
-            goals={goals}
-            onSelect={handleSelectTransaction}
-          />
+          <>
+            <div className="no-scrollbar flex gap-2 overflow-x-auto p-1">
+              {(
+                [
+                  { label: 'All', value: 'all' },
+                  { label: 'Income', value: 'income' },
+                  { label: 'Expense', value: 'expense' },
+                ] as { label: string; value: RecurringFilter }[]
+              ).map((tab) => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => setRecurringFilter(tab.value)}
+                  className={cn(
+                    'focus-visible:ring-ring focus-visible:ring-offset-background shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                    recurringFilter === tab.value
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-secondary-foreground',
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <p className="text-muted-foreground/70 text-xs">
+              Recurring transactions are expected future entries used for forecasts.
+            </p>
+
+            {filteredRecurringRules.length === 0 ? (
+              <EmptyState
+                title={
+                  recurringFilter === 'all'
+                    ? 'No recurring transactions'
+                    : `No ${recurringFilter} recurring transactions`
+                }
+                description="Add salary or recurring bills here so your forecasts stay useful."
+              />
+            ) : (
+              <RecurringRuleList
+                rules={filteredRecurringRules}
+                categories={categories}
+                onSelect={(rule) => setRecurringSheetState({ mode: 'edit', rule })}
+              />
+            )}
+          </>
         )}
       </div>
 
-      {/* FAB */}
-      <Button
-        onClick={handleAddTransaction}
-        variant="fab"
-        aria-label="Add transaction"
-      >
-        <Plus className="text-primary-foreground size-6" />
-      </Button>
+      {mode === 'posted' && (
+        <Button
+          onClick={handleAddTransaction}
+          variant="fab"
+          aria-label="Add transaction"
+        >
+          <Plus className="text-primary-foreground size-6" />
+        </Button>
+      )}
 
       {/* Bottom sheet */}
       {showForm && (
@@ -203,6 +355,37 @@ function TransactionsRoute() {
             accounts={accounts}
             categories={categories}
             goals={goals}
+          />
+        </BottomSheet>
+      )}
+
+      {recurringSheetState && (
+        <BottomSheet
+          title={
+            recurringSheetState.mode === 'edit'
+              ? 'Edit Recurring Transaction'
+              : recurringType === 'expense'
+                ? 'Add Recurring Expense'
+                : 'Add Recurring Income'
+          }
+          onClose={() => setRecurringSheetState(null)}
+        >
+          <RecurringRuleForm
+            accounts={accounts}
+            categories={categories}
+            type={recurringType}
+            defaultName={recurringType === 'income' ? 'Salary' : ''}
+            defaultCategoryId={
+              recurringType === 'income' ? 'category-income-salary' : ''
+            }
+            initialValues={
+              recurringSheetState.mode === 'edit'
+                ? recurringSheetState.rule
+                : undefined
+            }
+            onSubmit={handleRecurringSubmit}
+            onCancel={() => setRecurringSheetState(null)}
+            submitLabel="Save"
           />
         </BottomSheet>
       )}

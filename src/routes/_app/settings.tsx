@@ -2,32 +2,19 @@ import { useRef, useState } from 'react'
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
-import { CheckCircle, Download, Minus, Plus, Share } from 'lucide-react'
+import { CheckCircle, Download, Share } from 'lucide-react'
 import { Button } from '#/components/common/Button'
 import { BottomSheet } from '#/components/common/BottomSheet'
 import { ConfirmDialog } from '#/components/common/ConfirmDialog'
 import { ThemeToggle } from '#/features/settings/components/ThemeToggle'
-import { RecurringRuleForm } from '#/features/recurring/components/RecurringRuleForm'
-import { RecurringRuleList } from '#/features/recurring/components/RecurringRuleList'
 import { InfoBanner } from '#/components/common/InfoBanner'
-import { cn } from '#/lib/utils/cn'
 import { SectionHeader } from '#/components/common/SectionHeader'
-import { EmptyState } from '#/components/common/EmptyState'
-import { useAccounts } from '#/features/accounts/hooks/use-accounts'
-import { useCategories } from '#/features/categories/hooks/use-categories'
-import {
-  useRecurringRules,
-  useCreateRecurringRule,
-  useUpdateRecurringRule,
-} from '#/features/recurring/hooks/use-recurring-rules'
 import {
   exportData,
   parseImportFile,
   importData,
 } from '#/services/import-export/import-export.service'
 import type { ExportPayload } from '#/services/import-export/import-export.service'
-import type { RecurringRule } from '#/types/domain'
-import type { CreateRecurringRuleInput } from '#/features/recurring/schemas/recurring-rule.schemas'
 import { PRIMARY_LINK_BUTTON_CLS } from '#/lib/constants/ui-classes'
 import { useInstallPrompt } from '#/features/settings/hooks/use-install-prompt'
 import type { InstallState } from '#/features/settings/hooks/use-install-prompt'
@@ -38,16 +25,11 @@ export const Route = createFileRoute('/_app/settings')({
 })
 
 type SheetState =
-  | { mode: 'create'; type: 'income' | 'expense' }
-  | { mode: 'edit'; rule: RecurringRule }
   | { mode: 'import-confirm'; payload: ExportPayload }
   | null
 
-type RecurringFilter = 'all' | 'income' | 'expense'
-
 function SettingsRoute() {
   const [sheetState, setSheetState] = useState<SheetState>(null)
-  const [recurringFilter, setRecurringFilter] = useState<RecurringFilter>('all')
   const [isExporting, setIsExporting] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -56,38 +38,6 @@ function SettingsRoute() {
 
   const queryClient = useQueryClient()
   const router = useRouter()
-
-  const { data: accounts = [] } = useAccounts()
-  const { data: categories = [] } = useCategories()
-  const { data: recurringRules = [] } = useRecurringRules()
-  const filteredRules =
-    recurringFilter === 'all'
-      ? recurringRules
-      : recurringRules.filter((r) => r.type === recurringFilter)
-  const createRecurringRule = useCreateRecurringRule()
-  const updateRecurringRule = useUpdateRecurringRule()
-
-  async function handleRecurringSubmit(values: CreateRecurringRuleInput) {
-    try {
-      if (sheetState?.mode === 'edit') {
-        await updateRecurringRule.mutateAsync({
-          id: sheetState.rule.id,
-          changes: values,
-        })
-        toast.success('Recurring transaction updated')
-      } else {
-        await createRecurringRule.mutateAsync(values)
-        toast.success('Recurring transaction added')
-      }
-      setSheetState(null)
-    } catch {
-      toast.error(
-        sheetState?.mode === 'edit'
-          ? 'Failed to update recurring transaction'
-          : 'Failed to add recurring transaction',
-      )
-    }
-  }
 
   async function handleExport() {
     setIsExporting(true)
@@ -151,13 +101,6 @@ function SettingsRoute() {
 
   const { installState, triggerInstall } = useInstallPrompt()
 
-  const recurringType =
-    sheetState?.mode === 'edit'
-      ? sheetState.rule.type
-      : sheetState?.mode === 'create'
-        ? sheetState.type
-        : null
-
   return (
     <>
       <div className="space-y-8">
@@ -184,77 +127,6 @@ function SettingsRoute() {
               Open Accounts
             </Link>
           </div>
-        </div>
-
-        <div className="space-y-3">
-          <SectionHeader
-            title="Recurring Transactions"
-            action={
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={() =>
-                    setSheetState({ mode: 'create', type: 'income' })
-                  }
-                  variant="inline-primary"
-                >
-                  <Plus className="size-3.5" />
-                  Income
-                </Button>
-                <Button
-                  onClick={() =>
-                    setSheetState({ mode: 'create', type: 'expense' })
-                  }
-                  variant="inline-secondary"
-                >
-                  <Minus className="size-3.5" />
-                  Expense
-                </Button>
-              </div>
-            }
-          />
-          <p className="text-muted-foreground/70 text-xs">
-            Used for forecasting. Your actual posted transaction amount can
-            differ.
-          </p>
-          <div className="no-scrollbar flex gap-2 overflow-x-auto px-0.5 py-1">
-            {(
-              [
-                { label: 'All', value: 'all' },
-                { label: 'Income', value: 'income' },
-                { label: 'Expense', value: 'expense' },
-              ] as { label: string; value: RecurringFilter }[]
-            ).map((tab) => (
-              <button
-                key={tab.value}
-                type="button"
-                onClick={() => setRecurringFilter(tab.value)}
-                className={cn(
-                  'focus-visible:ring-ring focus-visible:ring-offset-background shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-                  recurringFilter === tab.value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-secondary-foreground',
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          {filteredRules.length === 0 ? (
-            <EmptyState
-              title={
-                recurringFilter === 'all'
-                  ? 'No recurring transactions'
-                  : `No ${recurringFilter} rules`
-              }
-              description="Add expected salary or fixed expenses for forecasting."
-            />
-          ) : (
-            <RecurringRuleList
-              rules={filteredRules}
-              categories={categories}
-              onSelect={(rule) => setSheetState({ mode: 'edit', rule })}
-            />
-          )}
         </div>
 
         <div className="space-y-3">
@@ -307,31 +179,6 @@ function SettingsRoute() {
           </div>
         </div>
       </div>
-
-      {(sheetState?.mode === 'create' || sheetState?.mode === 'edit') && (
-        <BottomSheet
-          title={
-            sheetState.mode === 'edit'
-              ? 'Edit Recurring Transaction'
-              : recurringType === 'expense'
-                ? 'Add Recurring Expense'
-                : 'Add Recurring Income'
-          }
-          onClose={() => setSheetState(null)}
-        >
-          <RecurringRuleForm
-            accounts={accounts}
-            categories={categories}
-            type={recurringType ?? 'income'}
-            initialValues={
-              sheetState.mode === 'edit' ? sheetState.rule : undefined
-            }
-            onSubmit={handleRecurringSubmit}
-            onCancel={() => setSheetState(null)}
-            submitLabel={'Save'}
-          />
-        </BottomSheet>
-      )}
 
       {sheetState?.mode === 'import-confirm' && (
         <BottomSheet
