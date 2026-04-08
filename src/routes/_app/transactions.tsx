@@ -29,6 +29,11 @@ import {
 } from '#/features/recurring/hooks/use-recurring-rules'
 import { cn } from '#/lib/utils/cn'
 import { useFiltersStore } from '#/stores/filters-store'
+import { useTransactionsViewStore } from '#/stores/transactions-view-store'
+import type {
+  RecurringFilter,
+  TransactionMode,
+} from '#/stores/transactions-view-store'
 import type { CreateRecurringRuleInput } from '#/features/recurring/schemas/recurring-rule.schemas'
 import type { CreateTransactionInput } from '#/features/transactions/schemas/transaction.schemas'
 import type { RecurringRule, Transaction } from '#/types/domain'
@@ -39,26 +44,23 @@ const TRANSACTION_TYPE_LABELS = {
   transfer: 'transfer',
 } as const
 
-type TransactionMode = 'posted' | 'recurring'
-type RecurringFilter = 'all' | 'income' | 'expense'
-
 export const Route = createFileRoute('/_app/transactions')({
   component: TransactionsRoute,
 })
 
 function TransactionsRoute() {
-  const [mode, setMode] = useState<TransactionMode>('posted')
   const [showForm, setShowForm] = useState(false)
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null)
   const [viewingTransfer, setViewingTransfer] = useState<Transaction | null>(
     null,
   )
-  const [recurringFilter, setRecurringFilter] = useState<RecurringFilter>('all')
   const [recurringSheetState, setRecurringSheetState] = useState<
     { mode: 'create'; type: 'income' | 'expense' } | { mode: 'edit'; rule: RecurringRule } | null
   >(null)
   const { transactionType } = useFiltersStore()
+  const { mode, setMode, recurringFilter, setRecurringFilter } =
+    useTransactionsViewStore()
 
   const { data: transactions = [] } = useTransactions({
     type: transactionType,

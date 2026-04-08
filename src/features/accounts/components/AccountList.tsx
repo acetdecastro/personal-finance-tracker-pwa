@@ -25,7 +25,7 @@ export function AccountList({
   balances,
 }: AccountListProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {accounts.map((account) => {
         const Icon = ACCOUNT_ICONS[account.type]
         const balance = balances?.[account.id] ?? account.initialBalance

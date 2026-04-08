@@ -30,6 +30,11 @@ export function BottomSheet({
   const dragStartY = useRef(0)
   const [dragY, setDragY] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
+  const [isDismissing, setIsDismissing] = useState(false)
+
+  function startDismiss() {
+    setIsDismissing(true)
+  }
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     dragStartY.current = e.clientY
@@ -45,9 +50,9 @@ export function BottomSheet({
   function handlePointerUp() {
     if (!isDragging) return
     setIsDragging(false)
-    const threshold = (panelRef.current?.offsetHeight ?? 0) * 0.6
+    const threshold = (panelRef.current?.offsetHeight ?? 0) * 0.4
     if (dragY > threshold) {
-      onClose()
+      startDismiss()
     } else {
       setDragY(0)
     }
@@ -76,17 +81,15 @@ export function BottomSheet({
     }
   }, [])
 
-  function dismiss(e: { preventDefault: () => void }) {
-    e.preventDefault()
-    onClose()
-  }
-
   return (
     <div
       className={BACKDROP_CLS}
       // onPointerDown: modern browsers — preventDefault cancels the ghost click
       onPointerDown={(e) => {
-        if (e.target === e.currentTarget) dismiss(e)
+        if (e.target === e.currentTarget) {
+          e.preventDefault()
+          onClose()
+        }
       }}
       // onClick: iOS Safari requires an onClick handler to treat a div as a
       // touch target; without it, taps pass through to elements below.
@@ -98,10 +101,16 @@ export function BottomSheet({
         ref={panelRef}
         className={PANEL_CLS}
         style={{
-          transform: `translateY(${dragY}px)`,
-          transition: isDragging
-            ? 'none'
-            : 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)',
+          transform: isDismissing
+            ? 'translateY(110%)'
+            : `translateY(${dragY}px)`,
+          transition:
+            isDragging && !isDismissing
+              ? 'none'
+              : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+        }}
+        onTransitionEnd={(e) => {
+          if (isDismissing && e.propertyName === 'transform') onClose()
         }}
         // Stop both pointer and click events so backdrop handlers never fire
         // when the user interacts with panel content.
@@ -116,7 +125,7 @@ export function BottomSheet({
           onPointerUp={handlePointerUp}
         >
           {/* Thumb indicator */}
-          <div className="flex justify-center pt-3 pb-1">
+          <div className="flex justify-center pt-2 pb-1">
             <div className="bg-muted-foreground/25 h-1 w-10 rounded-full" />
           </div>
           {/* Title + close row */}
@@ -125,11 +134,12 @@ export function BottomSheet({
             <Button
               onPointerDown={(e) => {
                 e.stopPropagation()
-                dismiss(e)
+                e.preventDefault()
+                startDismiss()
               }}
               onClick={(e) => {
                 e.stopPropagation()
-                onClose() // keyboard fallback (Enter / Space)
+                startDismiss() // keyboard fallback (Enter / Space)
               }}
               className={CLOSE_BUTTON_CLS}
               variant="inline-primary"

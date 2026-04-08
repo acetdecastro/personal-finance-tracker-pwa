@@ -10,6 +10,7 @@ import { BudgetList } from '#/features/budgets/components/BudgetList'
 import { BudgetForm } from '#/features/budgets/components/BudgetForm'
 import { GoalCard } from '#/features/goals/components/GoalCard'
 import { GoalForm } from '#/features/goals/components/GoalForm'
+import { RecurringRuleList } from '#/features/recurring/components/RecurringRuleList'
 import { RecurringRuleForm } from '#/features/recurring/components/RecurringRuleForm'
 import { TransactionRow } from '#/features/transactions/components/TransactionRow'
 import { TransactionForm } from '#/features/transactions/components/TransactionForm'
@@ -36,10 +37,9 @@ import {
 } from '#/lib/format/number.utils'
 import { formatCompactDisplayDate, formatDisplayDate } from '#/lib/dates'
 import { cn } from '#/lib/utils/cn'
-import type {
-  DashboardRecentTransactionDto,
-  UpcomingBillDto,
-} from '#/types/dto'
+import { getNextUpcomingOccurrenceDate } from '#/services/forecast/recurring-expansion.service'
+import { useTransactionsViewStore } from '#/stores/transactions-view-store'
+import type { DashboardRecentTransactionDto } from '#/types/dto'
 import type { CreateBudgetInput } from '#/features/budgets/schemas/budget.schemas'
 import type { CreateGoalInput } from '#/features/goals/schemas/goal.schemas'
 import type { CreateRecurringRuleInput } from '#/features/recurring/schemas/recurring-rule.schemas'
@@ -76,6 +76,9 @@ function getGreeting() {
 
 function DashboardRoute() {
   const navigate = useNavigate()
+  const openRecurringExpenses = useTransactionsViewStore(
+    (state) => state.openRecurringExpenses,
+  )
   const { data: dashboardData, isLoading } = useDashboardData()
   const { data: user } = useUser()
   const { data: accounts = [] } = useAccounts()
@@ -133,17 +136,26 @@ function DashboardRoute() {
     )
   }
 
-  const billsEmpty = !dashboardData || dashboardData.upcomingBills.length === 0
-  const goalsEmpty = !dashboardData || dashboardData.goals.length === 0
-  const budgetsEmpty = !dashboardData || dashboardData.budgets.length === 0
-  const transactionsEmpty =
-    !dashboardData || dashboardData.recentTransactions.length === 0
   const hasRecurringIncome =
     recurringRules?.some((rule) => rule.type === 'income' && rule.isActive) ??
     false
   const hasRecurringExpenses =
     recurringRules?.some((rule) => rule.type === 'expense' && rule.isActive) ??
     false
+  const upcomingExpenseRules =
+    recurringRules
+      ?.filter((rule) => rule.type === 'expense' && rule.isActive)
+      .sort((a, b) => {
+        const aDate = getNextUpcomingOccurrenceDate(a, new Date())
+        const bDate = getNextUpcomingOccurrenceDate(b, new Date())
+        return aDate.localeCompare(bDate)
+      })
+      .slice(0, 3) ?? []
+  const billsEmpty = upcomingExpenseRules.length === 0
+  const goalsEmpty = !dashboardData || dashboardData.goals.length === 0
+  const budgetsEmpty = !dashboardData || dashboardData.budgets.length === 0
+  const transactionsEmpty =
+    !dashboardData || dashboardData.recentTransactions.length === 0
   const showAddAnotherAccount = accounts.length <= 1
 
   const nextSteps: DashboardPrompt[] = [
@@ -171,10 +183,10 @@ function DashboardRoute() {
       ? null
       : {
           key: 'recurring-expense',
-          title: 'Add recurring bills',
+          title: 'Add recurring expenses',
           description:
             'Track expected expenses before they hit your account this month.',
-          actionLabel: 'Add Bill',
+          actionLabel: 'Add Expenses',
           onAction: () => setOpenSheet('recurring-expense'),
         },
     !budgetsEmpty
@@ -282,18 +294,24 @@ function DashboardRoute() {
           action={
             <SectionAction
               isEmpty={billsEmpty}
-              to="/settings"
-              onAdd={() => void navigate({ to: '/settings' })}
+              to="/transactions"
+              onAdd={() => {
+                openRecurringExpenses()
+                void navigate({ to: '/transactions' })
+              }}
             />
           }
         />
         {billsEmpty ? (
           <EmptyState
             title="No upcoming expenses"
-            description="Recurring expenses will appear here once you add them in Settings."
+            description="Recurring expenses will appear here once you add them in Transactions."
           />
         ) : (
-          <UpcomingBillsList bills={dashboardData.upcomingBills.slice(0, 3)} />
+          <RecurringRuleList
+            rules={upcomingExpenseRules}
+            categories={categories}
+          />
         )}
       </div>
 
@@ -504,39 +522,6 @@ function SectionAction({
     >
       See all
     </Link>
-  )
-}
-
-function UpcomingBillsList({ bills }: { bills: UpcomingBillDto[] }) {
-  return (
-    <div className="space-y-3">
-      {bills.map((bill) => (
-        <div
-          key={bill.id}
-          className="bg-card flex items-center justify-between rounded-2xl p-4 shadow"
-        >
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="min-w-0 space-y-0.5">
-              <p className="text-foreground truncate text-xs font-semibold">
-                {bill.name}
-              </p>
-              <p className="text-muted-foreground/70 text-[10px]">
-                Due {formatDisplayDate(bill.date)}
-              </p>
-            </div>
-          </div>
-          <p
-            title={formatPhpCurrency(bill.amount)}
-            className={cn(
-              'text-warning max-w-34 shrink-0 truncate text-right font-bold tabular-nums',
-              getCurrencyTextSizeClass(formatPhpCurrency(bill.amount), 'list'),
-            )}
-          >
-            -{formatPhpCurrency(bill.amount)}
-          </p>
-        </div>
-      ))}
-    </div>
   )
 }
 

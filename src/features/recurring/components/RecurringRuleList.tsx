@@ -26,13 +26,15 @@ export function RecurringRuleList({
   const categoryMap = new Map(categories.map((c) => [c.id, c.name]))
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {rules.map((rule) => {
         const amountLabel = `${rule.type === 'income' ? '+' : '-'}${formatPhpCurrency(rule.amount)}`
         const categoryName = categoryMap.get(rule.categoryId)
         const nextOccurrenceDate = rule.isActive
           ? getNextUpcomingOccurrenceDate(rule, new Date())
           : rule.nextOccurrenceDate
+        const dateLabelPrefix =
+          rule.type === 'expense' ? 'Due on' : 'Next occurrence on'
         const subLabelParts = [
           rule.type === 'income' ? 'Income' : 'Expense',
           ...(categoryName ? [categoryName] : []),
@@ -50,7 +52,7 @@ export function RecurringRuleList({
             label={rule.name}
             subLabel={subLabelParts.join(' · ')}
             amountLabel={amountLabel}
-            rightSecondaryLabel={formatCompactDisplayDate(nextOccurrenceDate)}
+            rightSecondaryLabel={`${dateLabelPrefix} ${formatCompactDisplayDate(nextOccurrenceDate)}`}
             amountColor={
               rule.type === 'income' ? 'text-primary' : 'text-warning'
             }
