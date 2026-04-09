@@ -117,6 +117,12 @@ export function RecurringRuleForm({
     },
   })
 
+  const showSecondSalaryAmount = supportsSecondSalaryAmount({
+    type: form.state.values.type,
+    categoryId: form.state.values.categoryId,
+    cadence: form.state.values.cadence,
+  })
+
   return (
     <form
       ref={formRef}
@@ -180,7 +186,7 @@ export function RecurringRuleForm({
       >
         {(field) => (
           <FormField
-            label="First Expected Amount"
+            label={showSecondSalaryAmount ? 'First Expected Amount' : 'Expected Amount'}
             htmlFor="rule-amount"
             hint="Used for forecasting. Your actual posted transaction amount can differ."
             error={field.state.meta.errors[0]?.toString()}
@@ -199,11 +205,7 @@ export function RecurringRuleForm({
         )}
       </form.Field>
 
-      {supportsSecondSalaryAmount({
-        type: form.state.values.type,
-        categoryId: form.state.values.categoryId,
-        cadence: form.state.values.cadence,
-      }) && (
+      {showSecondSalaryAmount && (
         <form.Field
           name="secondAmount"
           validators={{

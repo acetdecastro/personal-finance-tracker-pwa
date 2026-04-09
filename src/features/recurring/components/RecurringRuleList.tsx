@@ -44,12 +44,12 @@ export function RecurringRuleList({
         const amountContent: ReactNode | undefined = hasSecondSalaryAmount ? (
           <>
             <span>{formatPhpCurrency(rule.amount)}</span>
-            <span className="text-muted-foreground/70 align-super text-[5px] font-medium">
+            <span className="text-muted-foreground/70 align-super text-[6.3px] font-medium">
               1st
             </span>
             <span className="text-muted-foreground/70 px-0.5">·</span>
             <span>{formatPhpCurrency(rule.secondAmount)}</span>
-            <span className="text-muted-foreground/70 align-super text-[5px] font-medium">
+            <span className="text-muted-foreground/70 align-super text-[6.3px] font-medium">
               2nd
             </span>
           </>
