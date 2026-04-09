@@ -7,6 +7,7 @@ import {
   timestampFieldsSchema,
   trimmedNameSchema,
 } from '#/lib/utils/schema'
+import { supportsSecondSalaryAmount } from '../lib/salary-rule'
 
 export const recurringRuleTypeSchema = z.enum(['income', 'expense'])
 export const recurringCadenceSchema = z.enum([
@@ -25,6 +26,7 @@ const recurringRuleBaseSchema = z.object({
   name: trimmedNameSchema,
   type: recurringRuleTypeSchema,
   amount: positiveMoneySchema,
+  secondAmount: positiveMoneySchema.nullable().default(null),
   categoryId: entityIdSchema,
   accountId: entityIdSchema,
   cadence: supportedRecurringCadenceSchema,
@@ -91,6 +93,22 @@ function validateRecurringCadence<T extends z.ZodTypeAny>(schema: T) {
             'Semi-monthly recurring rules must not set weekly or monthly fields',
         })
       }
+    }
+
+    if (
+      value.secondAmount !== null &&
+      !supportsSecondSalaryAmount({
+        type: value.type,
+        categoryId: value.categoryId,
+        cadence: value.cadence,
+      })
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['secondAmount'],
+        message:
+          'A second expected amount is only allowed for semi-monthly salary income rules',
+      })
     }
   })
 }

@@ -11,6 +11,7 @@ import { useSmartFormAutofocus } from '#/lib/hooks/use-smart-form-autofocus'
 import { ENTITY_NAME_MAX_LENGTH, MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 import { cn } from '#/lib/utils/cn'
 import type { Account, Category, RecurringRule } from '#/types/domain'
+import { supportsSecondSalaryAmount } from '../lib/salary-rule'
 import type { CreateRecurringRuleInput } from '../schemas/recurring-rule.schemas'
 
 interface RecurringRuleFormProps {
@@ -21,6 +22,7 @@ interface RecurringRuleFormProps {
   defaultCategoryId?: string
   initialValues?: Partial<RecurringRule>
   onSubmit: (values: CreateRecurringRuleInput) => Promise<void>
+  onDelete?: () => Promise<void>
   onCancel?: () => void
   submitLabel?: string
 }
@@ -46,6 +48,7 @@ export function RecurringRuleForm({
   defaultCategoryId = '',
   initialValues,
   onSubmit,
+  onDelete,
   onCancel,
   submitLabel = 'Save',
 }: RecurringRuleFormProps) {
@@ -67,6 +70,7 @@ export function RecurringRuleForm({
       name: initialValues?.name ?? defaultName,
       type: initialValues?.type ?? type,
       amount: initialValues?.amount ?? ('' as unknown as number),
+      secondAmount: initialValues?.secondAmount ?? ('' as unknown as number),
       categoryId: initialValues?.categoryId ?? defaultCategoryId,
       accountId: defaultAccountId,
       cadence: initialCadence as CreateRecurringRuleInput['cadence'],
@@ -86,6 +90,15 @@ export function RecurringRuleForm({
         name: value.name,
         type: value.type,
         amount: Number(value.amount),
+        secondAmount: supportsSecondSalaryAmount({
+          type: value.type,
+          categoryId: value.categoryId,
+          cadence,
+        })
+          ? value.secondAmount
+            ? Number(value.secondAmount)
+            : null
+          : null,
         categoryId: value.categoryId,
         accountId: value.accountId,
         cadence,
@@ -167,7 +180,7 @@ export function RecurringRuleForm({
       >
         {(field) => (
           <FormField
-            label="Expected Amount"
+            label="First Expected Amount"
             htmlFor="rule-amount"
             hint="Used for forecasting. Your actual posted transaction amount can differ."
             error={field.state.meta.errors[0]?.toString()}
@@ -185,6 +198,47 @@ export function RecurringRuleForm({
           </FormField>
         )}
       </form.Field>
+
+      {supportsSecondSalaryAmount({
+        type: form.state.values.type,
+        categoryId: form.state.values.categoryId,
+        cadence: form.state.values.cadence,
+      }) && (
+        <form.Field
+          name="secondAmount"
+          validators={{
+            onChange: ({ value }) => {
+              if (!value) return undefined
+              const n = Number(value)
+              if (isNaN(n) || n <= 0) return 'Enter a valid amount'
+              if (n > MONEY_MAX_AMOUNT) {
+                return `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`
+              }
+              return undefined
+            },
+          }}
+        >
+          {(field) => (
+            <FormField
+              label="Second Expected Amount"
+              htmlFor="rule-second-amount"
+              hint="Optional. Use this when the 2nd semi-monthly salary differs from the 1st."
+              error={field.state.meta.errors[0]?.toString()}
+            >
+              <CurrencyInput
+                id="rule-second-amount"
+                name="rule-second-amount"
+                placeholder="Optional"
+                value={field.state.value as unknown as string}
+                onChange={(e) =>
+                  field.handleChange(e.target.value as unknown as number)
+                }
+                onBlur={field.handleBlur}
+              />
+            </FormField>
+          )}
+        </form.Field>
+      )}
 
       <form.Field
         name="categoryId"
@@ -378,6 +432,16 @@ export function RecurringRuleForm({
         {onCancel && (
           <Button onClick={onCancel} variant="secondary" fullWidth>
             Cancel
+          </Button>
+        )}
+        {onDelete && (
+          <Button
+            onClick={() => void onDelete()}
+            variant="secondary"
+            className="bg-destructive/10 text-destructive hover:bg-destructive/15"
+            fullWidth
+          >
+            Delete
           </Button>
         )}
         <form.Subscribe

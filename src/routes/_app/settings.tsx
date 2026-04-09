@@ -24,9 +24,7 @@ export const Route = createFileRoute('/_app/settings')({
   component: SettingsRoute,
 })
 
-type SheetState =
-  | { mode: 'import-confirm'; payload: ExportPayload }
-  | null
+type SheetState = { mode: 'import-confirm'; payload: ExportPayload } | null
 
 function SettingsRoute() {
   const [sheetState, setSheetState] = useState<SheetState>(null)

@@ -77,7 +77,9 @@ function getGreeting() {
 
 function DashboardRoute() {
   const navigate = useNavigate()
-  const setTransactionType = useFiltersStore((state) => state.setTransactionType)
+  const setTransactionType = useFiltersStore(
+    (state) => state.setTransactionType,
+  )
   const openPostedTransactions = useTransactionsViewStore(
     (state) => state.openPostedTransactions,
   )
@@ -525,11 +527,7 @@ function SectionAction({
 }) {
   if (isEmpty) {
     return (
-      <Button
-        type="button"
-        onClick={onAdd}
-        variant="inline-primary"
-      >
+      <Button type="button" onClick={onAdd} variant="inline-primary">
         <Plus className="size-3.5" />
         Add
       </Button>
@@ -553,7 +551,7 @@ function SectionAction({
       variant="inline-primary"
       onClick={handleSeeAll}
       onMouseDown={(event) => event.preventDefault()}
-      className="text-muted-foreground hover:bg-transparent hover:text-foreground/70"
+      className="text-muted-foreground hover:text-foreground/70 hover:bg-transparent"
     >
       See all
     </Button>

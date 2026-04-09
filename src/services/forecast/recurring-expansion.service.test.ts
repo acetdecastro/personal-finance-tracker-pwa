@@ -11,6 +11,7 @@ function createRule(overrides: Partial<RecurringRule> = {}): RecurringRule {
     name: 'Salary',
     type: 'income',
     amount: 1000,
+    secondAmount: null,
     categoryId: 'category-income-salary',
     accountId: 'account-1',
     cadence: 'semi-monthly',
@@ -67,6 +68,30 @@ describe('expandRecurringOccurrences', () => {
 
     expect(occurrences.map((occurrence) => occurrence.date)).toEqual([
       '2026-04-30T00:00:00.000Z',
+    ])
+  })
+
+  it('uses the first and second salary amounts for semi-monthly salary rules', () => {
+    const occurrences = expandRecurringOccurrences({
+      rules: [
+        createRule({
+          amount: 25000,
+          secondAmount: 27500,
+        }),
+      ],
+      fromDate: '2026-04-10T00:00:00.000Z',
+      endDate: '2026-05-20T00:00:00.000Z',
+    })
+
+    expect(
+      occurrences.map((occurrence) => ({
+        date: occurrence.date,
+        amount: occurrence.amount,
+      })),
+    ).toEqual([
+      { date: '2026-04-15T00:00:00.000Z', amount: 25000 },
+      { date: '2026-04-30T00:00:00.000Z', amount: 27500 },
+      { date: '2026-05-15T00:00:00.000Z', amount: 25000 },
     ])
   })
 

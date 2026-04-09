@@ -6,6 +6,7 @@ interface TransactionRowProps {
   label: string
   subLabel?: string | null
   amountLabel: string
+  amountContent?: ReactNode
   rightSecondaryLabel?: string | null
   amountColor: string
   Icon?: ElementType
@@ -19,6 +20,7 @@ export function TransactionRow({
   label,
   subLabel,
   amountLabel,
+  amountContent,
   rightSecondaryLabel,
   amountColor,
   onPress,
@@ -42,12 +44,12 @@ export function TransactionRow({
           <p
             title={amountLabel}
             className={cn(
-              'max-w-34 truncate font-bold tabular-nums',
+              'max-w-36 truncate font-bold tabular-nums',
               getCurrencyTextSizeClass(amountLabel, 'list'),
               amountColor,
             )}
           >
-            {amountLabel}
+            {amountContent ?? amountLabel}
           </p>
           {rightSecondaryLabel && (
             <p className="text-muted-foreground/70 mt-0.5 text-[10px]">

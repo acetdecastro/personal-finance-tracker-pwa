@@ -11,8 +11,7 @@ interface BottomSheetProps {
   contentClassName?: string
 }
 
-const BACKDROP_CLS =
-  'fixed inset-0 z-50 flex flex-col justify-end bg-black/40'
+const BACKDROP_CLS = 'fixed inset-0 z-50 flex flex-col justify-end bg-black/40'
 const PANEL_CLS =
   'flex max-h-[90dvh] flex-col rounded-tl-3xl rounded-tr-3xl bg-popover cursor-auto dark:border-primary/30 border-border/60 border-t animate-sheet-slide-up'
 const CLOSE_BUTTON_CLS =

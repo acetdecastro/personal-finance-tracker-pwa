@@ -24,6 +24,7 @@ import { useCategories } from '#/features/categories/hooks/use-categories'
 import { useGoals } from '#/features/goals/hooks/use-goals'
 import {
   useCreateRecurringRule,
+  useDeleteRecurringRule,
   useRecurringRules,
   useUpdateRecurringRule,
 } from '#/features/recurring/hooks/use-recurring-rules'
@@ -56,7 +57,9 @@ function TransactionsRoute() {
     null,
   )
   const [recurringSheetState, setRecurringSheetState] = useState<
-    { mode: 'create'; type: 'income' | 'expense' } | { mode: 'edit'; rule: RecurringRule } | null
+    | { mode: 'create'; type: 'income' | 'expense' }
+    | { mode: 'edit'; rule: RecurringRule }
+    | null
   >(null)
   const { transactionType } = useFiltersStore()
   const { mode, setMode, recurringFilter, setRecurringFilter } =
@@ -77,6 +80,7 @@ function TransactionsRoute() {
   const deleteTransaction = useDeleteTransaction()
   const createRecurringRule = useCreateRecurringRule()
   const updateRecurringRule = useUpdateRecurringRule()
+  const deleteRecurringRule = useDeleteRecurringRule()
 
   const filteredRecurringRules =
     recurringFilter === 'all'
@@ -136,6 +140,16 @@ function TransactionsRoute() {
       setShowForm(false)
     } catch {
       toast.error('Failed to delete transaction')
+    }
+  }
+
+  async function handleDeleteRecurringRule(id: string) {
+    try {
+      await deleteRecurringRule.mutateAsync(id)
+      toast.success('Recurring transaction deleted')
+      setRecurringSheetState(null)
+    } catch {
+      toast.error('Failed to delete recurring transaction')
     }
   }
 
@@ -283,7 +297,8 @@ function TransactionsRoute() {
             </div>
 
             <p className="text-muted-foreground/70 text-xs">
-              Recurring transactions are expected future entries used for forecasts.
+              Recurring transactions are expected future entries used for
+              forecasts.
             </p>
 
             {filteredRecurringRules.length === 0 ? (
@@ -299,7 +314,9 @@ function TransactionsRoute() {
               <RecurringRuleList
                 rules={filteredRecurringRules}
                 categories={categories}
-                onSelect={(rule) => setRecurringSheetState({ mode: 'edit', rule })}
+                onSelect={(rule) =>
+                  setRecurringSheetState({ mode: 'edit', rule })
+                }
               />
             )}
           </>
@@ -386,6 +403,11 @@ function TransactionsRoute() {
                 : undefined
             }
             onSubmit={handleRecurringSubmit}
+            onDelete={
+              recurringSheetState.mode === 'edit'
+                ? () => handleDeleteRecurringRule(recurringSheetState.rule.id)
+                : undefined
+            }
             onCancel={() => setRecurringSheetState(null)}
             submitLabel="Save"
           />

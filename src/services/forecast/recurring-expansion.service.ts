@@ -11,6 +11,7 @@ import {
 } from 'date-fns'
 import type { RecurringRule, Transaction } from '#/types/domain'
 import type { RecurringOccurrenceDto } from '#/types/dto'
+import { supportsSecondSalaryAmount } from '#/features/recurring/lib/salary-rule'
 
 interface ExpandRecurringOccurrencesInput {
   rules: RecurringRule[]
@@ -90,6 +91,32 @@ function hasPostedTransactionForOccurrence(
   )
 }
 
+function resolveOccurrenceAmount(rule: RecurringRule, occurrenceDate: Date) {
+  if (
+    rule.secondAmount === null ||
+    !supportsSecondSalaryAmount({
+      type: rule.type,
+      categoryId: rule.categoryId,
+      cadence: rule.cadence,
+    }) ||
+    rule.cadence !== 'semi-monthly'
+  ) {
+    return rule.amount
+  }
+
+  const configuredDays = [...(rule.semiMonthlyDays ?? [])].sort(
+    (left, right) => left - right,
+  )
+
+  if (configuredDays.length < 2) {
+    return rule.amount
+  }
+
+  return occurrenceDate.getDate() === configuredDays[1]
+    ? rule.secondAmount
+    : rule.amount
+}
+
 function expandRecurringRule(
   rule: RecurringRule,
   fromDate: Date,
@@ -114,7 +141,7 @@ function expandRecurringRule(
         recurringRuleId: rule.id,
         name: rule.name,
         type: rule.type,
-        amount: rule.amount,
+        amount: resolveOccurrenceAmount(rule, cursor),
         categoryId: rule.categoryId,
         accountId: rule.accountId,
         date: cursor.toISOString(),

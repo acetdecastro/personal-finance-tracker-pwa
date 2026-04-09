@@ -73,6 +73,10 @@ export function createRecurringRuleRepository(
       await database.recurringRules.put(validated)
       return validated
     },
+
+    async remove(id: string): Promise<void> {
+      await database.recurringRules.delete(id)
+    },
   }
 }
 

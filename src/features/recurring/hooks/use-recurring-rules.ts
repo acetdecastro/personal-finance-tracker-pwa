@@ -43,3 +43,14 @@ export function useUpdateRecurringRule() {
     },
   })
 }
+
+export function useDeleteRecurringRule() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => recurringRuleRepository.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: RECURRING_RULES_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY })
+    },
+  })
+}

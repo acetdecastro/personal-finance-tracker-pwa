@@ -58,6 +58,7 @@ const recurringRules: RecurringRule[] = [
     name: 'Salary',
     type: 'income',
     amount: 1000,
+    secondAmount: null,
     categoryId: 'category-income-salary',
     accountId: 'account-1',
     cadence: 'semi-monthly',
@@ -74,6 +75,7 @@ const recurringRules: RecurringRule[] = [
     name: 'Rent',
     type: 'expense',
     amount: 300,
+    secondAmount: null,
     categoryId: 'category-expense-rent',
     accountId: 'account-1',
     cadence: 'monthly',
@@ -108,6 +110,26 @@ describe('forecast.service', () => {
     expect(summary.projectedBalance14d).toBe(2000)
     expect(summary.projectedBalance30d).toBe(3000)
     expect(summary.lowestProjectedBalance30d).toBe(1000)
+  })
+
+  it('includes both first and second semi-monthly salary amounts in projections', () => {
+    const summary = calculateForecastSummary({
+      accounts: [account],
+      transactions,
+      recurringRules: [
+        {
+          ...recurringRules[0],
+          amount: 25000,
+          secondAmount: 27500,
+        },
+        recurringRules[1],
+      ],
+      now: '2026-04-05T00:00:00.000Z',
+    })
+
+    expect(summary.nextSalaryDate).toBe('2026-04-15T00:00:00.000Z')
+    expect(summary.projectedBalance14d).toBe(26000)
+    expect(summary.projectedBalance30d).toBe(53500)
   })
 
   it('computes per-account balance by applying income, expense, and transfer transactions', () => {

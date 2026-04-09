@@ -1,8 +1,10 @@
+import type { ReactNode } from 'react'
 import { RefreshCw } from 'lucide-react'
 import type { Category, RecurringRule } from '#/types/domain'
 import { formatPhpCurrency } from '#/lib/format/number.utils'
 import { formatCompactDisplayDate } from '#/lib/dates'
 import { TransactionRow } from '#/features/transactions/components/TransactionRow'
+import { supportsSecondSalaryAmount } from '../lib/salary-rule'
 import { getNextUpcomingOccurrenceDate } from '#/services/forecast/recurring-expansion.service'
 
 interface RecurringRuleListProps {
@@ -28,8 +30,30 @@ export function RecurringRuleList({
   return (
     <div className="space-y-4">
       {rules.map((rule) => {
-        const amountLabel = `${rule.type === 'income' ? '+' : '-'}${formatPhpCurrency(rule.amount)}`
         const categoryName = categoryMap.get(rule.categoryId)
+        const hasSecondSalaryAmount =
+          rule.secondAmount !== null &&
+          supportsSecondSalaryAmount({
+            type: rule.type,
+            categoryId: rule.categoryId,
+            cadence: rule.cadence,
+          })
+        const amountLabel = hasSecondSalaryAmount
+          ? `${formatPhpCurrency(rule.amount)} First · ${formatPhpCurrency(rule.secondAmount)} Second`
+          : `${rule.type === 'income' ? '+' : '-'}${formatPhpCurrency(rule.amount)}`
+        const amountContent: ReactNode | undefined = hasSecondSalaryAmount ? (
+          <>
+            <span>{formatPhpCurrency(rule.amount)}</span>
+            <span className="text-muted-foreground/70 align-super text-[5px] font-medium">
+              1st
+            </span>
+            <span className="text-muted-foreground/70 px-0.5">·</span>
+            <span>{formatPhpCurrency(rule.secondAmount)}</span>
+            <span className="text-muted-foreground/70 align-super text-[5px] font-medium">
+              2nd
+            </span>
+          </>
+        ) : undefined
         const nextOccurrenceDate = rule.isActive
           ? getNextUpcomingOccurrenceDate(rule, new Date())
           : rule.nextOccurrenceDate
@@ -52,6 +76,7 @@ export function RecurringRuleList({
             label={rule.name}
             subLabel={subLabelParts.join(' · ')}
             amountLabel={amountLabel}
+            amountContent={amountContent}
             rightSecondaryLabel={`${dateLabelPrefix} ${formatCompactDisplayDate(nextOccurrenceDate)}`}
             amountColor={
               rule.type === 'income' ? 'text-primary' : 'text-warning'

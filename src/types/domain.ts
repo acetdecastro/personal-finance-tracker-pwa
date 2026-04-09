@@ -57,6 +57,7 @@ export interface RecurringRule extends TimestampedEntity {
   name: string
   type: RecurringRuleType
   amount: number
+  secondAmount: number | null
   categoryId: EntityId
   accountId: EntityId
   cadence: RecurringCadence

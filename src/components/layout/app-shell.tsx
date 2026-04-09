@@ -37,7 +37,7 @@ export function AppShell() {
       {/* Bottom navigation */}
       <nav
         aria-label="Primary"
-        className="border-border/60 pb-safe dark:border-primary/30 fixed inset-x-0 bottom-0 z-40 rounded-tl-3xl rounded-tr-3xl border-t shadow bg-background/40 backdrop-blur-sm"
+        className="border-border/60 pb-safe dark:border-primary/30 bg-background/40 fixed inset-x-0 bottom-0 z-40 rounded-tl-3xl rounded-tr-3xl border-t shadow backdrop-blur-sm"
       >
         <div className="mx-auto flex max-w-lg items-center justify-between px-6 pt-3 pb-6">
           {mainNavItems.map((item) => (
