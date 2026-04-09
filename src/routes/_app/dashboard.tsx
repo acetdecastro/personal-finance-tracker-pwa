@@ -275,12 +275,12 @@ function DashboardRoute() {
         <SummaryCard
           label="7-Day Forecast"
           value={formatPhpCurrency(dashboardData?.projectedBalance7d ?? 0)}
-          description="Estimated balance after upcoming bills and income."
+          description="Estimated balance after upcoming expenses and income."
         />
         <SummaryCard
           label="30-Day Forecast"
           value={formatPhpCurrency(dashboardData?.projectedBalance30d ?? 0)}
-          description="Estimated balance after upcoming bills and income."
+          description="Estimated balance after upcoming expenses and income."
         />
       </div>
 
