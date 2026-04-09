@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { Loader2, Minus, Plus } from 'lucide-react'
 import { Button } from '#/components/common/Button'
 import { BottomSheet } from '#/components/common/BottomSheet'
+import { ConfirmDialog } from '#/components/common/ConfirmDialog'
 import { EmptyState } from '#/components/common/EmptyState'
 import { SectionHeader } from '#/components/common/SectionHeader'
 import { RecurringRuleForm } from '#/features/recurring/components/RecurringRuleForm'
@@ -61,6 +62,8 @@ function TransactionsRoute() {
     | { mode: 'edit'; rule: RecurringRule }
     | null
   >(null)
+  const [confirmRecurringDeleteRule, setConfirmRecurringDeleteRule] =
+    useState<RecurringRule | null>(null)
   const { transactionType } = useFiltersStore()
   const { mode, setMode, recurringFilter, setRecurringFilter } =
     useTransactionsViewStore()
@@ -147,6 +150,7 @@ function TransactionsRoute() {
     try {
       await deleteRecurringRule.mutateAsync(id)
       toast.success('Recurring transaction deleted')
+      setConfirmRecurringDeleteRule(null)
       setRecurringSheetState(null)
     } catch {
       toast.error('Failed to delete recurring transaction')
@@ -199,7 +203,11 @@ function TransactionsRoute() {
           title="Transactions"
           action={
             mode === 'posted' ? (
-              <Button onClick={handleAddTransaction} variant="inline-primary">
+              <Button
+                onClick={handleAddTransaction}
+                variant="inline-primary"
+                className="text-sm"
+              >
                 <Plus className="size-3.5" />
                 Add
               </Button>
@@ -208,6 +216,7 @@ function TransactionsRoute() {
                 <Button
                   onClick={() => handleAddRecurring('income')}
                   variant="inline-primary"
+                  className="text-sm"
                 >
                   <Plus className="size-3.5" />
                   Income
@@ -215,6 +224,7 @@ function TransactionsRoute() {
                 <Button
                   onClick={() => handleAddRecurring('expense')}
                   variant="inline-secondary"
+                  className="text-sm"
                 >
                   <Minus className="size-3.5" />
                   Expense
@@ -323,7 +333,8 @@ function TransactionsRoute() {
         )}
       </div>
 
-      {mode === 'posted' && (
+      {/* Floating action button */}
+      {/* {mode === 'posted' && (
         <Button
           onClick={handleAddTransaction}
           variant="fab"
@@ -331,7 +342,7 @@ function TransactionsRoute() {
         >
           <Plus className="text-primary-foreground size-6" />
         </Button>
-      )}
+      )} */}
 
       {/* Bottom sheet */}
       {showForm && (
@@ -405,13 +416,29 @@ function TransactionsRoute() {
             onSubmit={handleRecurringSubmit}
             onDelete={
               recurringSheetState.mode === 'edit'
-                ? () => handleDeleteRecurringRule(recurringSheetState.rule.id)
+                ? async () => {
+                    setConfirmRecurringDeleteRule(recurringSheetState.rule)
+                  }
                 : undefined
             }
             onCancel={() => setRecurringSheetState(null)}
             submitLabel="Save"
           />
         </BottomSheet>
+      )}
+
+      {confirmRecurringDeleteRule && (
+        <ConfirmDialog
+          title="Delete recurring transaction?"
+          description="This will stop future forecasted occurrences from this recurring transaction. Past linked transactions will be kept in your history."
+          confirmLabel="Delete"
+          onCancel={() => setConfirmRecurringDeleteRule(null)}
+          onConfirm={() =>
+            handleDeleteRecurringRule(confirmRecurringDeleteRule.id)
+          }
+          isLoading={deleteRecurringRule.isPending}
+          tone="destructive"
+        />
       )}
     </>
   )

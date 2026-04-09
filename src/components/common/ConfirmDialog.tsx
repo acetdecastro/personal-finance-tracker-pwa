@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { cn } from '#/lib/utils/cn'
 import { useBodyScrollLock } from '#/lib/hooks/use-body-scroll-lock'
 import { Button } from './Button'
 
@@ -28,13 +30,23 @@ export function ConfirmDialog({
   tone = 'default',
 }: ConfirmDialogProps) {
   useBodyScrollLock('visible')
+  const [isDismissing, setIsDismissing] = useState(false)
+
+  function startDismiss() {
+    if (isLoading) return
+    setIsDismissing(true)
+  }
 
   return (
     <div
-      className={BACKDROP_CLS}
-      onClick={() => {
-        if (!isLoading) onCancel()
+      className={cn(
+        BACKDROP_CLS,
+        isDismissing ? 'animate-overlay-fade-out' : 'animate-overlay-fade-in',
+      )}
+      onAnimationEnd={() => {
+        if (isDismissing) onCancel()
       }}
+      onClick={() => startDismiss()}
     >
       <div className={PANEL_CLS} onClick={(e) => e.stopPropagation()}>
         <div className="space-y-2">
@@ -45,7 +57,7 @@ export function ConfirmDialog({
           <Button
             variant="secondary"
             className="flex-1"
-            onClick={onCancel}
+            onClick={startDismiss}
             disabled={isLoading}
           >
             {cancelLabel}

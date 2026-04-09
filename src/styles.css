@@ -11,6 +11,8 @@
   --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   --breakpoint-xs: 380px;
   --animate-sheet-slide-up: sheet-slide-up 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-overlay-fade-in: overlay-fade-in 0.15s ease-out;
+  --animate-overlay-fade-out: overlay-fade-out 0.15s ease-in forwards;
 }
 
 /* ─── Design token bridge ─────────────────────────────────────────────── */
@@ -189,12 +191,30 @@
   }
 }
 
-/* ─── Sheet animation ───────────────────────────────────────────────────── */
+/* ─── Sheet + overlay animations ───────────────────────────────────────── */
 @keyframes sheet-slide-up {
   from {
     transform: translateY(100%);
   }
   to {
     transform: translateY(0);
+  }
+}
+
+@keyframes overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes overlay-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }

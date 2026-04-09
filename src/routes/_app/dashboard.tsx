@@ -261,7 +261,7 @@ function DashboardRoute() {
         <SummaryCard
           label="Safe to Spend"
           value={formatPhpCurrency(dashboardData?.safeToSpend ?? 0)}
-          description="Available after buffers and fixed bills."
+          description="Available after buffers and recurring expenses."
         />
         <SummaryCard
           label="Next Salary"
@@ -273,14 +273,14 @@ function DashboardRoute() {
           description="Next expected income date."
         />
         <SummaryCard
-          label="In 7 Days"
+          label="7-Day Forecast"
           value={formatPhpCurrency(dashboardData?.projectedBalance7d ?? 0)}
-          description="Projected balance in one week."
+          description="Estimated balance after upcoming bills and income."
         />
         <SummaryCard
-          label="In 30 Days"
+          label="30-Day Forecast"
           value={formatPhpCurrency(dashboardData?.projectedBalance30d ?? 0)}
-          description="Projected balance in one month."
+          description="Estimated balance after upcoming bills and income."
         />
       </div>
 
@@ -541,7 +541,12 @@ function SectionAction({
       activeElement.blur()
     }
 
-    window.getSelection().removeAllRanges()
+    const selection = window.getSelection()
+
+    if (selection) {
+      selection.removeAllRanges()
+    }
+
     onSeeAll?.()
   }
 

@@ -177,6 +177,7 @@ function AccountsRoute() {
               <Button
                 onClick={() => setSheetState({ mode: 'create' })}
                 variant="inline-primary"
+                className="text-sm"
               >
                 <Plus className="size-3.5" />
                 Add

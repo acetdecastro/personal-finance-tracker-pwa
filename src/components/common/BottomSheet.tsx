@@ -82,7 +82,10 @@ export function BottomSheet({
 
   return (
     <div
-      className={cn(BACKDROP_CLS, isDismissing && 'bg-transparent')}
+      className={cn(
+        BACKDROP_CLS,
+        isDismissing ? 'animate-overlay-fade-out' : 'animate-overlay-fade-in',
+      )}
       // onPointerDown: modern browsers — preventDefault cancels the ghost click
       onPointerDown={(e) => {
         if (e.target === e.currentTarget) {

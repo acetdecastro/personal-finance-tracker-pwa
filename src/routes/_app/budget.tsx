@@ -241,7 +241,11 @@ function BudgetRoute() {
           <SectionHeader
             title="Monthly Budgets"
             action={
-              <Button onClick={openBudgetCreate} variant="inline-primary">
+              <Button
+                onClick={openBudgetCreate}
+                variant="inline-primary"
+                className="text-sm"
+              >
                 <Plus className="size-3.5" />
                 Add
               </Button>
@@ -273,7 +277,11 @@ function BudgetRoute() {
           <SectionHeader
             title="Savings Goals"
             action={
-              <Button onClick={openGoalCreate} variant="inline-primary">
+              <Button
+                onClick={openGoalCreate}
+                variant="inline-primary"
+                className="text-sm"
+              >
                 <Plus className="size-3.5" />
                 Add
               </Button>
