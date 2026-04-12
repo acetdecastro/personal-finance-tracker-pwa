@@ -11,6 +11,7 @@ import type { CreateAccountInput } from '../schemas/account.schemas'
 
 interface AccountFormProps {
   onSubmit: (values: CreateAccountInput) => Promise<void>
+  onEditCurrentBalance?: () => void
   onArchive?: () => Promise<void>
   onRestore?: () => Promise<void>
   onDelete?: () => Promise<void>
@@ -30,6 +31,7 @@ const ACCOUNT_TYPES = [
 
 export function AccountForm({
   onSubmit,
+  onEditCurrentBalance,
   onArchive,
   onRestore,
   onDelete,
@@ -70,12 +72,25 @@ export function AccountForm({
     >
       {isEditing && (
         <div className="bg-card rounded-2xl px-4 py-3 shadow">
-          <p className="text-muted-foreground/70 text-[10px] font-bold tracking-widest uppercase">
-            Current Balance
-          </p>
-          <p className="text-foreground mt-1 text-xl font-bold tabular-nums">
-            {formatPhpCurrency(currentBalance)}
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-muted-foreground/70 text-[10px] font-bold tracking-widest uppercase">
+                Current Balance
+              </p>
+              <p className="text-foreground mt-1 text-xl font-bold tabular-nums">
+                {formatPhpCurrency(currentBalance)}
+              </p>
+            </div>
+            {onEditCurrentBalance && (
+              <Button
+                variant="inline-primary"
+                className="-mr-2"
+                onClick={onEditCurrentBalance}
+              >
+                Edit
+              </Button>
+            )}
+          </div>
           <div className="border-border/50 mt-2 flex items-center justify-between border-t pt-2">
             <p className="text-muted-foreground/70 text-[10px] font-bold tracking-widest uppercase">
               Starting Balance

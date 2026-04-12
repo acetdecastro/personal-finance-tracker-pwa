@@ -7,6 +7,7 @@ import { BottomSheet } from '#/components/common/BottomSheet'
 import { AccountForm } from '#/features/accounts/components/AccountForm'
 import { AccountList } from '#/features/accounts/components/AccountList'
 import { AddBalanceForm } from '#/features/accounts/components/AddBalanceForm'
+import { SetCurrentBalanceForm } from '#/features/accounts/components/SetCurrentBalanceForm'
 import {
   useAccountUsage,
   useAccounts,
@@ -41,6 +42,9 @@ function AccountsRoute() {
   const [filter, setFilter] = useState<'active' | 'archived'>('active')
   const [sheetState, setSheetState] = useState<SheetState>(null)
   const [addBalanceAccount, setAddBalanceAccount] = useState<Account | null>(
+    null,
+  )
+  const [setBalanceAccount, setSetBalanceAccount] = useState<Account | null>(
     null,
   )
   const { data: accounts = [] } = useAccounts()
@@ -146,6 +150,46 @@ function AccountsRoute() {
     } catch (e) {
       console.log(e)
       toast.error('Failed to add balance')
+    }
+  }
+
+  async function handleSetCurrentBalance(values: {
+    targetBalance: number
+    date: string
+  }) {
+    if (!setBalanceAccount) return
+
+    const currentBalance =
+      balances[setBalanceAccount.id] ?? setBalanceAccount.initialBalance
+    const difference = values.targetBalance - currentBalance
+
+    if (difference === 0) {
+      toast.success('Current balance is already up to date')
+      setSetBalanceAccount(null)
+      return
+    }
+
+    try {
+      await createTransaction.mutateAsync({
+        type: difference > 0 ? 'income' : 'expense',
+        accountId: setBalanceAccount.id,
+        categoryId:
+          difference > 0
+            ? 'category-income-other-income'
+            : 'category-expense-miscellaneous',
+        amount: Math.abs(difference),
+        transactionDate: toStoredDate(new Date(values.date + 'T00:00:00.000Z')),
+        note: 'Balance adjustment',
+        fromAccountId: null,
+        toAccountId: null,
+        recurringRuleId: null,
+        goalId: null,
+        goalTransferDirection: null,
+      })
+      toast.success('Current balance updated')
+      setSetBalanceAccount(null)
+    } catch {
+      toast.error('Failed to update current balance')
     }
   }
 
@@ -266,6 +310,11 @@ function AccountsRoute() {
                 ? async (values) => handleUpdate(values)
                 : handleCreate
             }
+            onEditCurrentBalance={
+              sheetState.mode === 'edit' && !sheetState.account.isArchived
+                ? () => setSetBalanceAccount(sheetState.account)
+                : undefined
+            }
             submitLabel={'Save'}
             onCancel={() => setSheetState(null)}
             onArchive={
@@ -299,6 +348,21 @@ function AccountsRoute() {
           <AddBalanceForm
             onSubmit={handleAddBalance}
             onCancel={() => setAddBalanceAccount(null)}
+          />
+        </BottomSheet>
+      )}
+
+      {setBalanceAccount && (
+        <BottomSheet
+          title={`Set Current Balance — ${setBalanceAccount.name}`}
+          onClose={() => setSetBalanceAccount(null)}
+        >
+          <SetCurrentBalanceForm
+            currentBalance={
+              balances[setBalanceAccount.id] ?? setBalanceAccount.initialBalance
+            }
+            onSubmit={handleSetCurrentBalance}
+            onCancel={() => setSetBalanceAccount(null)}
           />
         </BottomSheet>
       )}
