@@ -7,7 +7,6 @@ import {
   Download,
   FolderOpen,
   Loader2,
-  Share,
 } from 'lucide-react'
 import { InfoBanner } from '#/components/common/InfoBanner'
 import { AccountForm } from '#/features/accounts/components/AccountForm'
@@ -25,6 +24,10 @@ import {
 } from '#/features/goals/hooks/use-goals'
 import { useInstallPrompt } from '#/features/settings/hooks/use-install-prompt'
 import type { InstallState } from '#/features/settings/hooks/use-install-prompt'
+import {
+  getInstallDoneDescription,
+  getInstallInstructionContent,
+} from '#/features/settings/lib/install-instructions'
 import { SETTINGS_SCREEN_QUERY_KEY } from '#/features/settings/hooks/use-settings'
 import { USER_SETTINGS_QUERY_KEY } from '#/features/settings/hooks/use-user-settings'
 import { mapSettingsToDto } from '#/features/settings/services/settings.service'
@@ -261,6 +264,7 @@ function IntroNameStep({ onSubmit }: { onSubmit: (name: string) => void }) {
 function DoneStep({ onComplete }: { onComplete: () => void }) {
   const { installState, triggerInstall } = useInstallPrompt()
   const [isNavigating, setIsNavigating] = useState(false)
+  const instructionContent = getInstallInstructionContent(installState)
 
   async function handleComplete() {
     setIsNavigating(true)
@@ -295,17 +299,7 @@ function DoneStep({ onComplete }: { onComplete: () => void }) {
           You&apos;re all set!
         </h2>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          {installState === 'standalone'
-            ? "You're already running FinKo as an installed app."
-            : installState === 'ios'
-              ? 'Add FinKo to your Home Screen for a cleaner app-like experience and offline use.'
-              : installState === 'mac-safari'
-                ? 'Add FinKo to your Dock for a cleaner app-like experience and offline use on your Mac.'
-                : installState === 'desktop-chrome'
-                  ? 'Install FinKo from Chrome’s address bar for a cleaner app-like experience and offline use on your computer.'
-                  : installState === 'promptable'
-                    ? 'Install FinKo on your device for a cleaner app-like experience and offline use.'
-                    : 'Your dashboard is ready. You can now add transactions, salary, recurring bills, budgets, and goals as needed.'}
+          {getInstallDoneDescription(installState)}
         </p>
       </div>
 
@@ -332,14 +326,10 @@ function DoneStep({ onComplete }: { onComplete: () => void }) {
         </div>
       )}
 
-      {installState === 'ios' && (
+      {instructionContent && installState !== 'promptable' && (
         <div className="w-full space-y-4 text-left">
           <ol className="space-y-2">
-            {[
-              { icon: Share, text: "Tap the Share button in Safari's toolbar" },
-              { icon: null, text: 'Scroll down and tap "Add to Home Screen"' },
-              { icon: null, text: 'Tap "Add" to confirm' },
-            ].map((step, index) => (
+            {instructionContent.steps.map((step, index) => (
               <li
                 key={index}
                 className="text-secondary-foreground flex items-start gap-3 text-sm"
@@ -353,56 +343,6 @@ function DoneStep({ onComplete }: { onComplete: () => void }) {
                     <step.icon className="inline size-3.5 shrink-0" />
                   )}
                 </span>
-              </li>
-            ))}
-          </ol>
-          <Button onClick={handleComplete} className="w-full">
-            Go to Dashboard
-          </Button>
-        </div>
-      )}
-
-      {installState === 'mac-safari' && (
-        <div className="w-full space-y-4 text-left">
-          <ol className="space-y-2">
-            {[
-              'Click the Share button in Safari’s toolbar',
-              'Choose "Add to Dock"',
-              'Click "Add"',
-            ].map((step, index) => (
-              <li
-                key={index}
-                className="text-secondary-foreground flex items-start gap-3 text-sm"
-              >
-                <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
-                  {index + 1}
-                </span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
-          <Button onClick={handleComplete} className="w-full">
-            Go to Dashboard
-          </Button>
-        </div>
-      )}
-
-      {installState === 'desktop-chrome' && (
-        <div className="w-full space-y-4 text-left">
-          <ol className="space-y-2">
-            {[
-              'Click the Install button in Chrome’s address bar',
-              'Click "Install" in Chrome’s install dialog',
-              'Open FinKo from your device',
-            ].map((step, index) => (
-              <li
-                key={index}
-                className="text-secondary-foreground flex items-start gap-3 text-sm"
-              >
-                <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
-                  {index + 1}
-                </span>
-                <span>{step}</span>
               </li>
             ))}
           </ol>
@@ -431,20 +371,21 @@ function InstallStep({
   onNext: () => void
 }) {
   const [isInstalling, setIsInstalling] = useState(false)
+  const instructionContent = getInstallInstructionContent(installState)
 
   if (installState === 'promptable') {
     return (
       <div className="space-y-8">
         <div className="space-y-2">
           <p className="text-primary text-[11px] font-bold tracking-widest uppercase">
-            One quick step
+            {instructionContent?.eyebrow ?? 'Recommended'}
           </p>
           <h2 className="text-foreground text-xl font-bold tracking-tight">
-            Install FinKo on your device
+            {instructionContent?.title ?? 'Install FinKo on your device'}
           </h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Your data is stored locally — installing the app keeps it in the
-            app, not just the browser tab.
+            {instructionContent?.description ??
+              'Your data is stored locally — installing the app keeps it in the app, not just the browser tab.'}
           </p>
         </div>
         <InfoBanner message="Skipping means your data lives in the browser. If you install later, you may need to export and re-import your data." />
@@ -467,95 +408,9 @@ function InstallStep({
             onClick={onNext}
             className="text-muted-foreground hover:text-foreground w-full text-sm transition"
           >
-            Skip, continue in browser
+            {instructionContent?.skipLabel ?? 'Skip, continue in browser'}
           </button>
         </div>
-      </div>
-    )
-  }
-
-  if (installState === 'desktop-chrome') {
-    return (
-      <div className="space-y-8">
-        <div className="space-y-2">
-          <p className="text-primary text-[11px] font-bold tracking-widest uppercase">
-            One quick step
-          </p>
-          <h2 className="text-foreground text-xl font-bold tracking-tight">
-            Install FinKo in Chrome
-          </h2>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            On Chrome for desktop, you can install FinKo from the address bar
-            before continuing setup.
-          </p>
-        </div>
-        <ol className="space-y-3">
-          {[
-            'Click the Install button in Chrome’s address bar',
-            'Click "Install" in the install dialog',
-            'Open FinKo from your device',
-          ].map((step, index) => (
-            <li
-              key={index}
-              className="text-secondary-foreground flex items-start gap-3 text-sm"
-            >
-              <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
-                {index + 1}
-              </span>
-              <span>{step}</span>
-            </li>
-          ))}
-        </ol>
-        <button
-          type="button"
-          onClick={onNext}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-xl px-4 py-3 text-sm font-semibold transition"
-        >
-          Skip, continue in Chrome
-        </button>
-      </div>
-    )
-  }
-
-  if (installState === 'mac-safari') {
-    return (
-      <div className="space-y-8">
-        <div className="space-y-2">
-          <p className="text-primary text-[11px] font-bold tracking-widest uppercase">
-            One quick step
-          </p>
-          <h2 className="text-foreground text-xl font-bold tracking-tight">
-            Add FinKo to your Dock
-          </h2>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            On Safari for Mac, you can install FinKo as a Dock app before
-            continuing setup.
-          </p>
-        </div>
-        <ol className="space-y-3">
-          {[
-            'Click the Share button in Safari’s toolbar',
-            'Choose "Add to Dock"',
-            'Click "Add"',
-          ].map((step, index) => (
-            <li
-              key={index}
-              className="text-secondary-foreground flex items-start gap-3 text-sm"
-            >
-              <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
-                {index + 1}
-              </span>
-              <span>{step}</span>
-            </li>
-          ))}
-        </ol>
-        <button
-          type="button"
-          onClick={onNext}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-xl px-4 py-3 text-sm font-semibold transition"
-        >
-          Skip, continue in Safari
-        </button>
       </div>
     )
   }
@@ -564,30 +419,18 @@ function InstallStep({
     <div className="space-y-8">
       <div className="space-y-2">
         <p className="text-primary text-[11px] font-bold tracking-widest uppercase">
-          One quick step
+          {instructionContent?.eyebrow ?? 'Recommended'}
         </p>
         <h2 className="text-foreground text-xl font-bold tracking-tight">
-          Add FinKo to your Home Screen
+          {instructionContent?.title ?? 'Install FinKo on your device'}
         </h2>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Install before setting up so your data lives in the app, not just
-          Safari.
+          {instructionContent?.description ??
+            'Install before setting up so your data stays easy to reopen later.'}
         </p>
       </div>
       <ol className="space-y-3">
-        {(
-          [
-            {
-              icon: Share,
-              text: "Tap the Share button in Safari's toolbar",
-            },
-            { icon: null, text: 'Scroll down and tap "Add to Home Screen"' },
-            {
-              icon: null,
-              text: 'Tap "Add", then reopen FinKo from your Home Screen',
-            },
-          ] as { icon: ElementType | null; text: string }[]
-        ).map((step, index) => (
+        {(instructionContent?.steps ?? []).map((step, index) => (
           <li
             key={index}
             className="text-secondary-foreground flex items-start gap-3 text-sm"
@@ -602,13 +445,13 @@ function InstallStep({
           </li>
         ))}
       </ol>
-      <InfoBanner message="Skipping means your data lives in Safari. You can still install later from Settings." />
+      <InfoBanner message="Skipping means your data stays in the browser for now. You can still install later from Settings." />
       <button
         type="button"
         onClick={onNext}
         className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-xl px-4 py-3 text-sm font-semibold transition"
       >
-        Skip, continue in Safari
+        {instructionContent?.skipLabel ?? 'Skip, continue in browser'}
       </button>
     </div>
   )

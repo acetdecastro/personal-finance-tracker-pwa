@@ -7,7 +7,9 @@ interface BeforeInstallPromptEvent extends Event {
 
 export type InstallState =
   | 'standalone'
-  | 'ios'
+  | 'iphone-safari'
+  | 'iphone-chrome'
+  | 'android-chrome'
   | 'mac-safari'
   | 'desktop-chrome'
   | 'promptable'
@@ -36,24 +38,30 @@ export function useInstallPrompt() {
       return
     }
 
-    const isIOS =
-      (/iphone|ipad|ipod/i.test(userAgent) ||
-        /iphone|ipad|ipod/i.test(platform)) &&
+    const isIPhone =
+      (/iphone/i.test(userAgent) || /iphone/i.test(platform)) &&
       !(window as Window & { MSStream?: unknown }).MSStream
-
-    if (isIOS) {
-      setInstallState('ios')
-      return
-    }
+    const isAndroid = /android/i.test(userAgent) || /android/i.test(platform)
+    const isIPhoneChrome = isIPhone && /CriOS/i.test(userAgent)
+    const isIPhoneSafari =
+      isIPhone &&
+      /Safari/i.test(userAgent) &&
+      /Apple/i.test(vendor) &&
+      !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(userAgent)
+    const isAndroidChrome =
+      isAndroid &&
+      /Chrome|Chromium/i.test(userAgent) &&
+      !/EdgA|OPR|Firefox|SamsungBrowser/i.test(userAgent)
 
     const isDesktopChrome =
       (/Mac|Win|Linux/i.test(platform) ||
         /Macintosh|Windows|Linux/i.test(userAgent)) &&
-      /Chrome|Chromium|Edg|OPR/i.test(userAgent) &&
-      !/Mobile|Android|CriOS/i.test(userAgent)
+      /Chrome|Chromium/i.test(userAgent) &&
+      !/Mobile|Android|CriOS|Edg|OPR|Firefox/i.test(userAgent)
 
     if (isDesktopChrome) {
       setInstallState('desktop-chrome')
+      return
     }
 
     const isMacSafari =
@@ -67,10 +75,27 @@ export function useInstallPrompt() {
       return
     }
 
+    if (isIPhoneChrome) {
+      setInstallState('iphone-chrome')
+      return
+    }
+
+    if (isIPhoneSafari) {
+      setInstallState('iphone-safari')
+      return
+    }
+
+    if (isAndroidChrome) {
+      setInstallState('android-chrome')
+      return
+    }
+
     function handlePrompt(e: Event) {
       e.preventDefault()
       setPromptEvent(e as BeforeInstallPromptEvent)
-      setInstallState('promptable')
+      setInstallState((current) =>
+        current === 'unavailable' ? 'promptable' : current,
+      )
     }
 
     window.addEventListener('beforeinstallprompt', handlePrompt)

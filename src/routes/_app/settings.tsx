@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
-import { CheckCircle, Download, Share } from 'lucide-react'
+import { CheckCircle, Download } from 'lucide-react'
 import { Button } from '#/components/common/Button'
 import { BottomSheet } from '#/components/common/BottomSheet'
 import { ConfirmDialog } from '#/components/common/ConfirmDialog'
@@ -18,6 +18,7 @@ import type { ExportPayload } from '#/services/import-export/import-export.servi
 import { PRIMARY_LINK_BUTTON_CLS } from '#/lib/constants/ui-classes'
 import { useInstallPrompt } from '#/features/settings/hooks/use-install-prompt'
 import type { InstallState } from '#/features/settings/hooks/use-install-prompt'
+import { getInstallInstructionContent } from '#/features/settings/lib/install-instructions'
 import { resetAllAppData } from '#/services/data-reset/data-reset.service'
 
 export const Route = createFileRoute('/_app/settings')({
@@ -239,6 +240,8 @@ function InstallAppInstructions({
   installState: InstallState
   triggerInstall: () => Promise<void>
 }) {
+  const instructionContent = getInstallInstructionContent(installState)
+
   if (installState === 'standalone') {
     return (
       <div className="flex items-center gap-3">
@@ -258,10 +261,14 @@ function InstallAppInstructions({
   if (installState === 'promptable') {
     return (
       <>
-        <p className="text-muted-foreground text-sm">
-          Install FinKo on your device for quick access, offline support, and a
-          cleaner app-like experience.
-        </p>
+        <div className="space-y-1">
+          <p className="text-foreground text-sm font-medium">
+            {instructionContent?.title}
+          </p>
+          <p className="text-muted-foreground text-sm">
+            {instructionContent?.description}
+          </p>
+        </div>
         <Button
           onClick={() => void triggerInstall()}
           className="flex items-center gap-2"
@@ -273,80 +280,18 @@ function InstallAppInstructions({
     )
   }
 
-  if (installState === 'desktop-chrome') {
-    return (
-      <>
-        <p className="text-muted-foreground text-sm">
-          Install FinKo from Chrome&apos;s address bar for quick access and an
-          app-like desktop experience.
-        </p>
-        <ol className="space-y-2">
-          {[
-            'Click the Install button in Chrome’s address bar',
-            'Click "Install" in Chrome’s install dialog',
-            'Open FinKo from the installed app',
-          ].map((step, i) => (
-            <li
-              key={i}
-              className="text-secondary-foreground flex items-start gap-3 text-sm"
-            >
-              <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
-                {i + 1}
-              </span>
-              <span>{step}</span>
-            </li>
-          ))}
-        </ol>
-      </>
-    )
-  }
-
-  if (installState === 'mac-safari') {
-    return (
-      <>
-        <p className="text-muted-foreground text-sm">
-          Install FinKo on your Mac for quick access and an app-like Dock
-          experience.
-        </p>
-        <ol className="space-y-2">
-          {[
-            'Click the Share button in Safari’s toolbar',
-            'Choose "Add to Dock"',
-            'Click "Add"',
-          ].map((step, i) => (
-            <li
-              key={i}
-              className="text-secondary-foreground flex items-start gap-3 text-sm"
-            >
-              <span className="bg-primary text-primary-foreground mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
-                {i + 1}
-              </span>
-              <span>{step}</span>
-            </li>
-          ))}
-        </ol>
-      </>
-    )
-  }
-
   return (
     <>
-      <p className="text-muted-foreground text-sm">
-        Install FinKo on your iPhone or iPad for quick access and a full-screen
-        experience.
-      </p>
+      <div className="space-y-1">
+        <p className="text-foreground text-sm font-medium">
+          {instructionContent?.title}
+        </p>
+        <p className="text-muted-foreground text-sm">
+          {instructionContent?.description}
+        </p>
+      </div>
       <ol className="space-y-2">
-        {[
-          {
-            icon: Share,
-            text: "Tap the Share button in Safari's toolbar",
-          },
-          {
-            icon: null,
-            text: 'Scroll down and tap "Add to Home Screen"',
-          },
-          { icon: null, text: 'Tap "Add" to confirm' },
-        ].map((step, i) => (
+        {(instructionContent?.steps ?? []).map((step, i) => (
           <li
             key={i}
             className="text-secondary-foreground flex items-start gap-3 text-sm"

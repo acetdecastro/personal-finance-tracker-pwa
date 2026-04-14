@@ -186,7 +186,11 @@ export function RecurringRuleForm({
       >
         {(field) => (
           <FormField
-            label={showSecondSalaryAmount ? 'First Expected Amount' : 'Expected Amount'}
+            label={
+              showSecondSalaryAmount
+                ? 'First Expected Amount'
+                : 'Expected Amount'
+            }
             htmlFor="rule-amount"
             hint="Used for forecasting. Your actual posted transaction amount can differ."
             error={field.state.meta.errors[0]?.toString()}
