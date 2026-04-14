@@ -68,10 +68,10 @@ export function getInstallInstructionContent(
       eyebrow: 'Recommended',
       title: 'Install for the best experience',
       description:
-        'Add FinKo to your Home Screen before setup so it feels more like an app on your iPhone.',
+        'Add FinKo to your Home Screen before setup so it feels more like an app on your phone.',
       steps: [
         {
-          text: 'Tap the three-dot menu icon in the bottom right of the browser',
+          text: 'Tap the three-dot menu of the browser',
         },
         { text: 'Tap Share', icon: Share },
         { text: 'Scroll down and tap "Add to Home Screen"' },
@@ -86,10 +86,10 @@ export function getInstallInstructionContent(
       eyebrow: 'Recommended',
       title: 'Install for the best experience',
       description:
-        'Add FinKo to your Home Screen before setup so it feels more like an app on your iPhone.',
+        'Add FinKo to your Home Screen before setup so it feels more like an app on your phone.',
       steps: [
         {
-          text: 'Tap the Share button in the top-right corner of the browser',
+          text: 'Tap the Share button from the browser bar',
           icon: Share,
         },
         { text: 'Tap "View More"' },
@@ -106,7 +106,7 @@ export function getInstallInstructionContent(
     description:
       'Add FinKo to your Home Screen before setup so it feels more like an app on your Android device.',
     steps: [
-      { text: 'Tap the three-dot menu in the top-right corner of the browser' },
+      { text: 'Tap the three-dot menu from the browser bar' },
       { text: 'Tap "View More"' },
       { text: 'Scroll down and tap "Add to Home Screen"' },
       { text: 'Tap "Add", then reopen FinKo from your Home Screen' },
@@ -129,7 +129,7 @@ export function getInstallDoneDescription(installState: InstallState) {
   }
 
   if (installState === 'iphone-safari' || installState === 'iphone-chrome') {
-    return 'Add FinKo to your Home Screen for an app-like experience and easier access on your iPhone.'
+    return 'Add FinKo to your Home Screen for an app-like experience and easier access on your phone.'
   }
 
   if (installState === 'android-chrome') {
