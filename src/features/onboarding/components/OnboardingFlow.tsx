@@ -183,8 +183,8 @@ function IntroNameStep({ onSubmit }: { onSubmit: (name: string) => void }) {
       desc: 'Set monthly budgets and track progress toward savings goals.',
     },
     {
-      title: 'Works offline, always',
-      desc: 'Your data stays on this device or browser only — private by design.',
+      title: 'Private by design',
+      desc: 'Your data stays on this device or browser - only you can see it.',
     },
   ]
 
