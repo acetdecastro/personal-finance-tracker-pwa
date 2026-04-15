@@ -49,7 +49,7 @@ export function BottomSheet({
   function handlePointerUp() {
     if (!isDragging) return
     setIsDragging(false)
-    const threshold = (panelRef.current?.offsetHeight ?? 0) * 0.3
+    const threshold = (panelRef.current?.offsetHeight ?? 0) * 0.2
     if (dragY > threshold) {
       startDismiss()
     } else {

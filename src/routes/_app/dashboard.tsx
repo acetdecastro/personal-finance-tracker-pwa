@@ -493,7 +493,7 @@ function DashboardRoute() {
 
 function NextStepCard({ prompt }: { prompt: DashboardPrompt }) {
   return (
-    <div className="bg-card rounded-2xl p-4">
+    <div className="bg-card shadow rounded-2xl p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1 space-y-1">
           <p className="text-foreground text-sm font-semibold">
