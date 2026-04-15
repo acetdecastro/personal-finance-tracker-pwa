@@ -71,6 +71,42 @@ describe('expandRecurringOccurrences', () => {
     ])
   })
 
+  it('skips an occurrence when a linked transaction covers it early', () => {
+    const postedTransactions: Transaction[] = [
+      {
+        id: 'tx-early',
+        type: 'expense',
+        amount: 1000,
+        categoryId: 'category-expense-rent',
+        accountId: 'account-1',
+        fromAccountId: null,
+        toAccountId: null,
+        note: 'Internet bill paid early',
+        transactionDate: '2026-04-04T12:00:00.000Z',
+        recurringRuleId: 'rule-1',
+        coveredRecurringOccurrenceDate: '2026-04-15T00:00:00.000Z',
+        createdAt: '2026-04-04T12:00:00.000Z',
+        updatedAt: '2026-04-04T12:00:00.000Z',
+      },
+    ]
+
+    const occurrences = expandRecurringOccurrences({
+      rules: [
+        createRule({
+          type: 'expense',
+          categoryId: 'category-expense-rent',
+        }),
+      ],
+      transactions: postedTransactions,
+      fromDate: '2026-04-10T00:00:00.000Z',
+      endDate: '2026-04-30T00:00:00.000Z',
+    })
+
+    expect(occurrences.map((occurrence) => occurrence.date)).toEqual([
+      '2026-04-30T00:00:00.000Z',
+    ])
+  })
+
   it('uses the first and second salary amounts for semi-monthly salary rules', () => {
     const occurrences = expandRecurringOccurrences({
       rules: [

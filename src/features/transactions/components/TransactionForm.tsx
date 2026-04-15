@@ -38,6 +38,9 @@ export function TransactionForm({
       : new Date(),
     'yyyy-MM-dd',
   )
+  const coveredOccurrenceForInput = initialValues?.coveredRecurringOccurrenceDate
+    ? format(new Date(initialValues.coveredRecurringOccurrenceDate), 'yyyy-MM-dd')
+    : ''
 
   const form = useForm({
     defaultValues: {
@@ -62,6 +65,10 @@ export function TransactionForm({
           : ''),
       note: initialValues?.note ?? '',
       date: todayForInput,
+      coversScheduledOccurrence: Boolean(
+        initialValues?.coveredRecurringOccurrenceDate,
+      ),
+      coveredRecurringOccurrenceDate: coveredOccurrenceForInput,
     },
     onSubmit: async ({ value }) => {
       if (value.type === 'transfer') {
@@ -84,6 +91,7 @@ export function TransactionForm({
             new Date(value.date + 'T00:00:00.000Z'),
           ),
           recurringRuleId: null,
+          coveredRecurringOccurrenceDate: null,
         }
 
         await onSubmit(input)
@@ -118,6 +126,14 @@ export function TransactionForm({
         note: value.note.trim() || null,
         transactionDate: toStoredDate(new Date(value.date + 'T00:00:00.000Z')),
         recurringRuleId: selectedRecurringTransaction?.value ?? null,
+        coveredRecurringOccurrenceDate:
+          selectedRecurringTransaction?.value && value.coversScheduledOccurrence
+            ? toStoredDate(
+                new Date(
+                  value.coveredRecurringOccurrenceDate + 'T00:00:00.000Z',
+                ),
+              )
+            : null,
       }
       await onSubmit(input)
     },
@@ -231,6 +247,8 @@ export function TransactionForm({
                         null
 
                       if (!selectedOption) {
+                        form.setFieldValue('coversScheduledOccurrence', false)
+                        form.setFieldValue('coveredRecurringOccurrenceDate', '')
                         return
                       }
 
@@ -241,6 +259,14 @@ export function TransactionForm({
                       form.setFieldValue('accountId', selectedOption.accountId)
                       form.setFieldValue(
                         'date',
+                        format(
+                          new Date(selectedOption.nextOccurrenceDate),
+                          'yyyy-MM-dd',
+                        ),
+                      )
+                      form.setFieldValue('coversScheduledOccurrence', true)
+                      form.setFieldValue(
+                        'coveredRecurringOccurrenceDate',
                         format(
                           new Date(selectedOption.nextOccurrenceDate),
                           'yyyy-MM-dd',
@@ -540,6 +566,111 @@ export function TransactionForm({
           </FormField>
         )}
       </form.Field>
+
+      <form.Subscribe
+        selector={(state) => ({
+          type: state.values.type,
+          recurringTransactionId: state.values.recurringTransactionId,
+          coversScheduledOccurrence: state.values.coversScheduledOccurrence,
+        })}
+      >
+        {({ type, recurringTransactionId, coversScheduledOccurrence }) => {
+          if (type === 'transfer' || !recurringTransactionId) {
+            return null
+          }
+
+          return (
+            <div className="space-y-3">
+              <form.Field name="coversScheduledOccurrence">
+                {(field) => (
+                  <label className="border-border bg-card flex items-start gap-3 rounded-2xl border px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={field.state.value}
+                      onChange={(e) => {
+                        const checked = e.target.checked
+                        field.handleChange(checked)
+
+                        if (!checked) {
+                          form.setFieldValue(
+                            'coveredRecurringOccurrenceDate',
+                            '',
+                          )
+                          return
+                        }
+
+                        const selectedRecurringTransaction =
+                          [
+                            ...formOptions.expenseRecurringTransactionOptions,
+                            ...formOptions.incomeRecurringTransactionOptions,
+                          ].find(
+                            (option) =>
+                              option.value ===
+                              form.getFieldValue('recurringTransactionId'),
+                          ) ?? null
+
+                        if (
+                          selectedRecurringTransaction &&
+                          !form.getFieldValue('coveredRecurringOccurrenceDate')
+                        ) {
+                          form.setFieldValue(
+                            'coveredRecurringOccurrenceDate',
+                            format(
+                              new Date(
+                                selectedRecurringTransaction.nextOccurrenceDate,
+                              ),
+                              'yyyy-MM-dd',
+                            ),
+                          )
+                        }
+                      }}
+                      className="accent-primary mt-0.5 size-4 shrink-0"
+                    />
+                    <div className="space-y-1">
+                      <p className="text-foreground text-sm font-medium">
+                        This payment covers a scheduled occurrence
+                      </p>
+                      <p className="text-muted-foreground text-xs leading-relaxed">
+                        Use this when you paid a recurring expense early or late so
+                        the forecasts will not count that occurrence twice.
+                      </p>
+                    </div>
+                  </label>
+                )}
+              </form.Field>
+
+              {coversScheduledOccurrence && (
+                <form.Field
+                  name="coveredRecurringOccurrenceDate"
+                  validators={{
+                    onChange: ({ value }) =>
+                      !value
+                        ? 'Choose the recurring occurrence this payment covers'
+                        : undefined,
+                  }}
+                >
+                  {(field) => (
+                    <FormField
+                      label="Covers Recurring Occurrence"
+                      htmlFor="txn-covered-occurrence-date"
+                      hint="Choose the scheduled recurring date this payment should satisfy."
+                      error={field.state.meta.errors[0]?.toString()}
+                    >
+                      <DateInput
+                        id="txn-covered-occurrence-date"
+                        name="txn-covered-occurrence-date"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        onBlur={field.handleBlur}
+                      />
+                    </FormField>
+                  )}
+                </form.Field>
+              )}
+            </div>
+          )
+        }}
+      </form.Subscribe>
 
       {/* Note (optional) */}
       <form.Field name="note">

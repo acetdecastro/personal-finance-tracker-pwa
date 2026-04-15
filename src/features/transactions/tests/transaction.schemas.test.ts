@@ -23,6 +23,24 @@ describe('transaction schemas', () => {
     expect(parsed.type).toBe('expense')
   })
 
+  it('rejects covered recurring occurrence dates without a linked recurring rule', () => {
+    expect(() =>
+      createTransactionInputSchema.parse({
+        type: 'expense',
+        amount: 350,
+        categoryId: crypto.randomUUID(),
+        accountId: crypto.randomUUID(),
+        fromAccountId: null,
+        toAccountId: null,
+        goalTransferDirection: null,
+        note: 'Lunch',
+        transactionDate: '2026-04-04T00:00:00.000Z',
+        recurringRuleId: null,
+        coveredRecurringOccurrenceDate: '2026-04-17T00:00:00.000Z',
+      }),
+    ).toThrow()
+  })
+
   it('rejects transfer records that still carry category or accountId', () => {
     expect(() =>
       createTransactionInputSchema.parse({

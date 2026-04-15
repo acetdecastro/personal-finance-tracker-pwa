@@ -50,6 +50,7 @@ export interface Transaction extends TimestampedEntity {
   note: string | null
   transactionDate: string
   recurringRuleId: EntityId | null
+  coveredRecurringOccurrenceDate?: string | null
 }
 
 export interface RecurringRule extends TimestampedEntity {

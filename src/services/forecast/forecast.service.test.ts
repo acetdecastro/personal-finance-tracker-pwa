@@ -132,6 +132,49 @@ describe('forecast.service', () => {
     expect(summary.projectedBalance30d).toBe(53500)
   })
 
+  it('does not double-count an early payment that covers a future recurring occurrence', () => {
+    const summary = calculateForecastSummary({
+      accounts: [
+        {
+          ...account,
+          initialBalance: 10000,
+          safetyBuffer: 0,
+        },
+      ],
+      transactions: [
+        {
+          id: 'tx-early-bill',
+          type: 'expense',
+          amount: 1000,
+          categoryId: 'category-expense-rent',
+          accountId: 'account-1',
+          fromAccountId: null,
+          toAccountId: null,
+          goalId: null,
+          goalTransferDirection: null,
+          note: 'Internet bill paid early',
+          transactionDate: '2026-04-04T00:00:00.000Z',
+          recurringRuleId: 'bill-rule',
+          coveredRecurringOccurrenceDate: '2026-04-10T00:00:00.000Z',
+          createdAt: '2026-04-04T00:00:00.000Z',
+          updatedAt: '2026-04-04T00:00:00.000Z',
+        },
+      ],
+      recurringRules: [
+        {
+          ...recurringRules[1],
+          amount: 1000,
+          nextOccurrenceDate: '2026-04-10T00:00:00.000Z',
+        },
+      ],
+      now: '2026-04-05T00:00:00.000Z',
+    })
+
+    expect(summary.currentBalance).toBe(9000)
+    expect(summary.projectedBalance7d).toBe(9000)
+    expect(summary.projectedBalance30d).toBe(9000)
+  })
+
   it('computes per-account balance by applying income, expense, and transfer transactions', () => {
     const accountA: Account = {
       id: 'account-a',

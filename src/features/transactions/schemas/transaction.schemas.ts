@@ -21,11 +21,21 @@ const transactionBaseSchema = z.object({
   note: optionalNoteSchema,
   transactionDate: storedDateSchema,
   recurringRuleId: entityIdSchema.nullable(),
+  coveredRecurringOccurrenceDate: storedDateSchema.nullable().default(null),
 })
 
 function validateTransactionShape<T extends z.ZodTypeAny>(schema: T) {
   return schema.superRefine((value, ctx) => {
     if (value.type === 'transfer') {
+      if (value.recurringRuleId || value.coveredRecurringOccurrenceDate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['recurringRuleId'],
+          message:
+            'Transfer transactions must not be linked to recurring occurrences',
+        })
+      }
+
       if (value.goalId) {
         if (!value.categoryId) {
           ctx.addIssue({
@@ -116,6 +126,15 @@ function validateTransactionShape<T extends z.ZodTypeAny>(schema: T) {
       }
 
       return
+    }
+
+    if (value.coveredRecurringOccurrenceDate && !value.recurringRuleId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['coveredRecurringOccurrenceDate'],
+        message:
+          'Covered recurring occurrence date requires a linked recurring transaction',
+      })
     }
 
     if (!value.accountId) {
