@@ -1,9 +1,9 @@
 import { useForm } from '@tanstack/react-form'
-import { format } from 'date-fns'
 import { Button } from '#/components/common/Button'
 import { CurrencyInput } from '#/components/common/CurrencyInput'
-import { DateInput } from '#/components/common/DateInput'
+import { DateTimeInput } from '#/components/common/DateTimeInput'
 import { FormField } from '#/components/common/FormField'
+import { formatDateTimeInputValueForNewTransaction } from '#/lib/dates'
 import { useSmartFormAutofocus } from '#/lib/hooks/use-smart-form-autofocus'
 import {
   formatMoneyInputValue,
@@ -13,7 +13,10 @@ import { MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 
 interface SetCurrentBalanceFormProps {
   currentBalance: number
-  onSubmit: (values: { targetBalance: number; date: string }) => Promise<void>
+  onSubmit: (values: {
+    targetBalance: number
+    dateTime: string
+  }) => Promise<void>
   onCancel?: () => void
 }
 
@@ -26,12 +29,12 @@ export function SetCurrentBalanceForm({
   const form = useForm({
     defaultValues: {
       targetBalance: formatMoneyInputValue(currentBalance),
-      date: format(new Date(), 'yyyy-MM-dd'),
+      dateTime: formatDateTimeInputValueForNewTransaction(),
     },
     onSubmit: async ({ value }) => {
       await onSubmit({
         targetBalance: Number(value.targetBalance),
-        date: value.date,
+        dateTime: value.dateTime,
       })
     },
   })
@@ -88,10 +91,10 @@ export function SetCurrentBalanceForm({
         )}
       </form.Field>
 
-      <form.Field name="date">
+      <form.Field name="dateTime">
         {(field) => (
-          <FormField label="Date" htmlFor="set-balance-date">
-            <DateInput
+          <FormField label="Date and Time" htmlFor="set-balance-date">
+            <DateTimeInput
               id="set-balance-date"
               name="set-balance-date"
               value={field.state.value}

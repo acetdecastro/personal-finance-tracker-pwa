@@ -1,6 +1,6 @@
-import { isSameMonth, parseISO } from 'date-fns'
 import type { Budget, Category, Transaction } from '#/types/domain'
 import type { BudgetSnapshotDto } from '#/types/dto'
+import { isSameAppMonth } from '#/lib/dates'
 
 interface CalculateBudgetSnapshotsInput {
   budgets: Budget[]
@@ -14,7 +14,7 @@ function toDate(value: Date | string | undefined): Date {
     return new Date()
   }
 
-  return value instanceof Date ? value : parseISO(value)
+  return value instanceof Date ? value : new Date(value)
 }
 
 export function calculateBudgetSnapshots({
@@ -34,7 +34,7 @@ export function calculateBudgetSnapshots({
         (transaction) =>
           transaction.type === 'expense' &&
           transaction.categoryId === budget.categoryId &&
-          isSameMonth(parseISO(transaction.transactionDate), monthReference),
+          isSameAppMonth(transaction.transactionDate, monthReference),
       )
       .reduce((sum, transaction) => sum + transaction.amount, 0)
 

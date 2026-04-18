@@ -1,12 +1,15 @@
 import { useForm } from '@tanstack/react-form'
-import { format } from 'date-fns'
 import { Button } from '#/components/common/Button'
 import { CurrencyInput } from '#/components/common/CurrencyInput'
-import { DateInput } from '#/components/common/DateInput'
+import { DateTimeInput } from '#/components/common/DateTimeInput'
 import { FormField } from '#/components/common/FormField'
 import { Input } from '#/components/common/Input'
 import { SelectInput } from '#/components/common/SelectInput'
-import { toStoredDate, toStoredDateTimeForDateInput } from '#/lib/dates'
+import {
+  formatDateTimeInputValue,
+  formatDateTimeInputValueForNewTransaction,
+  toStoredDateTimeFromInput,
+} from '#/lib/dates'
 import { formatMoneyInputValue } from '#/lib/format/number.utils'
 import { useSmartFormAutofocus } from '#/lib/hooks/use-smart-form-autofocus'
 import { MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
@@ -33,16 +36,12 @@ export function TransactionForm({
   initialValues,
 }: TransactionFormProps) {
   const formRef = useSmartFormAutofocus()
-  const postedTimeSource = initialValues?.transactionDate
-    ? new Date(initialValues.transactionDate)
-    : undefined
-  const todayForInput = format(postedTimeSource ?? new Date(), 'yyyy-MM-dd')
+  const todayForInput = initialValues?.transactionDate
+    ? formatDateTimeInputValue(initialValues.transactionDate)
+    : formatDateTimeInputValueForNewTransaction()
   const coveredOccurrenceForInput =
     initialValues?.coveredRecurringOccurrenceDate
-      ? format(
-          new Date(initialValues.coveredRecurringOccurrenceDate),
-          'yyyy-MM-dd',
-        )
+      ? formatDateTimeInputValue(initialValues.coveredRecurringOccurrenceDate)
       : ''
 
   const form = useForm({
@@ -67,7 +66,7 @@ export function TransactionForm({
             : 'in'
           : ''),
       note: initialValues?.note ?? '',
-      date: todayForInput,
+      dateTime: todayForInput,
       coversScheduledOccurrence: Boolean(
         initialValues?.coveredRecurringOccurrenceDate,
       ),
@@ -90,10 +89,7 @@ export function TransactionForm({
             ? ((value.goalTransferDirection || 'in') as 'in' | 'out')
             : null,
           note: value.note.trim() || null,
-          transactionDate: toStoredDateTimeForDateInput(
-            value.date,
-            postedTimeSource,
-          ),
+          transactionDate: toStoredDateTimeFromInput(value.dateTime),
           recurringRuleId: null,
           coveredRecurringOccurrenceDate: null,
         }
@@ -128,18 +124,11 @@ export function TransactionForm({
         goalId: null,
         goalTransferDirection: null,
         note: value.note.trim() || null,
-        transactionDate: toStoredDateTimeForDateInput(
-          value.date,
-          postedTimeSource,
-        ),
+        transactionDate: toStoredDateTimeFromInput(value.dateTime),
         recurringRuleId: selectedRecurringTransaction?.value ?? null,
         coveredRecurringOccurrenceDate:
           selectedRecurringTransaction?.value && value.coversScheduledOccurrence
-            ? toStoredDate(
-                new Date(
-                  value.coveredRecurringOccurrenceDate + 'T00:00:00.000Z',
-                ),
-              )
+            ? toStoredDateTimeFromInput(value.coveredRecurringOccurrenceDate)
             : null,
       }
       await onSubmit(input)
@@ -265,18 +254,16 @@ export function TransactionForm({
                       )
                       form.setFieldValue('accountId', selectedOption.accountId)
                       form.setFieldValue(
-                        'date',
-                        format(
-                          new Date(selectedOption.nextOccurrenceDate),
-                          'yyyy-MM-dd',
+                        'dateTime',
+                        formatDateTimeInputValue(
+                          selectedOption.nextOccurrenceDate,
                         ),
                       )
                       form.setFieldValue('coversScheduledOccurrence', true)
                       form.setFieldValue(
                         'coveredRecurringOccurrenceDate',
-                        format(
-                          new Date(selectedOption.nextOccurrenceDate),
-                          'yyyy-MM-dd',
+                        formatDateTimeInputValue(
+                          selectedOption.nextOccurrenceDate,
                         ),
                       )
                     }}
@@ -556,14 +543,14 @@ export function TransactionForm({
       </form.Subscribe>
 
       {/* Date */}
-      <form.Field name="date">
+      <form.Field name="dateTime">
         {(field) => (
           <FormField
-            label="Date"
+            label="Date and Time"
             htmlFor="txn-date"
-            hint="Use the actual posted date for this transaction."
+            hint="Use the actual posted date and time for this transaction."
           >
-            <DateInput
+            <DateTimeInput
               id="txn-date"
               name="txn-date"
               value={field.state.value}
@@ -622,11 +609,8 @@ export function TransactionForm({
                         ) {
                           form.setFieldValue(
                             'coveredRecurringOccurrenceDate',
-                            format(
-                              new Date(
-                                selectedRecurringTransaction.nextOccurrenceDate,
-                              ),
-                              'yyyy-MM-dd',
+                            formatDateTimeInputValue(
+                              selectedRecurringTransaction.nextOccurrenceDate,
                             ),
                           )
                         }
@@ -663,7 +647,7 @@ export function TransactionForm({
                       hint="Choose the scheduled recurring date this payment should satisfy."
                       error={field.state.meta.errors[0]?.toString()}
                     >
-                      <DateInput
+                      <DateTimeInput
                         id="txn-covered-occurrence-date"
                         name="txn-covered-occurrence-date"
                         value={field.state.value}

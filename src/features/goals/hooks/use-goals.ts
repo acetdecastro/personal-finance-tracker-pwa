@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { DASHBOARD_QUERY_KEY } from '#/features/dashboard/hooks/use-dashboard-data'
-import { toStoredDateTimeForDateInput } from '#/lib/dates'
+import { toStoredDateTimeFromInput } from '#/lib/dates'
 import { DEFAULT_TRANSFER_CATEGORIES } from '#/services/seed/seed-data'
 import { transactionRepository } from '#/features/transactions/services/transaction.repository'
 import { goalManagementService } from '../services/goal-management.service'
@@ -107,7 +107,7 @@ export function useAddGoalSavings() {
         goalId: id,
         goalTransferDirection: 'in',
         note: `Goal Savings · ${goal.name}`,
-        transactionDate: toStoredDateTimeForDateInput(transactionDate),
+        transactionDate: toStoredDateTimeFromInput(transactionDate),
         recurringRuleId: null,
       })
     },
@@ -153,7 +153,7 @@ export function useTransferOutGoalFunds() {
         goalId: id,
         goalTransferDirection: 'out',
         note: `Goal Transfer Out · ${goal.name}`,
-        transactionDate: toStoredDateTimeForDateInput(transactionDate),
+        transactionDate: toStoredDateTimeFromInput(transactionDate),
         recurringRuleId: null,
       })
     },

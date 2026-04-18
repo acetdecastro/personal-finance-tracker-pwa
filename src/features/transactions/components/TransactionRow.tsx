@@ -44,7 +44,7 @@ export function TransactionRow({
           <p
             title={amountLabel}
             className={cn(
-              'max-w-36 truncate font-bold tabular-nums',
+              'truncate font-bold tabular-nums',
               getCurrencyTextSizeClass(amountLabel, 'list'),
               amountColor,
             )}

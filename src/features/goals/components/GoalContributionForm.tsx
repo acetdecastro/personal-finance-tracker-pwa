@@ -1,9 +1,9 @@
 import { useForm } from '@tanstack/react-form'
-import { format } from 'date-fns'
 import { Button } from '#/components/common/Button'
 import { CurrencyInput } from '#/components/common/CurrencyInput'
-import { DateInput } from '#/components/common/DateInput'
+import { DateTimeInput } from '#/components/common/DateTimeInput'
 import { FormField } from '#/components/common/FormField'
+import { formatDateTimeInputValueForNewTransaction } from '#/lib/dates'
 import { useSmartFormAutofocus } from '#/lib/hooks/use-smart-form-autofocus'
 import { MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 import { SelectInput } from '#/components/common/SelectInput'
@@ -15,7 +15,7 @@ interface GoalContributionFormProps {
   onSubmit: (values: {
     accountId: string
     amount: number
-    date: string
+    dateTime: string
   }) => Promise<void>
   onCancel?: () => void
 }
@@ -31,13 +31,13 @@ export function GoalContributionForm({
     defaultValues: {
       accountId: accounts[0]?.id ?? '',
       amount: '',
-      date: format(new Date(), 'yyyy-MM-dd'),
+      dateTime: formatDateTimeInputValueForNewTransaction(),
     },
     onSubmit: async ({ value }) => {
       await onSubmit({
         accountId: value.accountId,
         amount: Number(value.amount),
-        date: value.date,
+        dateTime: value.dateTime,
       })
     },
   })
@@ -121,10 +121,10 @@ export function GoalContributionForm({
         )}
       </form.Field>
 
-      <form.Field name="date">
+      <form.Field name="dateTime">
         {(field) => (
-          <FormField label="Date" htmlFor="goal-contribution-date">
-            <DateInput
+          <FormField label="Date and Time" htmlFor="goal-contribution-date">
+            <DateTimeInput
               id="goal-contribution-date"
               name="goal-contribution-date"
               value={field.state.value}

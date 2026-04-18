@@ -20,7 +20,7 @@ import {
   useTransactions,
   useCreateTransaction,
 } from '#/features/transactions/hooks/use-transactions'
-import { toStoredDateTimeForDateInput } from '#/lib/dates'
+import { toStoredDateTimeFromInput } from '#/lib/dates'
 import { SectionHeader } from '#/components/common/SectionHeader'
 import { EmptyState } from '#/components/common/EmptyState'
 import { cn } from '#/lib/utils/cn'
@@ -127,7 +127,7 @@ function AccountsRoute() {
 
   async function handleSetCurrentBalance(values: {
     targetBalance: number
-    date: string
+    dateTime: string
   }) {
     if (!setBalanceAccount) return
 
@@ -150,7 +150,7 @@ function AccountsRoute() {
             ? 'category-income-other-income'
             : 'category-expense-miscellaneous',
         amount: Math.abs(difference),
-        transactionDate: toStoredDateTimeForDateInput(values.date),
+        transactionDate: toStoredDateTimeFromInput(values.dateTime),
         note: 'Balance adjustment',
         fromAccountId: null,
         toAccountId: null,

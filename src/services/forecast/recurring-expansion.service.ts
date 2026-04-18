@@ -1,17 +1,12 @@
-import {
-  addMonths,
-  addWeeks,
-  compareAsc,
-  getDaysInMonth,
-  isAfter,
-  isBefore,
-  isSameDay,
-  parseISO,
-  startOfMonth,
-} from 'date-fns'
+import { compareAsc, isAfter, isBefore, parseISO } from 'date-fns'
 import type { RecurringRule, Transaction } from '#/types/domain'
 import type { RecurringOccurrenceDto } from '#/types/dto'
 import { supportsSecondSalaryAmount } from '#/features/recurring/lib/salary-rule'
+import {
+  formatDateTimeInputValue,
+  isSameAppDay,
+  toStoredDateTimeFromInput,
+} from '#/lib/dates'
 
 interface ExpandRecurringOccurrencesInput {
   rules: RecurringRule[]
@@ -24,37 +19,99 @@ function toDate(value: Date | string): Date {
   return value instanceof Date ? value : parseISO(value)
 }
 
-function setClampedDay(
-  baseDate: Date,
-  targetDay: number,
-  sourceTime: Date,
-): Date {
-  const clampedDay = Math.min(targetDay, getDaysInMonth(baseDate))
-  const result = new Date(baseDate)
-  result.setDate(clampedDay)
-  result.setHours(
-    sourceTime.getHours(),
-    sourceTime.getMinutes(),
-    sourceTime.getSeconds(),
-    sourceTime.getMilliseconds(),
+function parseAppDateTimeParts(value: Date | string) {
+  const input = formatDateTimeInputValue(value)
+
+  return {
+    year: Number(input.slice(0, 4)),
+    month: Number(input.slice(5, 7)),
+    day: Number(input.slice(8, 10)),
+    hour: Number(input.slice(11, 13)),
+    minute: Number(input.slice(14, 16)),
+  }
+}
+
+function toAppComparableDate(parts: {
+  year: number
+  month: number
+  day: number
+  hour: number
+  minute: number
+}) {
+  return new Date(
+    Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute),
   )
-  return result
+}
+
+function toStoredFromAppComparableDate(value: Date): Date {
+  const input = [
+    value.getUTCFullYear(),
+    String(value.getUTCMonth() + 1).padStart(2, '0'),
+    String(value.getUTCDate()).padStart(2, '0'),
+  ].join('-')
+  const time = [
+    String(value.getUTCHours()).padStart(2, '0'),
+    String(value.getUTCMinutes()).padStart(2, '0'),
+  ].join(':')
+
+  return parseISO(toStoredDateTimeFromInput(`${input}T${time}`))
+}
+
+function getDaysInAppMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate()
+}
+
+function setClampedAppDay(
+  year: number,
+  month: number,
+  targetDay: number,
+  source: { hour: number; minute: number },
+): Date {
+  return new Date(
+    Date.UTC(
+      year,
+      month - 1,
+      Math.min(targetDay, getDaysInAppMonth(year, month)),
+      source.hour,
+      source.minute,
+    ),
+  )
+}
+
+function addAppMonths(year: number, month: number, amount: number) {
+  const date = new Date(Date.UTC(year, month - 1 + amount, 1))
+
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+  }
 }
 
 function nextOccurrenceDateForRule(
   rule: RecurringRule,
   currentDate: Date,
 ): Date {
+  const currentParts = parseAppDateTimeParts(currentDate)
+
   if (rule.cadence === 'weekly') {
-    return addWeeks(currentDate, rule.weeklyInterval ?? 1)
+    const currentAppDate = toAppComparableDate(currentParts)
+    currentAppDate.setUTCDate(
+      currentAppDate.getUTCDate() + 7 * (rule.weeklyInterval ?? 1),
+    )
+
+    return toStoredFromAppComparableDate(currentAppDate)
   }
 
   if (rule.cadence === 'monthly') {
-    const nextMonth = addMonths(startOfMonth(currentDate), 1)
-    return setClampedDay(
-      nextMonth,
-      rule.monthlyDay ?? currentDate.getDate(),
-      currentDate,
+    const nextMonth = addAppMonths(currentParts.year, currentParts.month, 1)
+
+    return toStoredFromAppComparableDate(
+      setClampedAppDay(
+        nextMonth.year,
+        nextMonth.month,
+        rule.monthlyDay ?? currentParts.day,
+        currentParts,
+      ),
     )
   }
 
@@ -66,17 +123,32 @@ function nextOccurrenceDateForRule(
     throw new Error(`Semi-monthly recurring rule is missing days: ${rule.id}`)
   }
 
+  const currentAppDate = toAppComparableDate(currentParts)
   const sameMonthCandidates = configuredDays
-    .map((day) => setClampedDay(startOfMonth(currentDate), day, currentDate))
-    .filter((candidate) => isAfter(candidate, currentDate))
+    .map((day) =>
+      setClampedAppDay(
+        currentParts.year,
+        currentParts.month,
+        day,
+        currentParts,
+      ),
+    )
+    .filter((candidate) => isAfter(candidate, currentAppDate))
     .sort(compareAsc)
 
   if (sameMonthCandidates[0]) {
-    return sameMonthCandidates[0]
+    return toStoredFromAppComparableDate(sameMonthCandidates[0])
   }
 
-  const nextMonth = addMonths(startOfMonth(currentDate), 1)
-  return setClampedDay(nextMonth, configuredDays[0], currentDate)
+  const nextMonth = addAppMonths(currentParts.year, currentParts.month, 1)
+  return toStoredFromAppComparableDate(
+    setClampedAppDay(
+      nextMonth.year,
+      nextMonth.month,
+      configuredDays[0],
+      currentParts,
+    ),
+  )
 }
 
 function hasPostedTransactionForOccurrence(
@@ -90,13 +162,13 @@ function hasPostedTransactionForOccurrence(
     }
 
     if (transaction.coveredRecurringOccurrenceDate) {
-      return isSameDay(
-        parseISO(transaction.coveredRecurringOccurrenceDate),
+      return isSameAppDay(
+        transaction.coveredRecurringOccurrenceDate,
         occurrenceDate,
       )
     }
 
-    return isSameDay(parseISO(transaction.transactionDate), occurrenceDate)
+    return isSameAppDay(transaction.transactionDate, occurrenceDate)
   })
 }
 
@@ -121,7 +193,7 @@ function resolveOccurrenceAmount(rule: RecurringRule, occurrenceDate: Date) {
     return rule.amount
   }
 
-  return occurrenceDate.getDate() === configuredDays[1]
+  return parseAppDateTimeParts(occurrenceDate).day === configuredDays[1]
     ? rule.secondAmount
     : rule.amount
 }

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { RefreshCw } from 'lucide-react'
 import type { Category, RecurringRule } from '#/types/domain'
 import { formatPhpCurrency } from '#/lib/format/number.utils'
-import { formatCompactDisplayDate } from '#/lib/dates'
+import { formatAppDateTime } from '#/lib/dates'
 import { TransactionRow } from '#/features/transactions/components/TransactionRow'
 import { supportsSecondSalaryAmount } from '../lib/salary-rule'
 import { getNextUpcomingOccurrenceDate } from '#/services/forecast/recurring-expansion.service'
@@ -77,7 +77,7 @@ export function RecurringRuleList({
             subLabel={subLabelParts.join(' · ')}
             amountLabel={amountLabel}
             amountContent={amountContent}
-            rightSecondaryLabel={`${dateLabelPrefix} ${formatCompactDisplayDate(nextOccurrenceDate)}`}
+            rightSecondaryLabel={`${dateLabelPrefix} ${formatAppDateTime(nextOccurrenceDate)}`}
             amountColor={
               rule.type === 'income' ? 'text-primary' : 'text-warning'
             }

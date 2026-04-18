@@ -127,7 +127,7 @@ function BudgetRoute() {
   async function handleContributionSubmit(values: {
     accountId: string
     amount: number
-    date: string
+    dateTime: string
   }) {
     if (!editingGoal) return
 
@@ -136,7 +136,7 @@ function BudgetRoute() {
         id: editingGoal.id,
         accountId: values.accountId,
         amount: values.amount,
-        transactionDate: values.date,
+        transactionDate: values.dateTime,
       })
       toast.success('Savings added')
       setEditingGoal(null)
@@ -149,7 +149,7 @@ function BudgetRoute() {
   async function handleTransferOutSubmit(values: {
     accountId: string
     amount: number
-    date: string
+    dateTime: string
   }) {
     if (!editingGoal) return
 
@@ -158,7 +158,7 @@ function BudgetRoute() {
         id: editingGoal.id,
         accountId: values.accountId,
         amount: values.amount,
-        transactionDate: values.date,
+        transactionDate: values.dateTime,
       })
       toast.success('Funds transferred out')
       setEditingGoal(null)

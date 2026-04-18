@@ -10,9 +10,49 @@ import type {
   User,
   UserSettings,
 } from '#/types/domain'
+import {
+  DEFAULT_RECURRING_TIME,
+  formatDateTimeInputValue,
+  getAppDateKey,
+  toStoredDateTimeFromInput,
+} from '#/lib/dates'
 
 export const APP_DB_NAME = 'personal-finance-tracker-pwa'
-export const APP_SCHEMA_VERSION = 7
+export const APP_SCHEMA_VERSION = 8
+
+function safeStoredDateTimeFromAppDateAndTime(
+  dateValue: unknown,
+  timeSource: unknown,
+): string | null {
+  if (typeof dateValue !== 'string' || typeof timeSource !== 'string') {
+    return null
+  }
+
+  try {
+    const dateKey = getAppDateKey(dateValue)
+    const time = formatDateTimeInputValue(timeSource).slice(11)
+
+    return toStoredDateTimeFromInput(`${dateKey}T${time}`)
+  } catch {
+    return null
+  }
+}
+
+function safeStoredDateTimeFromAppDateWithDefaultTime(
+  dateValue: unknown,
+): string | null {
+  if (typeof dateValue !== 'string') {
+    return null
+  }
+
+  try {
+    return toStoredDateTimeFromInput(
+      `${getAppDateKey(dateValue)}T${DEFAULT_RECURRING_TIME}`,
+    )
+  } catch {
+    return null
+  }
+}
 
 export class FinanceTrackerDatabase extends Dexie {
   accounts!: EntityTable<Account, 'id'>
@@ -226,6 +266,64 @@ export class FinanceTrackerDatabase extends Dexie {
           await transaction.table('transactions').put({
             ...item,
             transactionDate: postedAt.toISOString(),
+          })
+        }
+      })
+
+    this.version(8)
+      .stores({
+        accounts: 'id, name, type, isArchived, createdAt, updatedAt',
+        categories: 'id, name, type, isSystem, createdAt, updatedAt',
+        transactions:
+          'id, type, categoryId, accountId, fromAccountId, toAccountId, goalId, goalTransferDirection, transactionDate, [transactionDate+id], recurringRuleId, createdAt, updatedAt',
+        recurringRules:
+          'id, type, categoryId, accountId, cadence, nextOccurrenceDate, isActive, createdAt, updatedAt',
+        budgets: 'id, categoryId, periodType, createdAt, updatedAt',
+        goals: 'id, createdAt, updatedAt',
+        userSettings: 'id, createdAt, updatedAt',
+        users: 'id, name, createdAt, updatedAt',
+      })
+      .upgrade(async (transaction) => {
+        const transactions = (await transaction
+          .table('transactions')
+          .toArray()) as Array<Record<string, unknown>>
+
+        for (const item of transactions) {
+          const transactionDate = safeStoredDateTimeFromAppDateAndTime(
+            item.transactionDate,
+            item.createdAt,
+          )
+          const coveredRecurringOccurrenceDate =
+            safeStoredDateTimeFromAppDateWithDefaultTime(
+              item.coveredRecurringOccurrenceDate,
+            )
+
+          await transaction.table('transactions').put({
+            ...item,
+            ...(transactionDate ? { transactionDate } : {}),
+            ...(coveredRecurringOccurrenceDate
+              ? { coveredRecurringOccurrenceDate }
+              : {}),
+          })
+        }
+
+        const recurringRules = (await transaction
+          .table('recurringRules')
+          .toArray()) as Array<Record<string, unknown>>
+
+        for (const item of recurringRules) {
+          const nextOccurrenceDate =
+            safeStoredDateTimeFromAppDateWithDefaultTime(
+              item.nextOccurrenceDate,
+            )
+
+          if (!nextOccurrenceDate) {
+            continue
+          }
+
+          await transaction.table('recurringRules').put({
+            ...item,
+            nextOccurrenceDate,
           })
         }
       })

@@ -1,4 +1,4 @@
-import { formatDisplayDate } from '#/lib/dates'
+import { formatAppDateTime } from '#/lib/dates'
 import { formatPhpCurrency } from '#/lib/format/number.utils'
 import type { Account, Category, Goal, Transaction } from '#/types/domain'
 
@@ -58,8 +58,8 @@ export function TransferDetails({
 
       <div className="bg-card space-y-3 rounded-2xl p-4">
         <DetailRow
-          label="Date"
-          value={formatDisplayDate(transaction.transactionDate)}
+          label="Date and Time"
+          value={formatAppDateTime(transaction.transactionDate)}
         />
         <DetailRow label="Category" value={categoryName} />
         {fromAccountName && (

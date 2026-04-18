@@ -1,12 +1,15 @@
 import { useForm } from '@tanstack/react-form'
-import { format, getDate } from 'date-fns'
 import { Button } from '#/components/common/Button'
 import { CurrencyInput } from '#/components/common/CurrencyInput'
-import { DateInput } from '#/components/common/DateInput'
+import { DateTimeInput } from '#/components/common/DateTimeInput'
 import { FormField } from '#/components/common/FormField'
 import { Input } from '#/components/common/Input'
 import { SelectInput } from '#/components/common/SelectInput'
-import { toStoredDate } from '#/lib/dates'
+import {
+  formatDateTimeInputValue,
+  formatDateTimeInputValueForNewRecurringRule,
+  toStoredDateTimeFromInput,
+} from '#/lib/dates'
 import { useSmartFormAutofocus } from '#/lib/hooks/use-smart-form-autofocus'
 import { ENTITY_NAME_MAX_LENGTH, MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 import { cn } from '#/lib/utils/cn'
@@ -54,12 +57,9 @@ export function RecurringRuleForm({
 }: RecurringRuleFormProps) {
   const formRef = useSmartFormAutofocus()
   const initialCadence = initialValues?.cadence ?? 'semi-monthly'
-  const todayForInput = format(
-    initialValues?.nextOccurrenceDate
-      ? new Date(initialValues.nextOccurrenceDate)
-      : new Date(),
-    'yyyy-MM-dd',
-  )
+  const todayForInput = initialValues?.nextOccurrenceDate
+    ? formatDateTimeInputValue(initialValues.nextOccurrenceDate)
+    : formatDateTimeInputValueForNewRecurringRule()
   const defaultAccountId =
     initialValues?.accountId || (accounts[0] ? accounts[0].id : '')
   const [semiMonthlyDay1 = 15, semiMonthlyDay2 = 30] =
@@ -83,9 +83,6 @@ export function RecurringRuleForm({
     },
     onSubmit: async ({ value }) => {
       const cadence = value.cadence
-      const parsedNextOccurrenceDate = new Date(
-        value.nextOccurrenceDate + 'T00:00:00.000Z',
-      )
       const input: CreateRecurringRuleInput = {
         name: value.name,
         type: value.type,
@@ -107,20 +104,16 @@ export function RecurringRuleForm({
             ? [Number(value.semiMonthlyDay1), Number(value.semiMonthlyDay2)]
             : null,
         monthlyDay:
-          cadence === 'monthly' ? getDate(parsedNextOccurrenceDate) : null,
+          cadence === 'monthly'
+            ? Number(value.nextOccurrenceDate.slice(8, 10))
+            : null,
         weeklyInterval:
           cadence === 'weekly' ? Number(value.weeklyInterval) : null,
-        nextOccurrenceDate: toStoredDate(parsedNextOccurrenceDate),
+        nextOccurrenceDate: toStoredDateTimeFromInput(value.nextOccurrenceDate),
         isActive: value.isActive,
       }
       await onSubmit(input)
     },
-  })
-
-  const showSecondSalaryAmount = supportsSecondSalaryAmount({
-    type: form.state.values.type,
-    categoryId: form.state.values.categoryId,
-    cadence: form.state.values.cadence,
   })
 
   return (
@@ -171,80 +164,103 @@ export function RecurringRuleForm({
         )}
       </form.Field>
 
-      <form.Field
-        name="amount"
-        validators={{
-          onChange: ({ value }) => {
-            const n = Number(value)
-            if (!value || isNaN(n) || n <= 0) return 'Enter a valid amount'
-            if (n > MONEY_MAX_AMOUNT) {
-              return `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`
-            }
-            return undefined
-          },
-        }}
+      <form.Subscribe
+        selector={(state) => ({
+          type: state.values.type,
+          categoryId: state.values.categoryId,
+          cadence: state.values.cadence,
+        })}
       >
-        {(field) => (
-          <FormField
-            label={
-              showSecondSalaryAmount
-                ? 'First Expected Amount'
-                : 'Expected Amount'
-            }
-            htmlFor="rule-amount"
-            hint="Used for forecasting. Your actual posted transaction amount can differ."
-            error={field.state.meta.errors[0]?.toString()}
-            required
-          >
-            <CurrencyInput
-              id="rule-amount"
-              name="rule-amount"
-              value={field.state.value as unknown as string}
-              onChange={(e) =>
-                field.handleChange(e.target.value as unknown as number)
-              }
-              onBlur={field.handleBlur}
-            />
-          </FormField>
-        )}
-      </form.Field>
+        {({ type: ruleType, categoryId, cadence }) => {
+          const showSemiMonthlySalaryAmounts = supportsSecondSalaryAmount({
+            type: ruleType,
+            categoryId,
+            cadence,
+          })
 
-      {showSecondSalaryAmount && (
-        <form.Field
-          name="secondAmount"
-          validators={{
-            onChange: ({ value }) => {
-              if (!value) return undefined
-              const n = Number(value)
-              if (isNaN(n) || n <= 0) return 'Enter a valid amount'
-              if (n > MONEY_MAX_AMOUNT) {
-                return `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`
-              }
-              return undefined
-            },
-          }}
-        >
-          {(field) => (
-            <FormField
-              label="Second Expected Amount"
-              htmlFor="rule-second-amount"
-              hint="Optional. Use this when the 2nd semi-monthly salary differs from the 1st."
-              error={field.state.meta.errors[0]?.toString()}
-            >
-              <CurrencyInput
-                id="rule-second-amount"
-                name="rule-second-amount"
-                placeholder="Optional"
-                value={field.state.value as unknown as string}
-                onChange={(e) =>
-                  field.handleChange(e.target.value as unknown as number)
-                }
-                onBlur={field.handleBlur}
-              />
-            </FormField>
-          )}
-        </form.Field>
-      )}
+          return (
+            <>
+              <form.Field
+                name="amount"
+                validators={{
+                  onChange: ({ value }) => {
+                    const n = Number(value)
+                    if (!value || isNaN(n) || n <= 0)
+                      return 'Enter a valid amount'
+                    if (n > MONEY_MAX_AMOUNT) {
+                      return `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`
+                    }
+                    return undefined
+                  },
+                }}
+              >
+                {(field) => (
+                  <FormField
+                    label={
+                      showSemiMonthlySalaryAmounts
+                        ? 'First Expected Amount'
+                        : 'Amount'
+                    }
+                    htmlFor="rule-amount"
+                    hint="Used for forecasting. Your actual posted transaction amount can differ."
+                    error={field.state.meta.errors[0]?.toString()}
+                    required
+                  >
+                    <CurrencyInput
+                      id="rule-amount"
+                      name="rule-amount"
+                      value={field.state.value as unknown as string}
+                      onChange={(e) =>
+                        field.handleChange(e.target.value as unknown as number)
+                      }
+                      onBlur={field.handleBlur}
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+
+              {showSemiMonthlySalaryAmounts && (
+                <form.Field
+                  name="secondAmount"
+                  validators={{
+                    onChange: ({ value }) => {
+                      if (!value) return undefined
+                      const n = Number(value)
+                      if (isNaN(n) || n <= 0) return 'Enter a valid amount'
+                      if (n > MONEY_MAX_AMOUNT) {
+                        return `Amount can't be greater than ${MONEY_MAX_AMOUNT.toLocaleString()}`
+                      }
+                      return undefined
+                    },
+                  }}
+                >
+                  {(field) => (
+                    <FormField
+                      label="Second Expected Amount"
+                      htmlFor="rule-second-amount"
+                      hint="Optional. Use this when the 2nd semi-monthly salary differs from the 1st."
+                      error={field.state.meta.errors[0]?.toString()}
+                    >
+                      <CurrencyInput
+                        id="rule-second-amount"
+                        name="rule-second-amount"
+                        placeholder="Optional"
+                        value={field.state.value as unknown as string}
+                        onChange={(e) =>
+                          field.handleChange(
+                            e.target.value as unknown as number,
+                          )
+                        }
+                        onBlur={field.handleBlur}
+                      />
+                    </FormField>
+                  )}
+                </form.Field>
+              )}
+            </>
+          )
+        }}
+      </form.Subscribe>
 
       <form.Field
         name="categoryId"
@@ -412,17 +428,17 @@ export function RecurringRuleForm({
           <form.Field name="nextOccurrenceDate">
             {(field) => (
               <FormField
-                label="Next Occurrence Date"
+                label="Next Occurrence Date and Time"
                 htmlFor="rule-next-date"
                 hint={
                   cadence === 'monthly'
-                    ? 'We use this date to determine the repeating day each month.'
+                    ? 'We use this date and time to determine the repeating day and time each month.'
                     : cadence === 'semi-monthly'
                       ? 'Choose whichever of the two monthly occurrences comes next.'
-                      : 'Choose the next expected weekly occurrence.'
+                      : 'Choose the next expected weekly occurrence date and time.'
                 }
               >
-                <DateInput
+                <DateTimeInput
                   id="rule-next-date"
                   name="rule-next-date"
                   value={field.state.value}

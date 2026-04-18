@@ -145,7 +145,7 @@ describe('dashboardQueryService', () => {
     )
   })
 
-  it('summarizes current-month inflow and outflow without counting transfers', async () => {
+  it('summarizes current-month inflow and outflow without counting transfers or balance maintenance transactions', async () => {
     const database = createTestDatabase()
     databases.push(database)
 
@@ -223,6 +223,39 @@ describe('dashboardQueryService', () => {
       toAccountId: savings.id,
       note: 'Move to savings',
       transactionDate: '2026-04-17T00:00:00.000Z',
+      recurringRuleId: null,
+    })
+    await transactionRepository.create({
+      type: 'income',
+      amount: 5000,
+      categoryId: 'category-income-other-income',
+      accountId: checking.id,
+      fromAccountId: null,
+      toAccountId: null,
+      note: 'Balance top-up',
+      transactionDate: '2026-04-17T01:00:00.000Z',
+      recurringRuleId: null,
+    })
+    await transactionRepository.create({
+      type: 'income',
+      amount: 2500,
+      categoryId: 'category-income-other-income',
+      accountId: checking.id,
+      fromAccountId: null,
+      toAccountId: null,
+      note: 'Balance adjustment',
+      transactionDate: '2026-04-17T02:00:00.000Z',
+      recurringRuleId: null,
+    })
+    await transactionRepository.create({
+      type: 'expense',
+      amount: 1200,
+      categoryId: 'category-expense-miscellaneous',
+      accountId: checking.id,
+      fromAccountId: null,
+      toAccountId: null,
+      note: 'Balance adjustment',
+      transactionDate: '2026-04-17T03:00:00.000Z',
       recurringRuleId: null,
     })
 

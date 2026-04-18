@@ -1,5 +1,5 @@
 import type { FinanceTrackerDatabase } from '#/db/dexie'
-import { isSameMonth, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
 import { db } from '#/db/dexie'
 import { createAccountRepository } from '#/features/accounts/services/account.repository'
 import { createBudgetRepository } from '#/features/budgets/services/budget.repository'
@@ -11,11 +11,17 @@ import { createRecurringRuleRepository } from '#/features/recurring/services/rec
 import { createTransactionRepository } from '#/features/transactions/services/transaction.repository'
 import { calculateForecastSummary } from '#/services/forecast/forecast.service'
 import { seedCoreData } from '#/services/seed/seed.service'
+import { isSameAppMonth } from '#/lib/dates'
 import type { DashboardData, DashboardRecentTransactionDto } from '#/types/dto'
 
 interface GetDashboardDataOptions {
   now?: Date | string
 }
+
+const BALANCE_MAINTENANCE_NOTES = new Set([
+  'Balance adjustment',
+  'Balance top-up',
+])
 
 function toDate(value: Date | string | undefined): Date {
   if (!value) {
@@ -23,6 +29,10 @@ function toDate(value: Date | string | undefined): Date {
   }
 
   return value instanceof Date ? value : parseISO(value)
+}
+
+function isBalanceMaintenanceTransaction(note: string | null): boolean {
+  return note ? BALANCE_MAINTENANCE_NOTES.has(note) : false
 }
 
 export function createDashboardQueryService(
@@ -75,7 +85,8 @@ export function createDashboardQueryService(
       const monthlyTotals = transactions.reduce(
         (totals, transaction) => {
           if (
-            !isSameMonth(parseISO(transaction.transactionDate), monthReference)
+            !isSameAppMonth(transaction.transactionDate, monthReference) ||
+            isBalanceMaintenanceTransaction(transaction.note)
           ) {
             return totals
           }

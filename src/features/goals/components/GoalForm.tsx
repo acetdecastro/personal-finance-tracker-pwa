@@ -1,12 +1,11 @@
 import { useForm } from '@tanstack/react-form'
-import { format } from 'date-fns'
 import { Button } from '#/components/common/Button'
 import { CurrencyInput } from '#/components/common/CurrencyInput'
 import { DateInput } from '#/components/common/DateInput'
 import { FormField } from '#/components/common/FormField'
 import { Input } from '#/components/common/Input'
 import { InfoBanner } from '#/components/common/InfoBanner'
-import { toStoredDate } from '#/lib/dates'
+import { formatDateInputValue, toStoredDateFromDateInput } from '#/lib/dates'
 import { useSmartFormAutofocus } from '#/lib/hooks/use-smart-form-autofocus'
 import { ENTITY_NAME_MAX_LENGTH, MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 import type { Goal } from '#/types/domain'
@@ -45,7 +44,7 @@ export function GoalForm({
           ? String(initialValues.currentAmount)
           : ('' as unknown as number),
       targetDate: initialValues?.targetDate
-        ? format(new Date(initialValues.targetDate), 'yyyy-MM-dd')
+        ? formatDateInputValue(initialValues.targetDate)
         : '',
     },
     onSubmit: async ({ value }) => {
@@ -54,7 +53,7 @@ export function GoalForm({
         targetAmount: Number(value.targetAmount),
         currentAmount: value.currentAmount ? Number(value.currentAmount) : null,
         targetDate: value.targetDate
-          ? toStoredDate(new Date(value.targetDate + 'T00:00:00.000Z'))
+          ? toStoredDateFromDateInput(value.targetDate)
           : null,
       })
     },
@@ -186,7 +185,7 @@ export function GoalForm({
             <DateInput
               id="goal-target-date"
               name="goal-target-date"
-              min={format(new Date(), 'yyyy-MM-dd')}
+              min={formatDateInputValue(new Date())}
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
             />

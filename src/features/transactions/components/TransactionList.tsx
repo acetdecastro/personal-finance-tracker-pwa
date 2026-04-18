@@ -1,7 +1,7 @@
-import { format, parseISO } from 'date-fns'
 import { ArrowUpRight, ArrowUp, ArrowDown } from 'lucide-react'
 import type { Account, Category, Goal, Transaction } from '#/types/domain'
 import { formatPhpCurrency } from '#/lib/format/number.utils'
+import { formatAppDateLabel, formatAppTime, getAppDateKey } from '#/lib/dates'
 import { TransactionRow } from './TransactionRow'
 
 interface TransactionListProps {
@@ -118,15 +118,14 @@ function groupByDate(transactions: Transaction[]): TransactionGroup[] {
   const groups: TransactionGroup[] = []
 
   for (const t of transactions) {
-    const parsedDate = parseISO(t.transactionDate)
-    const dateKey = format(parsedDate, 'yyyy-MM-dd')
+    const dateKey = getAppDateKey(t.transactionDate)
     const last = groups.at(-1)
     if (last?.dateKey === dateKey) {
       last.items.push(t)
     } else {
       groups.push({
         dateKey,
-        label: format(parsedDate, 'MMM d, yyyy').toUpperCase(),
+        label: formatAppDateLabel(t.transactionDate).toUpperCase(),
         items: [t],
       })
     }
@@ -173,10 +172,7 @@ export function TransactionList({
                   subLabel={subLabel}
                   amountLabel={amountLabel}
                   amountColor={cfg.amountColor}
-                  rightSecondaryLabel={format(
-                    parseISO(t.transactionDate),
-                    'h:mm a',
-                  )}
+                  rightSecondaryLabel={formatAppTime(t.transactionDate)}
                   Icon={Icon}
                   iconColor={cfg.color}
                   iconBg={cfg.bg}
