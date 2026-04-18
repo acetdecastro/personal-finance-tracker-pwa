@@ -1,8 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { BUDGET_PAGE_QUERY_KEY } from '#/features/budgets/hooks/use-budgets'
 import { DASHBOARD_QUERY_KEY } from '#/features/dashboard/hooks/use-dashboard-data'
 import { transactionService } from '../services/transaction.service'
-import type { TransactionFiltersDto } from '../types'
+import type { TransactionCursorDto, TransactionFiltersDto } from '../types'
 import type {
   CreateTransactionInput,
   UpdateTransactionInput,
@@ -17,6 +22,20 @@ export function useTransactions(filters?: TransactionFiltersDto) {
   return useQuery({
     queryKey: [...TRANSACTIONS_QUERY_KEY, filters],
     queryFn: () => transactionService.list(filters ?? undefined),
+  })
+}
+
+export function useInfiniteTransactions(filters?: TransactionFiltersDto) {
+  return useInfiniteQuery({
+    queryKey: [...TRANSACTIONS_QUERY_KEY, 'infinite', filters],
+    initialPageParam: null as TransactionCursorDto | null,
+    queryFn: ({ pageParam }) =>
+      transactionService.listPage({
+        filters,
+        cursor: pageParam,
+        limit: 10,
+      }),
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
   })
 }
 

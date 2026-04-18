@@ -83,6 +83,16 @@ export interface TransactionFiltersDto {
   categoryId?: string | null
 }
 
+export interface TransactionCursorDto {
+  transactionDate: string
+  id: string
+}
+
+export interface TransactionPageDto {
+  items: Transaction[]
+  nextCursor: TransactionCursorDto | null
+}
+
 export interface RecurringTransactionOptionDto extends SelectOption {
   type: RecurringRule['type']
   categoryId: string

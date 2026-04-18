@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { Loader2, Minus, Plus } from 'lucide-react'
@@ -14,7 +14,7 @@ import { TransactionList } from '#/features/transactions/components/TransactionL
 import { TransactionForm } from '#/features/transactions/components/TransactionForm'
 import { TransactionFilterBar } from '#/features/transactions/components/TransactionFilterBar'
 import {
-  useTransactions,
+  useInfiniteTransactions,
   useTransactionFormOptions,
   useCreateTransaction,
   useUpdateTransaction,
@@ -67,8 +67,15 @@ function TransactionsRoute() {
   const { transactionType } = useFiltersStore()
   const { mode, setMode, recurringFilter, setRecurringFilter } =
     useTransactionsViewStore()
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
 
-  const { data: transactions = [] } = useTransactions({
+  const {
+    data: transactionPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: isTransactionsLoading,
+  } = useInfiniteTransactions({
     type: transactionType,
   })
   const { data: accounts = [] } = useAccounts()
@@ -89,6 +96,35 @@ function TransactionsRoute() {
     recurringFilter === 'all'
       ? recurringRules
       : recurringRules.filter((rule) => rule.type === recurringFilter)
+  const transactions = useMemo(
+    () => transactionPages?.pages.flatMap((page) => page.items) ?? [],
+    [transactionPages],
+  )
+
+  useEffect(() => {
+    if (mode !== 'posted') {
+      return
+    }
+
+    const sentinel = loadMoreRef.current
+
+    if (!sentinel || !hasNextPage || isFetchingNextPage) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void fetchNextPage()
+        }
+      },
+      { rootMargin: '240px 0px' },
+    )
+
+    observer.observe(sentinel)
+
+    return () => observer.disconnect()
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, mode])
 
   async function handleSubmit(values: CreateTransactionInput) {
     try {
@@ -261,7 +297,11 @@ function TransactionsRoute() {
           <>
             <TransactionFilterBar />
 
-            {transactions.length === 0 ? (
+            {isTransactionsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="text-primary size-5 animate-spin" />
+              </div>
+            ) : transactions.length === 0 ? (
               <EmptyState
                 title="No transactions"
                 description={
@@ -279,6 +319,15 @@ function TransactionsRoute() {
                 onSelect={handleSelectTransaction}
               />
             )}
+
+            <div ref={loadMoreRef} className="flex justify-center py-3">
+              {isFetchingNextPage && (
+                <div className="text-muted-foreground flex items-center gap-2 text-xs">
+                  <Loader2 className="size-3.5 animate-spin" />
+                  Loading more transactions…
+                </div>
+              )}
+            </div>
           </>
         ) : (
           <>

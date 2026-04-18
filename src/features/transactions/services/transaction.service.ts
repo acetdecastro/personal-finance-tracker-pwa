@@ -8,8 +8,10 @@ import { createRecurringRuleRepository } from '#/features/recurring/services/rec
 import { seedCoreData } from '#/services/seed/seed.service'
 import type {
   RecurringTransactionOptionDto,
+  TransactionCursorDto,
   TransactionFiltersDto,
   TransactionFormOptionsDto,
+  TransactionPageDto,
 } from '#/types/dto'
 import type { Transaction } from '#/types/domain'
 import { createTransactionRepository } from './transaction.repository'
@@ -73,15 +75,15 @@ export function createTransactionService(
       )
   }
 
-  return {
-    async list(filters?: TransactionFiltersDto): Promise<Transaction[]> {
-      const transactions = await transactionRepository.list()
+  function filterTransactions(
+    transactions: Transaction[],
+    filters?: TransactionFiltersDto,
+  ) {
+    if (!filters) {
+      return transactions
+    }
 
-      if (!filters) {
-        return transactions
-      }
-
-      return transactions.filter((transaction) => {
+    return transactions.filter((transaction) => {
         if (filters.type && transaction.type !== filters.type) {
           return false
         }
@@ -99,6 +101,74 @@ export function createTransactionService(
 
         return true
       })
+  }
+
+  function sortTransactionsNewestFirst(transactions: Transaction[]) {
+    return [...transactions].sort((left, right) => {
+      const dateDiff =
+        new Date(right.transactionDate).getTime() -
+        new Date(left.transactionDate).getTime()
+
+      if (dateDiff !== 0) {
+        return dateDiff
+      }
+
+      return right.id.localeCompare(left.id)
+    })
+  }
+
+  function isAfterCursor(
+    transaction: Transaction,
+    cursor: TransactionCursorDto,
+  ) {
+    if (transaction.transactionDate < cursor.transactionDate) {
+      return true
+    }
+
+    return (
+      transaction.transactionDate === cursor.transactionDate &&
+      transaction.id < cursor.id
+    )
+  }
+
+  return {
+    async list(filters?: TransactionFiltersDto): Promise<Transaction[]> {
+      const transactions = sortTransactionsNewestFirst(
+        await transactionRepository.list(),
+      )
+
+      return filterTransactions(transactions, filters)
+    },
+
+    async listPage(input: {
+      filters?: TransactionFiltersDto
+      cursor?: TransactionCursorDto | null
+      limit?: number
+    }): Promise<TransactionPageDto> {
+      const limit = input.limit ?? 20
+      const transactions = filterTransactions(
+        sortTransactionsNewestFirst(await transactionRepository.list()),
+        input.filters,
+      )
+      const cursorFilteredTransactions = input.cursor
+        ? transactions.filter((transaction) =>
+            isAfterCursor(transaction, input.cursor as TransactionCursorDto),
+          )
+        : transactions
+      const pageItems = cursorFilteredTransactions.slice(0, limit)
+      const hasNextPage = cursorFilteredTransactions.length > limit
+      const lastItem = pageItems.at(-1)
+
+      return {
+        items: pageItems,
+        nextCursor:
+          hasNextPage && lastItem
+            ? {
+                transactionDate: lastItem.transactionDate,
+                id: lastItem.id,
+              }
+            : null,
+      }
     },
 
     async create(input: CreateTransactionInput) {
