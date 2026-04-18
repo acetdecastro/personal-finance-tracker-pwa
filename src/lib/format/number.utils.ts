@@ -38,6 +38,16 @@ export function formatNumber(
   return defaultNumberFormatter.format(value)
 }
 
+export function formatMoneyInputValue(
+  value: number | null | undefined,
+): string {
+  if (!isFiniteNumber(value)) {
+    return ''
+  }
+
+  return (Math.round((value + Number.EPSILON) * 100) / 100).toFixed(2)
+}
+
 export function getCurrencyTextSizeClass(
   formattedValue: string,
   variant: CurrencyTextSizeVariant = 'list',

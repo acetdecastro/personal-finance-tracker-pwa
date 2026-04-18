@@ -1,7 +1,6 @@
 import { Landmark, Wallet, Smartphone, Circle } from 'lucide-react'
 import type { Account } from '#/types/domain'
 import { formatPhpCurrency } from '#/lib/format/number.utils'
-import { Button } from '#/components/common/Button'
 import { AccountRow } from './AccountRow'
 
 const ACCOUNT_ICONS = {
@@ -14,14 +13,12 @@ const ACCOUNT_ICONS = {
 interface AccountListProps {
   accounts: Account[]
   onSelect?: (account: Account) => void
-  onAddBalance?: (account: Account) => void
   balances?: Record<string, number>
 }
 
 export function AccountList({
   accounts,
   onSelect,
-  onAddBalance,
   balances,
 }: AccountListProps) {
   return (
@@ -50,21 +47,6 @@ export function AccountList({
               amountLabel={formatPhpCurrency(balance)}
               Icon={Icon}
             />
-            {onAddBalance && !account.isArchived && (
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  variant="inline-primary"
-                  className="-mr-2 text-[10px]"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onAddBalance(account)
-                  }}
-                >
-                  Add Balance
-                </Button>
-              </div>
-            )}
           </div>
         )
       })}

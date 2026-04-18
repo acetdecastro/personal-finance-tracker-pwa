@@ -5,7 +5,10 @@ import { CurrencyInput } from '#/components/common/CurrencyInput'
 import { DateInput } from '#/components/common/DateInput'
 import { FormField } from '#/components/common/FormField'
 import { useSmartFormAutofocus } from '#/lib/hooks/use-smart-form-autofocus'
-import { formatPhpCurrency } from '#/lib/format/number.utils'
+import {
+  formatMoneyInputValue,
+  formatPhpCurrency,
+} from '#/lib/format/number.utils'
 import { MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 
 interface SetCurrentBalanceFormProps {
@@ -22,7 +25,7 @@ export function SetCurrentBalanceForm({
   const formRef = useSmartFormAutofocus()
   const form = useForm({
     defaultValues: {
-      targetBalance: currentBalance.toString(),
+      targetBalance: formatMoneyInputValue(currentBalance),
       date: format(new Date(), 'yyyy-MM-dd'),
     },
     onSubmit: async ({ value }) => {
