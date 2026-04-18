@@ -151,14 +151,23 @@ describe('transactionService', () => {
       limit: 10,
       cursor: firstPage.nextCursor,
     })
+    const thirdPage = await transactionService.listPage({
+      limit: 10,
+      cursor: secondPage.nextCursor,
+    })
 
     expect(firstPage.items).toHaveLength(10)
     expect(firstPage.nextCursor).not.toBeNull()
-    expect(secondPage.items).toHaveLength(5)
-    expect(secondPage.nextCursor).toBeNull()
+    expect(secondPage.items).toHaveLength(10)
+    expect(secondPage.nextCursor).not.toBeNull()
+    expect(thirdPage.items).toHaveLength(5)
+    expect(thirdPage.nextCursor).toBeNull()
     expect(
-      new Set([...firstPage.items, ...secondPage.items].map((tx) => tx.id))
-        .size,
+      new Set(
+        [...firstPage.items, ...secondPage.items, ...thirdPage.items].map(
+          (tx) => tx.id,
+        ),
+      ).size,
     ).toBe(25)
   })
 

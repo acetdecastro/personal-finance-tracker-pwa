@@ -117,20 +117,6 @@ export function createTransactionService(
     })
   }
 
-  function isAfterCursor(
-    transaction: Transaction,
-    cursor: TransactionCursorDto,
-  ) {
-    if (transaction.transactionDate < cursor.transactionDate) {
-      return true
-    }
-
-    return (
-      transaction.transactionDate === cursor.transactionDate &&
-      transaction.id < cursor.id
-    )
-  }
-
   return {
     async list(filters?: TransactionFiltersDto): Promise<Transaction[]> {
       const transactions = sortTransactionsNewestFirst(
@@ -145,30 +131,7 @@ export function createTransactionService(
       cursor?: TransactionCursorDto | null
       limit?: number
     }): Promise<TransactionPageDto> {
-      const limit = input.limit ?? 20
-      const transactions = filterTransactions(
-        sortTransactionsNewestFirst(await transactionRepository.list()),
-        input.filters,
-      )
-      const cursorFilteredTransactions = input.cursor
-        ? transactions.filter((transaction) =>
-            isAfterCursor(transaction, input.cursor as TransactionCursorDto),
-          )
-        : transactions
-      const pageItems = cursorFilteredTransactions.slice(0, limit)
-      const hasNextPage = cursorFilteredTransactions.length > limit
-      const lastItem = pageItems.at(-1)
-
-      return {
-        items: pageItems,
-        nextCursor:
-          hasNextPage && lastItem
-            ? {
-                transactionDate: lastItem.transactionDate,
-                id: lastItem.id,
-              }
-            : null,
-      }
+      return transactionRepository.listPage(input)
     },
 
     async create(input: CreateTransactionInput) {

@@ -6,6 +6,11 @@ import {
   touchUpdatedAt,
 } from '#/lib/utils/entity'
 import type { Transaction } from '#/types/domain'
+import type {
+  TransactionCursorDto,
+  TransactionFiltersDto,
+  TransactionPageDto,
+} from '#/types/dto'
 import {
   createTransactionInputSchema,
   transactionListSchema,
@@ -20,6 +25,29 @@ import type {
 export function createTransactionRepository(
   database: FinanceTrackerDatabase = db,
 ) {
+  function matchesFilters(
+    transaction: Transaction,
+    filters?: TransactionFiltersDto,
+  ) {
+    if (!filters) {
+      return true
+    }
+
+    if (filters.type && transaction.type !== filters.type) {
+      return false
+    }
+
+    if (filters.accountId && transaction.accountId !== filters.accountId) {
+      return false
+    }
+
+    if (filters.categoryId && transaction.categoryId !== filters.categoryId) {
+      return false
+    }
+
+    return true
+  }
+
   return {
     async list(): Promise<Transaction[]> {
       return transactionListSchema.parse(
@@ -33,6 +61,41 @@ export function createTransactionRepository(
     async getById(id: string): Promise<Transaction | undefined> {
       const transaction = await database.transactions.get(id)
       return transaction ? transactionSchema.parse(transaction) : undefined
+    },
+
+    async listPage(input: {
+      filters?: TransactionFiltersDto
+      cursor?: TransactionCursorDto | null
+      limit?: number
+    }): Promise<TransactionPageDto> {
+      const limit = input.limit ?? 10
+      const collection = input.cursor
+        ? database.transactions
+            .where('[transactionDate+id]')
+            .below([input.cursor.transactionDate, input.cursor.id])
+            .reverse()
+        : database.transactions.orderBy('[transactionDate+id]').reverse()
+      const items = transactionListSchema.parse(
+        await collection
+          .filter((transaction) =>
+            matchesFilters(transaction, input.filters),
+          )
+          .limit(limit + 1)
+          .toArray(),
+      )
+      const pageItems = items.slice(0, limit)
+      const lastItem = pageItems.at(-1)
+
+      return {
+        items: pageItems,
+        nextCursor:
+          items.length > limit && lastItem
+            ? {
+                transactionDate: lastItem.transactionDate,
+                id: lastItem.id,
+              }
+            : null,
+      }
     },
 
     async create(input: CreateTransactionInput): Promise<Transaction> {

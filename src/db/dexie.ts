@@ -12,7 +12,7 @@ import type {
 } from '#/types/domain'
 
 export const APP_DB_NAME = 'personal-finance-tracker-pwa'
-export const APP_SCHEMA_VERSION = 5
+export const APP_SCHEMA_VERSION = 6
 
 export class FinanceTrackerDatabase extends Dexie {
   accounts!: EntityTable<Account, 'id'>
@@ -152,6 +152,19 @@ export class FinanceTrackerDatabase extends Dexie {
       categories: 'id, name, type, isSystem, createdAt, updatedAt',
       transactions:
         'id, type, categoryId, accountId, fromAccountId, toAccountId, goalId, goalTransferDirection, transactionDate, recurringRuleId, createdAt, updatedAt',
+      recurringRules:
+        'id, type, categoryId, accountId, cadence, nextOccurrenceDate, isActive, createdAt, updatedAt',
+      budgets: 'id, categoryId, periodType, createdAt, updatedAt',
+      goals: 'id, createdAt, updatedAt',
+      userSettings: 'id, createdAt, updatedAt',
+      users: 'id, name, createdAt, updatedAt',
+    })
+
+    this.version(6).stores({
+      accounts: 'id, name, type, isArchived, createdAt, updatedAt',
+      categories: 'id, name, type, isSystem, createdAt, updatedAt',
+      transactions:
+        'id, type, categoryId, accountId, fromAccountId, toAccountId, goalId, goalTransferDirection, transactionDate, [transactionDate+id], recurringRuleId, createdAt, updatedAt',
       recurringRules:
         'id, type, categoryId, accountId, cadence, nextOccurrenceDate, isActive, createdAt, updatedAt',
       budgets: 'id, categoryId, periodType, createdAt, updatedAt',
