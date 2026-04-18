@@ -20,7 +20,7 @@ import {
   useTransactions,
   useCreateTransaction,
 } from '#/features/transactions/hooks/use-transactions'
-import { toStoredDate } from '#/lib/dates'
+import { toStoredDateTimeForDateInput } from '#/lib/dates'
 import { SectionHeader } from '#/components/common/SectionHeader'
 import { EmptyState } from '#/components/common/EmptyState'
 import { cn } from '#/lib/utils/cn'
@@ -150,7 +150,7 @@ function AccountsRoute() {
             ? 'category-income-other-income'
             : 'category-expense-miscellaneous',
         amount: Math.abs(difference),
-        transactionDate: toStoredDate(new Date(values.date + 'T00:00:00.000Z')),
+        transactionDate: toStoredDateTimeForDateInput(values.date),
         note: 'Balance adjustment',
         fromAccountId: null,
         toAccountId: null,

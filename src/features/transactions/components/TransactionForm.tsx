@@ -6,7 +6,8 @@ import { DateInput } from '#/components/common/DateInput'
 import { FormField } from '#/components/common/FormField'
 import { Input } from '#/components/common/Input'
 import { SelectInput } from '#/components/common/SelectInput'
-import { toStoredDate } from '#/lib/dates'
+import { toStoredDate, toStoredDateTimeForDateInput } from '#/lib/dates'
+import { formatMoneyInputValue } from '#/lib/format/number.utils'
 import { useSmartFormAutofocus } from '#/lib/hooks/use-smart-form-autofocus'
 import { MONEY_MAX_AMOUNT } from '#/lib/utils/schema'
 import { cn } from '#/lib/utils/cn'
@@ -32,12 +33,10 @@ export function TransactionForm({
   initialValues,
 }: TransactionFormProps) {
   const formRef = useSmartFormAutofocus()
-  const todayForInput = format(
-    initialValues?.transactionDate
-      ? new Date(initialValues.transactionDate)
-      : new Date(),
-    'yyyy-MM-dd',
-  )
+  const postedTimeSource = initialValues?.transactionDate
+    ? new Date(initialValues.transactionDate)
+    : undefined
+  const todayForInput = format(postedTimeSource ?? new Date(), 'yyyy-MM-dd')
   const coveredOccurrenceForInput =
     initialValues?.coveredRecurringOccurrenceDate
       ? format(
@@ -51,7 +50,7 @@ export function TransactionForm({
       type: initialValues?.type ?? ('expense' as TransactionType),
       amount:
         initialValues?.amount !== undefined
-          ? String(initialValues.amount)
+          ? formatMoneyInputValue(initialValues.amount)
           : ('' as unknown as number),
       recurringTransactionId: initialValues?.recurringRuleId ?? '',
       categoryId: initialValues?.categoryId ?? '',
@@ -91,8 +90,9 @@ export function TransactionForm({
             ? ((value.goalTransferDirection || 'in') as 'in' | 'out')
             : null,
           note: value.note.trim() || null,
-          transactionDate: toStoredDate(
-            new Date(value.date + 'T00:00:00.000Z'),
+          transactionDate: toStoredDateTimeForDateInput(
+            value.date,
+            postedTimeSource,
           ),
           recurringRuleId: null,
           coveredRecurringOccurrenceDate: null,
@@ -128,7 +128,10 @@ export function TransactionForm({
         goalId: null,
         goalTransferDirection: null,
         note: value.note.trim() || null,
-        transactionDate: toStoredDate(new Date(value.date + 'T00:00:00.000Z')),
+        transactionDate: toStoredDateTimeForDateInput(
+          value.date,
+          postedTimeSource,
+        ),
         recurringRuleId: selectedRecurringTransaction?.value ?? null,
         coveredRecurringOccurrenceDate:
           selectedRecurringTransaction?.value && value.coversScheduledOccurrence

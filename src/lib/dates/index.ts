@@ -7,4 +7,5 @@ export {
   nowStoredAt,
   parseDisplayDate,
   toStoredDate,
+  toStoredDateTimeForDateInput,
 } from './date.utils'

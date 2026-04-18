@@ -12,7 +12,7 @@ import type {
 } from '#/types/domain'
 
 export const APP_DB_NAME = 'personal-finance-tracker-pwa'
-export const APP_SCHEMA_VERSION = 6
+export const APP_SCHEMA_VERSION = 7
 
 export class FinanceTrackerDatabase extends Dexie {
   accounts!: EntityTable<Account, 'id'>
@@ -172,6 +172,63 @@ export class FinanceTrackerDatabase extends Dexie {
       userSettings: 'id, createdAt, updatedAt',
       users: 'id, name, createdAt, updatedAt',
     })
+
+    this.version(7)
+      .stores({
+        accounts: 'id, name, type, isArchived, createdAt, updatedAt',
+        categories: 'id, name, type, isSystem, createdAt, updatedAt',
+        transactions:
+          'id, type, categoryId, accountId, fromAccountId, toAccountId, goalId, goalTransferDirection, transactionDate, [transactionDate+id], recurringRuleId, createdAt, updatedAt',
+        recurringRules:
+          'id, type, categoryId, accountId, cadence, nextOccurrenceDate, isActive, createdAt, updatedAt',
+        budgets: 'id, categoryId, periodType, createdAt, updatedAt',
+        goals: 'id, createdAt, updatedAt',
+        userSettings: 'id, createdAt, updatedAt',
+        users: 'id, name, createdAt, updatedAt',
+      })
+      .upgrade(async (transaction) => {
+        const transactions = (await transaction
+          .table('transactions')
+          .toArray()) as Array<Record<string, unknown>>
+
+        for (const item of transactions) {
+          if (
+            typeof item.transactionDate !== 'string' ||
+            typeof item.createdAt !== 'string' ||
+            !item.transactionDate.endsWith('T00:00:00.000Z')
+          ) {
+            continue
+          }
+
+          const [datePart] = item.transactionDate.split('T')
+          const dateParts = datePart.split('-').map(Number)
+          const createdAt = new Date(item.createdAt)
+
+          if (
+            dateParts.length !== 3 ||
+            dateParts.some((part) => !Number.isFinite(part)) ||
+            Number.isNaN(createdAt.getTime())
+          ) {
+            continue
+          }
+
+          const [year, month, day] = dateParts
+          const postedAt = new Date(
+            year,
+            month - 1,
+            day,
+            createdAt.getHours(),
+            createdAt.getMinutes(),
+            createdAt.getSeconds(),
+            createdAt.getMilliseconds(),
+          )
+
+          await transaction.table('transactions').put({
+            ...item,
+            transactionDate: postedAt.toISOString(),
+          })
+        }
+      })
   }
 }
 

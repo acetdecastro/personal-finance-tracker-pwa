@@ -118,14 +118,15 @@ function groupByDate(transactions: Transaction[]): TransactionGroup[] {
   const groups: TransactionGroup[] = []
 
   for (const t of transactions) {
-    const dateKey = t.transactionDate.slice(0, 10)
+    const parsedDate = parseISO(t.transactionDate)
+    const dateKey = format(parsedDate, 'yyyy-MM-dd')
     const last = groups.at(-1)
     if (last?.dateKey === dateKey) {
       last.items.push(t)
     } else {
       groups.push({
         dateKey,
-        label: format(parseISO(dateKey), 'MMM d, yyyy').toUpperCase(),
+        label: format(parsedDate, 'MMM d, yyyy').toUpperCase(),
         items: [t],
       })
     }
@@ -151,7 +152,7 @@ export function TransactionList({
     <div className="space-y-6">
       {groups.map((group) => (
         <div key={group.dateKey}>
-          <p className="text-muted-foreground pt-1 pb-2 px-2 text-[11px] font-semibold tracking-widest">
+          <p className="text-muted-foreground px-2 pt-1 pb-2 text-[11px] font-semibold tracking-widest">
             {group.label}
           </p>
           <div className="space-y-3">

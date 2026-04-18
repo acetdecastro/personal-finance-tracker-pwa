@@ -4,6 +4,7 @@ import {
   fromStoredDate,
   parseDisplayDate,
   toStoredDate,
+  toStoredDateTimeForDateInput,
 } from './date.utils'
 
 describe('date utilities', () => {
@@ -20,5 +21,21 @@ describe('date utilities', () => {
 
   it('parses the display date format back into a valid date', () => {
     expect(formatDisplayDate(parseDisplayDate('04/16/2026'))).toBe('04/16/2026')
+  })
+
+  it('combines a date input with the current local time for stored timestamps', () => {
+    const stored = toStoredDateTimeForDateInput(
+      '2026-04-16',
+      new Date(2026, 0, 1, 13, 45, 30, 123),
+    )
+    const parsed = new Date(stored)
+
+    expect(parsed.getFullYear()).toBe(2026)
+    expect(parsed.getMonth()).toBe(3)
+    expect(parsed.getDate()).toBe(16)
+    expect(parsed.getHours()).toBe(13)
+    expect(parsed.getMinutes()).toBe(45)
+    expect(parsed.getSeconds()).toBe(30)
+    expect(parsed.getMilliseconds()).toBe(123)
   })
 })

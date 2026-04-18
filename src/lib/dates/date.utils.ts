@@ -5,6 +5,7 @@ import {
 } from '#/lib/constants/date-format'
 
 const STORED_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})Z$/
+const DATE_INPUT_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
 
 function toDate(value: Date | string | number): Date {
   if (value instanceof Date) {
@@ -26,6 +27,42 @@ function toDate(value: Date | string | number): Date {
 
 export function toStoredDate(value: Date | string | number): string {
   return toDate(value).toISOString()
+}
+
+export function toStoredDateTimeForDateInput(
+  dateInput: string,
+  timeSource = new Date(),
+): string {
+  const match = DATE_INPUT_PATTERN.exec(dateInput)
+
+  if (!match) {
+    throw new Error('Expected date input in yyyy-MM-dd format')
+  }
+
+  const [, yearValue, monthValue, dayValue] = match
+  const year = Number(yearValue)
+  const monthIndex = Number(monthValue) - 1
+  const day = Number(dayValue)
+  const nextDate = new Date(
+    year,
+    monthIndex,
+    day,
+    timeSource.getHours(),
+    timeSource.getMinutes(),
+    timeSource.getSeconds(),
+    timeSource.getMilliseconds(),
+  )
+
+  if (
+    !isValid(nextDate) ||
+    nextDate.getFullYear() !== year ||
+    nextDate.getMonth() !== monthIndex ||
+    nextDate.getDate() !== day
+  ) {
+    throw new Error('Invalid date input value')
+  }
+
+  return nextDate.toISOString()
 }
 
 export function nowStoredAt(): string {
