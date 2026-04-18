@@ -84,23 +84,20 @@ export function createTransactionService(
     }
 
     return transactions.filter((transaction) => {
-        if (filters.type && transaction.type !== filters.type) {
-          return false
-        }
+      if (filters.type && transaction.type !== filters.type) {
+        return false
+      }
 
-        if (filters.accountId && transaction.accountId !== filters.accountId) {
-          return false
-        }
+      if (filters.accountId && transaction.accountId !== filters.accountId) {
+        return false
+      }
 
-        if (
-          filters.categoryId &&
-          transaction.categoryId !== filters.categoryId
-        ) {
-          return false
-        }
+      if (filters.categoryId && transaction.categoryId !== filters.categoryId) {
+        return false
+      }
 
-        return true
-      })
+      return true
+    })
   }
 
   function sortTransactionsNewestFirst(transactions: Transaction[]) {

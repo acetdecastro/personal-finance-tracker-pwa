@@ -257,6 +257,19 @@ function DashboardRoute() {
         </p>
       </div>
 
+      <div className="grid grid-cols-2 gap-2.5">
+        <MonthlyFlowCard
+          label="Inflow"
+          value={`+${formatPhpCurrency(dashboardData?.monthlyInflow ?? 0)}`}
+          valueClassName="text-primary"
+        />
+        <MonthlyFlowCard
+          label="Outflow"
+          value={formatPhpCurrency(dashboardData?.monthlyOutflow ?? 0)}
+          valueClassName="text-warning"
+        />
+      </div>
+
       <div className="space-y-3">
         <SummaryCard
           label="Safe to Spend"
@@ -493,7 +506,7 @@ function DashboardRoute() {
 
 function NextStepCard({ prompt }: { prompt: DashboardPrompt }) {
   return (
-    <div className="bg-card shadow rounded-2xl p-4">
+    <div className="bg-card rounded-2xl p-4 shadow">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1 space-y-1">
           <p className="text-foreground text-sm font-semibold">
@@ -617,6 +630,34 @@ interface SummaryCardProps {
   color?: string
   bgColor?: string
   note?: string
+}
+
+function MonthlyFlowCard({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string
+  value: string
+  valueClassName: string
+}) {
+  return (
+    <div className="bg-card rounded-3xl p-5 shadow">
+      <p className="text-foreground mb-1 text-[10px] font-bold tracking-widest uppercase">
+        {label}
+      </p>
+      <p
+        title={value}
+        className={cn(
+          'truncate text-xs font-extrabold tracking-tight tabular-nums sm:text-[1rem]',
+          valueClassName,
+          getCurrencyTextSizeClass(value, 'monthly-flow'),
+        )}
+      >
+        {value}
+      </p>
+    </div>
+  )
 }
 
 function SummaryCard({ label, value, description, note }: SummaryCardProps) {

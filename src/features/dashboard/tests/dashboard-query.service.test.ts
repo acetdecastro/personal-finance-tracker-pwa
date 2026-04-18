@@ -144,4 +144,93 @@ describe('dashboardQueryService', () => {
       'Goal Savings · Deleted Goal',
     )
   })
+
+  it('summarizes current-month inflow and outflow without counting transfers', async () => {
+    const database = createTestDatabase()
+    databases.push(database)
+
+    const accountRepository = createAccountRepository(database)
+    const transactionRepository = createTransactionRepository(database)
+    const dashboardQueryService = createDashboardQueryService(database)
+
+    await seedCoreData(database)
+
+    const checking = await accountRepository.create({
+      name: 'Checking',
+      type: 'bank',
+      initialBalance: 1000,
+      safetyBuffer: 0,
+      isArchived: false,
+    })
+    const savings = await accountRepository.create({
+      name: 'Savings',
+      type: 'bank',
+      initialBalance: 0,
+      safetyBuffer: 0,
+      isArchived: false,
+    })
+
+    await transactionRepository.create({
+      type: 'income',
+      amount: 12000,
+      categoryId: 'category-income-salary',
+      accountId: checking.id,
+      fromAccountId: null,
+      toAccountId: null,
+      note: 'Salary',
+      transactionDate: '2026-04-15T00:00:00.000Z',
+      recurringRuleId: null,
+    })
+    await transactionRepository.create({
+      type: 'expense',
+      amount: 3500,
+      categoryId: 'category-expense-food',
+      accountId: checking.id,
+      fromAccountId: null,
+      toAccountId: null,
+      note: 'Groceries',
+      transactionDate: '2026-04-16T00:00:00.000Z',
+      recurringRuleId: null,
+    })
+    await transactionRepository.create({
+      type: 'income',
+      amount: 9000,
+      categoryId: 'category-income-salary',
+      accountId: checking.id,
+      fromAccountId: null,
+      toAccountId: null,
+      note: 'Previous salary',
+      transactionDate: '2026-03-15T00:00:00.000Z',
+      recurringRuleId: null,
+    })
+    await transactionRepository.create({
+      type: 'expense',
+      amount: 1500,
+      categoryId: 'category-expense-food',
+      accountId: checking.id,
+      fromAccountId: null,
+      toAccountId: null,
+      note: 'Previous groceries',
+      transactionDate: '2026-03-16T00:00:00.000Z',
+      recurringRuleId: null,
+    })
+    await transactionRepository.create({
+      type: 'transfer',
+      amount: 2000,
+      categoryId: DEFAULT_TRANSFER_CATEGORIES[0].id,
+      accountId: null,
+      fromAccountId: checking.id,
+      toAccountId: savings.id,
+      note: 'Move to savings',
+      transactionDate: '2026-04-17T00:00:00.000Z',
+      recurringRuleId: null,
+    })
+
+    const dashboardData = await dashboardQueryService.getDashboardData({
+      now: '2026-04-18T00:00:00.000Z',
+    })
+
+    expect(dashboardData.monthlyInflow).toBe(12000)
+    expect(dashboardData.monthlyOutflow).toBe(3500)
+  })
 })

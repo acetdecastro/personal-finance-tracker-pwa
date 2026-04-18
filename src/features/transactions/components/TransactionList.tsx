@@ -1,7 +1,7 @@
+import { format, parseISO } from 'date-fns'
 import { ArrowUpRight, ArrowUp, ArrowDown } from 'lucide-react'
 import type { Account, Category, Goal, Transaction } from '#/types/domain'
 import { formatPhpCurrency } from '#/lib/format/number.utils'
-import { formatCompactDisplayDate } from '#/lib/dates'
 import { TransactionRow } from './TransactionRow'
 
 interface TransactionListProps {
@@ -108,6 +108,32 @@ function getTransactionSubLabel(
     : null
 }
 
+interface TransactionGroup {
+  dateKey: string
+  label: string
+  items: Transaction[]
+}
+
+function groupByDate(transactions: Transaction[]): TransactionGroup[] {
+  const groups: TransactionGroup[] = []
+
+  for (const t of transactions) {
+    const dateKey = t.transactionDate.slice(0, 10)
+    const last = groups.at(-1)
+    if (last?.dateKey === dateKey) {
+      last.items.push(t)
+    } else {
+      groups.push({
+        dateKey,
+        label: format(parseISO(dateKey), 'MMM d, yyyy').toUpperCase(),
+        items: [t],
+      })
+    }
+  }
+
+  return groups
+}
+
 export function TransactionList({
   transactions,
   accounts,
@@ -119,33 +145,47 @@ export function TransactionList({
   const categoryMap = new Map(categories.map((c) => [c.id, c]))
   const goalMap = new Map(goals.map((goal) => [goal.id, goal]))
 
-  return (
-    <div className="space-y-4">
-      {transactions.map((t) => {
-        const cfg = TYPE_CONFIG[t.type]
-        const Icon = cfg.Icon
-        const categoryName = t.categoryId
-          ? (categoryMap.get(t.categoryId)?.name ?? null)
-          : null
-        const subLabel = getTransactionSubLabel(t, accountMap)
-        const amountLabel = `${cfg.sign}${formatPhpCurrency(t.amount)}`
+  const groups = groupByDate(transactions)
 
-        return (
-          <TransactionRow
-            key={t.id}
-            className="bg-card p-4 shadow"
-            label={getTransactionLabel(t, categoryName, goalMap)}
-            subLabel={subLabel}
-            amountLabel={amountLabel}
-            rightSecondaryLabel={formatCompactDisplayDate(t.transactionDate)}
-            amountColor={cfg.amountColor}
-            Icon={Icon}
-            iconColor={cfg.color}
-            iconBg={cfg.bg}
-            onPress={onSelect ? () => onSelect(t) : undefined}
-          />
-        )
-      })}
+  return (
+    <div className="space-y-6">
+      {groups.map((group) => (
+        <div key={group.dateKey}>
+          <p className="text-muted-foreground pt-1 pb-2 px-2 text-[11px] font-semibold tracking-widest">
+            {group.label}
+          </p>
+          <div className="space-y-3">
+            {group.items.map((t) => {
+              const cfg = TYPE_CONFIG[t.type]
+              const Icon = cfg.Icon
+              const categoryName = t.categoryId
+                ? (categoryMap.get(t.categoryId)?.name ?? null)
+                : null
+              const subLabel = getTransactionSubLabel(t, accountMap)
+              const amountLabel = `${cfg.sign}${formatPhpCurrency(t.amount)}`
+
+              return (
+                <TransactionRow
+                  key={t.id}
+                  className="bg-card p-4 shadow"
+                  label={getTransactionLabel(t, categoryName, goalMap)}
+                  subLabel={subLabel}
+                  amountLabel={amountLabel}
+                  amountColor={cfg.amountColor}
+                  rightSecondaryLabel={format(
+                    parseISO(t.transactionDate),
+                    'h:mm a',
+                  )}
+                  Icon={Icon}
+                  iconColor={cfg.color}
+                  iconBg={cfg.bg}
+                  onPress={onSelect ? () => onSelect(t) : undefined}
+                />
+              )
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

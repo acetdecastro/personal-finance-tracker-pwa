@@ -10,7 +10,7 @@ const defaultNumberFormatter = new Intl.NumberFormat('en-PH', {
   maximumFractionDigits: 2,
 })
 
-type CurrencyTextSizeVariant = 'hero' | 'summary' | 'list'
+type CurrencyTextSizeVariant = 'hero' | 'summary' | 'list' | 'monthly-flow'
 
 function isFiniteNumber(value: number | null | undefined): value is number {
   return typeof value === 'number' && Number.isFinite(value)

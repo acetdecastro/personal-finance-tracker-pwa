@@ -1,4 +1,5 @@
 import type { FinanceTrackerDatabase } from '#/db/dexie'
+import { isSameMonth, parseISO } from 'date-fns'
 import { db } from '#/db/dexie'
 import { createAccountRepository } from '#/features/accounts/services/account.repository'
 import { createBudgetRepository } from '#/features/budgets/services/budget.repository'
@@ -14,6 +15,14 @@ import type { DashboardData, DashboardRecentTransactionDto } from '#/types/dto'
 
 interface GetDashboardDataOptions {
   now?: Date | string
+}
+
+function toDate(value: Date | string | undefined): Date {
+  if (!value) {
+    return new Date()
+  }
+
+  return value instanceof Date ? value : parseISO(value)
 }
 
 export function createDashboardQueryService(
@@ -62,6 +71,27 @@ export function createDashboardQueryService(
         categories.map((category) => [category.id, category.name]),
       )
       const goalMap = new Map(goals.map((goal) => [goal.id, goal.name]))
+      const monthReference = toDate(options.now)
+      const monthlyTotals = transactions.reduce(
+        (totals, transaction) => {
+          if (
+            !isSameMonth(parseISO(transaction.transactionDate), monthReference)
+          ) {
+            return totals
+          }
+
+          if (transaction.type === 'income') {
+            totals.inflow += transaction.amount
+          }
+
+          if (transaction.type === 'expense') {
+            totals.outflow += transaction.amount
+          }
+
+          return totals
+        },
+        { inflow: 0, outflow: 0 },
+      )
 
       const recentTransactions: DashboardRecentTransactionDto[] = transactions
         .slice(0, 5)
@@ -87,6 +117,8 @@ export function createDashboardQueryService(
 
       return {
         currentBalance: forecast.currentBalance,
+        monthlyInflow: monthlyTotals.inflow,
+        monthlyOutflow: monthlyTotals.outflow,
         safeToSpend: forecast.safeToSpend,
         nextSalaryDate: forecast.nextSalaryDate,
         projectedBalance7d: forecast.projectedBalance7d,

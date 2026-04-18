@@ -191,6 +191,8 @@ export interface UpcomingBillDto {
 
 export interface DashboardData {
   currentBalance: number
+  monthlyInflow: number
+  monthlyOutflow: number
   safeToSpend: number
   nextSalaryDate: string | null
   projectedBalance7d: number

@@ -84,22 +84,20 @@ function hasPostedTransactionForOccurrence(
   occurrenceDate: Date,
   transactions: Transaction[],
 ): boolean {
-  return transactions.some(
-    (transaction) => {
-      if (transaction.recurringRuleId !== ruleId) {
-        return false
-      }
+  return transactions.some((transaction) => {
+    if (transaction.recurringRuleId !== ruleId) {
+      return false
+    }
 
-      if (transaction.coveredRecurringOccurrenceDate) {
-        return isSameDay(
-          parseISO(transaction.coveredRecurringOccurrenceDate),
-          occurrenceDate,
-        )
-      }
+    if (transaction.coveredRecurringOccurrenceDate) {
+      return isSameDay(
+        parseISO(transaction.coveredRecurringOccurrenceDate),
+        occurrenceDate,
+      )
+    }
 
-      return isSameDay(parseISO(transaction.transactionDate), occurrenceDate)
-    },
-  )
+    return isSameDay(parseISO(transaction.transactionDate), occurrenceDate)
+  })
 }
 
 function resolveOccurrenceAmount(rule: RecurringRule, occurrenceDate: Date) {

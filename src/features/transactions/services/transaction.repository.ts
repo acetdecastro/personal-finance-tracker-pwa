@@ -77,9 +77,7 @@ export function createTransactionRepository(
         : database.transactions.orderBy('[transactionDate+id]').reverse()
       const items = transactionListSchema.parse(
         await collection
-          .filter((transaction) =>
-            matchesFilters(transaction, input.filters),
-          )
+          .filter((transaction) => matchesFilters(transaction, input.filters))
           .limit(limit + 1)
           .toArray(),
       )

@@ -38,9 +38,13 @@ export function TransactionForm({
       : new Date(),
     'yyyy-MM-dd',
   )
-  const coveredOccurrenceForInput = initialValues?.coveredRecurringOccurrenceDate
-    ? format(new Date(initialValues.coveredRecurringOccurrenceDate), 'yyyy-MM-dd')
-    : ''
+  const coveredOccurrenceForInput =
+    initialValues?.coveredRecurringOccurrenceDate
+      ? format(
+          new Date(initialValues.coveredRecurringOccurrenceDate),
+          'yyyy-MM-dd',
+        )
+      : ''
 
   const form = useForm({
     defaultValues: {
@@ -631,8 +635,8 @@ export function TransactionForm({
                         This payment covers a scheduled occurrence
                       </p>
                       <p className="text-muted-foreground text-xs leading-relaxed">
-                        Use this when you paid a recurring expense early or late so
-                        the forecasts will not count that occurrence twice.
+                        Use this when you paid a recurring expense early or late
+                        so the forecasts will not count that occurrence twice.
                       </p>
                     </div>
                   </label>
