@@ -151,7 +151,7 @@ export function TransactionList({
     <div className="space-y-6">
       {groups.map((group) => (
         <div key={group.dateKey}>
-          <p className="text-muted-foreground px-2 pt-1 pb-2 text-[11px] font-semibold tracking-widest">
+          <p className="text-foreground px-2 pt-1 pb-2 text-sm font-semibold tracking-widest">
             {group.label}
           </p>
           <div className="space-y-3">
