@@ -272,7 +272,7 @@ function DashboardRoute() {
             getCurrencyTextSizeClass(totalBalanceLabel, 'hero'),
           )}
         >
-          {isBalanceHidden ? '******' : totalBalanceLabel}
+          {isBalanceHidden ? '••••••' : totalBalanceLabel}
         </p>
         <p className="mt-1 text-xs text-white/50">
           Live total from accounts and posted transactions
