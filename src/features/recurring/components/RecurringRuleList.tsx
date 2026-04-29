@@ -79,7 +79,7 @@ export function RecurringRuleList({
             amountContent={amountContent}
             rightSecondaryLabel={`${dateLabelPrefix} ${formatAppDateTime(nextOccurrenceDate)}`}
             amountColor={
-              rule.type === 'income' ? 'text-primary' : 'text-warning'
+              rule.type === 'income' ? 'text-primary' : 'text-destructive'
             }
             Icon={RefreshCw}
             iconColor="text-muted-foreground"

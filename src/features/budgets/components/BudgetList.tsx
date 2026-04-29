@@ -29,7 +29,7 @@ export function BudgetList({ budgets, onSelect }: BudgetListProps) {
                     ? 'text-destructive'
                     : budget.percentUsed >= 50
                       ? 'text-warning'
-                      : 'text-foreground',
+                      : 'text-accent',
                 )}
               >
                 {budget.isOverBudget ? 'Over budget' : `${budget.percentUsed}%`}

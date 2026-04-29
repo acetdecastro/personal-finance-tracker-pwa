@@ -272,7 +272,7 @@ function DashboardRoute() {
             getCurrencyTextSizeClass(totalBalanceLabel, 'hero'),
           )}
         >
-          {isBalanceHidden ? '••••••' : totalBalanceLabel}
+          {isBalanceHidden ? '******' : totalBalanceLabel}
         </p>
         <p className="mt-1 text-xs text-white/50">
           Live total from accounts and posted transactions
@@ -288,7 +288,7 @@ function DashboardRoute() {
         <MonthlyFlowCard
           label="Outflow"
           value={formatPhpCurrency(dashboardData?.monthlyOutflow ?? 0)}
-          valueClassName="text-warning"
+          valueClassName="text-destructive"
         />
       </div>
 

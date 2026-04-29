@@ -25,7 +25,7 @@ export const TYPE_CONFIG = {
     color: 'text-muted-foreground',
     bg: 'bg-muted',
     sign: '-',
-    amountColor: 'text-warning',
+    amountColor: 'text-destructive',
   },
   transfer: {
     Icon: ArrowUpRight,
