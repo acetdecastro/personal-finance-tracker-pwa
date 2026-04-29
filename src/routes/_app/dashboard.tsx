@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, Lightbulb, Plus } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Lightbulb,
+  Plus,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '#/components/common/Button'
 import { BottomSheet } from '#/components/common/BottomSheet'
@@ -40,6 +47,7 @@ import { cn } from '#/lib/utils/cn'
 import { getNextUpcomingOccurrenceDate } from '#/services/forecast/recurring-expansion.service'
 import { useFiltersStore } from '#/stores/filters-store'
 import { useTransactionsViewStore } from '#/stores/transactions-view-store'
+import { useUIStore } from '#/stores/ui-store'
 import type { DashboardRecentTransactionDto } from '#/types/dto'
 import type { CreateBudgetInput } from '#/features/budgets/schemas/budget.schemas'
 import type { CreateGoalInput } from '#/features/goals/schemas/goal.schemas'
@@ -97,6 +105,7 @@ function DashboardRoute() {
   const createGoal = useCreateGoal()
   const createRecurringRule = useCreateRecurringRule()
   const createTransaction = useCreateTransaction()
+  const { isBalanceHidden, toggleBalanceHidden } = useUIStore()
   const [tipIndex, setTipIndex] = useState(0)
   const [openSheet, setOpenSheet] = useState<
     null | 'budget' | 'goal' | 'transaction' | 'salary' | 'recurring-expense'
@@ -240,17 +249,30 @@ function DashboardRoute() {
       )}
 
       <div className="rounded-3xl bg-linear-to-br from-emerald-800 to-lime-600/90 p-6 shadow-lg">
-        <p className="mb-1 text-[11px] font-bold tracking-widest text-white/70 uppercase">
-          Total Balance
-        </p>
+        <div className="mb-1 flex items-center justify-between">
+          <p className="text-[11px] font-bold tracking-widest text-white/70 uppercase">
+            Total Balance
+          </p>
+          <button
+            onClick={toggleBalanceHidden}
+            aria-label={isBalanceHidden ? 'Show balance' : 'Hide balance'}
+            className="text-white/60 transition-colors hover:text-white"
+          >
+            {isBalanceHidden ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
+          </button>
+        </div>
         <p
-          title={totalBalanceLabel}
+          title={isBalanceHidden ? undefined : totalBalanceLabel}
           className={cn(
             'truncate font-extrabold tracking-tight text-white tabular-nums',
             getCurrencyTextSizeClass(totalBalanceLabel, 'hero'),
           )}
         >
-          {totalBalanceLabel}
+          {isBalanceHidden ? '••••••' : totalBalanceLabel}
         </p>
         <p className="mt-1 text-xs text-white/50">
           Live total from accounts and posted transactions

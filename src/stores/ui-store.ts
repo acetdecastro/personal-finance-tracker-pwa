@@ -6,8 +6,10 @@ type ResolvedTheme = 'light' | 'dark'
 interface UIStore {
   themeMode: ThemeMode
   resolvedTheme: ResolvedTheme
+  isBalanceHidden: boolean
   initializeTheme: () => void
   setThemeMode: (mode: ThemeMode) => void
+  toggleBalanceHidden: () => void
 }
 
 function getSystemTheme(): ResolvedTheme {
@@ -38,10 +40,14 @@ function getStoredTheme(): ThemeMode {
   return 'system'
 }
 
-export const useUIStore = create<UIStore>((set) => ({
+export const useUIStore = create<UIStore>((set, get) => ({
   // Keep SSR and first client render deterministic; hydrate from browser state later.
   themeMode: 'system',
   resolvedTheme: 'light',
+  isBalanceHidden: true,
+  toggleBalanceHidden: () => {
+    set({ isBalanceHidden: !get().isBalanceHidden })
+  },
   initializeTheme: () => {
     const mode = getStoredTheme()
     const resolved = resolveTheme(mode)
